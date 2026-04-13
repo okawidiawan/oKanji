@@ -1,0 +1,17 @@
+{
+  "name": "okanji",
+  "scripts": {
+    "dev:backend": "cd backend && bun run dev",
+    "dev:frontend": "cd frontend && bun run dev",
+    "dev": "concurrently \"bun run dev:backend\" \"bun run dev:frontend\""
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "concurrently": "^9.2.1",
+    "wait-on": "^9.0.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
