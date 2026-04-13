@@ -1,21 +1,14 @@
-# Feature: Registrasi User Baru
+# Feature: Login User
 
-## Spesifikasi Database
-
-Buat/Modifikasi model `User` di Prisma sehingga menghasilkan struktur tabel berikut di MySQL:
-- `id`: integer, auto increment, primary key
-- `username`: varchar 255 (berasal dari property `"name"` pada request body)
-- `email`: varchar 255, unique
-- `password`: varchar 255, not null (password harus berupa hash dari `bcrypt`)
-- `create_at`: timestamp, default current_timestamp
+## Deskripsi Fitur
+Membuat endpoint API untuk fitur login pengguna menggunakan Express JS, Prisma ORM, MySQL, dan `bcrypt` (untuk komparasi hash password). Proses login yang berhasil akan men-*generate* `uuid` sebagai token autentikasi yang kemudian disimpan ke database.
 
 ## Spesifikasi Endpoint API
 
-- **Metode & Endpoint**: `POST /api/users`
+- **Metode & Endpoint**: `POST /api/users/login`
 - **Request Body**:
 ```json
 {
-	"name": "Oka",
 	"email": "oka@localhost",
 	"password": "rahasia"
 }
@@ -23,63 +16,58 @@ Buat/Modifikasi model `User` di Prisma sehingga menghasilkan struktur tabel beri
 - **Response Body (Success / 200 OK)**:
 ```json
 {
-	"data": "OK"
+	"data": "token_uuid_yang_di_generate"
 }
 ```
-- **Response Body (Error / 400 Bad Request)**:
+- **Response Body (Error / 401 Unauthorized)**:
 ```json
 {
-	"error": "Email sudah terdaftar"
+	"error": "Email atau password salah"
 }
 ```
 
 ## Arsitektur & Struktur Folder
 
-Di dalam direktori `backend/src`, buatlah struktur folder dan file sebagai berikut untuk memisahkan logic aplikasi (Clean Architecture pattern sederhana):
-- `routes/`: Tempat mendeklarasikan API endpoint. (Contoh file: `user-route.js`)
-- `services/`: Tempat menulis business logic utama (validasi bisnis, hash password, interaksi db). (Contoh file: `user-service.js`)
-- `controller/`: Bertugas menerima HTTP Request (req), memanggil layer service, dan mengirim HTTP Response (res). (Contoh file: `user-controller.js`)
-- `error/`: Bertugas menampung custom error class atau error middleware untuk menyeragamkan response error program. (Contoh file: `error-middleware.js` atau `response-error.js`)
+Lanjutkan penggunaan struktur folder MVC yang sudah ada di dalam direktori `backend/src`:
+- `routes/`: Tempat mendeklarasikan API endpoint. (Gunakan file: `user-route.js`)
+- `services/`: Tempat menulis business logic utama (validasi form login, mencocokkan password, generate & sinkronisasi token di DB). (Gunakan file: `user-service.js`)
+- `controller/`: Bertindak memproses input request, meneruskan data ke service, lalu mengirimkan respons JSON kembali. (Gunakan file: `user-controller.js`)
+- `error/`: Mengandalkan middleware error handler yang sudah dibuat pada fitur registrasi sebelumnya (`response-error.js`).
 
 ---
 
-## Tahapan Implementasi (Untuk Junior Programmer / AI Model)
+## Tahapan Implementasi (Instruksi Teknis Junior/AI)
 
-Ikuti langkah-langkah di bawah ini secara runut untuk mengimplementasikan fitur:
+Ikuti langkah-langkah runut ini:
 
-### 1. Update Database (Prisma)
-- Buka file `backend/prisma/schema.prisma`.
-- Ubah/buat model `User` yang mencerminkan detail: `id` (autoincrement), `username` (String), `email` (String, @unique), `password` (String), dan `create_at` (DateTime @default(now())).
-- Jalankan perintah: `bun x prisma migrate dev --name update_user_table` untuk mengaplikasikan tabel ke database MySQL lokal.
+### 1. Install Dependency Library `uuid`
+- Kamu memerlukan package `uuid` untuk men-*generate* string token secara acak dan unik.
+- Buka terminal, pastikan kamu berada di dalam direktori `backend/`, dan jalankan: `bun add uuid`.
 
-### 2. Install Dependency Tambahan
-- Kamu memerlukan bcrypt untuk hashing password. Jalankan perintah: `bun add bcrypt` di dalam folder `backend/`.
+### 2. Penambahan Logic di Service (`src/services/user-service.js`)
+- Buka file `src/services/user-service.js`.
+- *Import* library UUID di baris paling atas: `const { v4: uuid } = require('uuid');`.
+- Buat dan *export* asynchronous fungsi baru bernama `login(request)`.
+- **Cari Data User:** Gunakan fungsi `prisma.user.findUnique()` terhadap email yang di-*submit* (`request.email`).
+- **Validasi Data:** Jika data user bernilai `null` (tidak ditemukan), berhentikan fungsi dan *throw error* menggunakan custom error class: `throw new ResponseError(401, "Email atau password salah")`. 
+- **Komparasi Password:** Jika data user ada, verifikasikan password menggunakan `await bcrypt.compare(request.password, user.password)`.
+- Jika `bcrypt.compare` me-return `false`, gunakan kembali *throw error*: `throw new ResponseError(401, "Email atau password salah")`. Pastikan menggunakan pesan yang sama demi keamanan asimetris.
+- **Generate Token:** Hasilkan UUID unik: `const token = uuid();`.
+- **Simpan Token:** Gunakan fungsi `prisma.user.update()` untuk *update* field `token` dengan UUID terbaru untuk user dengan format record pencarian berdasarkan ID atribut tabel atau Email di Database.
+- **Kembalikan Token:** Return string `token` dari fungsi.
 
-### 3. Setup Error Handling (`src/error`)
-- Buat folder `src/error`.
-- Buat file `response-error.js` yang mengekstend class `Error` native agar bisa menyimpan HTTP Status Code.
-- Buat file `error-middleware.js` untuk menangkap error yang di-throw dari service. Middleware ini bertugas me-return response JSON persis dengan format: `{"error": "pesan error dari parameter"}` sesuai spesifikasi.
+### 3. Penambahan Controller (`src/controller/user-controller.js`)
+- Buka file `src/controller/user-controller.js`.
+- Buat dan *export* asynchronous *handler function* bernama `login(req, res, next)`.
+- Gunakan blok standard `try...catch`. 
+- Pada ruas `try`, panggil `const token = await userService.login(req.body);`. 
+- Return JSON response format standard `{ data: token }` beserta `.status(200)`.
+- Pada blok `catch(e)`, panggil middleware interseptor lewat pemanggilan `next(e)`.
 
-### 4. Implementasi Business Logic (`src/services/user-service.js`)
-- Di dalam file ini, buat fungsi bernama `register(requestBody)`.
-- Menggunakan `prisma.user.findUnique()`, periksa apakah database sudah memiliki user dengan email yang diinput. Jika sudah ada, lemparkan error custom: `throw new Error("Email sudah terdaftar")`.
-- Jika email belum terdaftar, gunakan `await bcrypt.hash(requestBody.password, 10)` untuk menyandikan password asli pengguna.
-- Gunakan `prisma.user.create()` untuk menyimpan data ke database. Perhatikan mapping input `"name"` ke kolom `"username"`.
-- Return nilai sukses (meskipun hanya string `'OK'` atau object user) ke controller.
+### 4. Pendaftaran Routing API (`src/routes/user-route.js`)
+- Buka file rute `src/routes/user-route.js`.
+- Modifikasi inisialisasi *router* untuk langsung membawahi API Endpoint Login:
+  `userRouter.post('/api/users/login', userController.login);`.
+- Simpan file.
 
-### 5. Implementasi Controller (`src/controller/user-controller.js`)
-- Buat fungsi handler bernama `register(req, res, next)`.
-- Ambil data dari parameter request dengan `req.body`.
-- Masukkan dalam blok `try...catch`. Di blok `try`, panggil `await userService.register(req.body)`.
-- Jika berhasil (tidak ada baris catch tersentuh), kembalikan response sukses: `res.status(200).json({ "data": "OK" })`.
-- Jika gagal/masuk catch blok, panggil `next(error)` dengan mengoper argumen error agar diproses secara sentral oleh error middleware.
-
-### 6. Deklarasi Endpoint (Routing) (`src/routes/user-route.js`)
-- Import object express `Router`.
-- Konfigurasi router untuk merespon POST request pada `'/api/users'` yang diarahkan dan ditangani oleh `userController.register`.
-- Export konfigurasi modul routernya.
-
-### 7. Hubungkan Semua Perubahan ke `src/index.js` Utama
-- Buka entry point Express JS, lalu *import* `user-route.js`.
-- Daftarkan route baru tersebut sebelum baris `app.listen` dengan memanggil `app.use(userRouter)`.
-- Pastikan kalian menempatkan `errorMiddleware` di bawah pendaftaran route yang lain (`app.use(errorMiddleware)`) agar bisa menyerap dan memformat segala exception yang muncul secara serasi dari atas ke bawah.
+Pastikan kamu mengikuti detail kembalian pesan JSON (entah berhasil atau parameter keliru) yang tercantum persis pada format Spesifikasi Endpoint API di dokumen ini.
