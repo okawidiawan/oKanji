@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const { PrismaClient } = require('@prisma/client');
 const { ResponseError } = require('../error/response-error');
+const { v4: uuid } = require('uuid');
 
 const prisma = new PrismaClient();
 
@@ -29,6 +30,37 @@ const register = async (request) => {
   });
 };
 
+const login = async (request) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      email: request.email
+    }
+  });
+
+  if (!user) {
+    throw new ResponseError(401, "Email atau password salah");
+  }
+
+  const isPasswordValid = await bcrypt.compare(request.password, user.password);
+  if (!isPasswordValid) {
+    throw new ResponseError(401, "Email atau password salah");
+  }
+
+  const token = uuid();
+  return prisma.user.update({
+    where: {
+      email: request.email
+    },
+    data: {
+      token: token
+    },
+    select: {
+      token: true
+    }
+  });
+};
+
 module.exports = {
-  register
+  register,
+  login
 };
