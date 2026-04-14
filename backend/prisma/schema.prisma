@@ -12,7 +12,7 @@ model User {
   username  String   @db.VarChar(255)
   email     String   @unique @db.VarChar(255)
   password  String   @db.VarChar(255)
-  token     String   @unique @default("") @db.VarChar(255)
+  token     String?  @unique @db.VarChar(255)
   create_at DateTime @default(now())
 
   @@map("users")
