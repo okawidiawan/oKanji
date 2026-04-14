@@ -1,74 +1,49 @@
-# Feature: Membuat Model Database Kanji
+# Feature: Impor Data Kanji dari XML (Seeder)
 
 ## Deskripsi Tugas
-Tugas ini bertujuan untuk membangun struktur lapisan database untuk menyimpan data koleksi kanji. Entitas tabel `Kanji` yang dibuat akan berisi rincian huruf kanji, tingkat kesulitan (JLPT), cara baca (onyomi/kunyomi), serta artinya. 
+Tugas ini adalah mengimplementasikan proses *seeding* database untuk mengisi tabel `kanjis` dengan ribuan data kanji yang diambil dari file `kanjidic2.xml`. Kita akan menggunakan skrip `seed.js` yang sudah disiapkan untuk memproses file XML tersebut dan menyimpannya ke MySQL menggunakan Prisma.
 
-## Spesifikasi Schema Database (Prisma)
+## Sumber Daya yang Tersedia
+- **File Data**: `kanjidic2.xml` (Database Kanji lengkap dalam format XML).
+- **Skrip Seeder**: `seed.js` (Skrip Node.js yang menggunakan `PrismaClient` dan `fast-xml-parser`).
 
-Kamu perlu memodifikasi file `schema.prisma` dengan menambahkan *Enum* dan *Model/Table* baru sesuai spesifikasi di bawah.
+## Panduan Teknis & Tahapan Implementasi
 
-1. **Enum JlptLevel**: Tipe data khusus untuk menjamin nilai tingkatan JLPT valid (misalnya hanya N5, N4, N3, N2, N1).
-2. **Model Kanji**:
-   - `id`: Tipe `String` yang dibentuk dari UUID, di-set sebagai *Primary Key*.
-   - `character`: Tipe `String`, maksimal 10 karakter, bersifat `Unique`.
-   - `jlptLevel`: Menggunakan tipe bentukan enum `JlptLevel`.
-   - `onyomi`: Tipe `String`, batas maksimal 255 karakter.
-   - `kunyomi`: Tipe `String`, batas maksimal 255 karakter.
-   - `meaning`: Tipe `String`, batas diperbesar maksimal 500 karakter karena terjemahan bahasa bisa panjang.
-   - `strokeCount`: Tipe angka `Integer` *(Opsional / Nullable)*, menyimpan rasio jumlah coretan kuas.
-   - `radical`: Tipe `String`, maksimal 10 karakter *(Opsional / Nullable)*.
-   - `createdAt`: Tipe `DateTime` dengan nilai default `now()`.
+Ikuti langkah-langkah berikut untuk menjalankan proses seeding:
 
----
+### 1. Persiapan File
+- Pastikan file `kanjidic2.xml` dan `seed.js` berada di lokasi yang benar.
+- Pindahkan atau copy file `seed.js` ke dalam folder `backend/prisma/seed.js` (atau lokasi standar seeding Prisma Anda).
+- Pastikan file `kanjidic2.xml` berada di root folder `backend/` atau sesuaikan variabel `XML_PATH` di dalam `seed.js`.
 
-## Tahapan Implementasi (Panduan Untuk Junior Programmer / AI)
+### 2. Instalasi Dependensi
+Skrip seeding ini membutuhkan pustaka untuk memproses XML. Jalankan perintah berikut di folder `backend/`:
+```bash
+bun add fast-xml-parser
+```
 
-Silakan ikuti instruksi teknis di bawah dengan teliti:
+### 3. Penyesuaian skrip `seed.js` (PENTING)
+Karena saat ini kita baru membuat tabel `kanjis` dan belum membuat tabel `kotobas` atau `user_kanjis`, baris kode yang mencoba menghapus data di tabel tersebut akan menyebabkan error.
 
-### Tahap 1: Modifikasi File Prisma Schema
-1. Buka file di dalam *directory codebase*: `backend/prisma/schema.prisma`.
-2. Pertama, definisikan `enum` bernama `JlptLevel` (ini penting karena tipe data ini dipakai oleh model `Kanji`). Kamu bisa menaruhnya di bawah blok `model User` atau dekat awal baris.
-   Formatnya:
-   ```prisma
-   enum JlptLevel {
-     N5
-     N4
-     N3
-     N2
-     N1
-   }
-   ```
-3. Kedua, deklarasikan bentuk blok skema tabelnya. Salin struktur dan relasi *database map* di bawah ini secara utuh:
-   ```prisma
-   model Kanji {
-     id          String    @id @default(uuid())
-     character   String    @unique @db.VarChar(10)  
-     jlptLevel   JlptLevel
-     onyomi      String    @db.VarChar(255)
-     kunyomi     String    @db.VarChar(255)
-     meaning     String    @db.VarChar(500)
-     strokeCount Int?
-     radical     String?   @db.VarChar(10)
-     createdAt   DateTime  @default(now())
-   
-     // Kami membiasakan standarisasi nama tabel bentuk jamak/plural
-     @@map("kanjis")
-   }
-   ```
-   **Penting:** Perhatikan simbol tanda tanya `?` pada nilai `Int?` dan `String?` yang berarti nilainya boleh kosong (Not Required/Nullable).
+- Buka file `seed.js`.
+- Cari blok kode pembersihan data lama (sekitar baris 131-132).
+- **Komentari (comment out)** baris berikut:
+  ```javascript
+  // await prisma.kotoba.deleteMany()
+  // await prisma.userKanji.deleteMany()
+  ```
+- Biarkan baris `await prisma.kanji.deleteMany()` aktif jika Anda ingin mengosongkan tabel kanji sebelum diisi ulang.
 
-### Tahap 2: Sinkronisasi ke Database (Migrasi)
-Setelah kode Prisma selesai dimasukkan dan disimpan (`.prisma`), saatnya menerapkan struktur ini ke Server Database lokal mu.
+### 4. Eksekusi Seeding
+Jalankan proses import dengan perintah Prisma:
+```bash
+bun x prisma db seed
+```
 
-1. Buka *terminal/command line* di direktori `backend/`.
-2. Pastikan servis database MySQL menyala, dan file `.env` kamu terkonfigurasi dengan benar.
-3. Jalankan sintaks:
-   ```bash
-   bun x prisma migrate dev --name create_kanji_table
-   ```
-4. Apabila berhasil, terminal akan memunculkan konfirmasi bahwa file SQL migrasi terbentuk di dalam folder `prisma/migrations/` dan *Prisma Client* yang baru berhasil di-*generate*.
+### 5. Verifikasi Akhir
+- Perhatikan output di terminal untuk melihat progres batch insert (Progress: X/Y).
+- Setelah selesai, buka **Prisma Studio** (`bun x prisma studio`) untuk memastikan data kanji sudah masuk dengan atribut lengkap (onyomi, kunyomi, meaning, dll).
 
-### Tahap 3: Verifikasi
-Uji periksa apakah migrasimu berhasil dengan menjalankan Prisma Studio.
-- Jalankan perintah: `bun x prisma studio` (Bila di dalam folder backend).
-- Buka browser yang terpampang di konsol dan periksa keberadaan tab tabel **`Kanji`**. Pastikan kolom opsional maupun validasinya tertata dengan benar sesuai susunan `schema.prisma`.
+## Catatan Tambahan
+- Skrip ini memfilter kanji berdasarkan level JLPT (N5 hingga N2). Jika ingin mengimpor semua, sesuaikan variabel `JLPT_FILTER`.
+- Proses ini mungkin memakan waktu beberapa menit karena ukuran XML yang besar (>15MB). Jangan hentikan proses sebelum muncul pesan "Seeding selesai!".
