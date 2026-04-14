@@ -1,77 +1,74 @@
-# Peningkatan Kode: Perbaikan Schema, Logic Registrasi & Standarisasi Error Handling
+# Feature: Membuat Model Database Kanji
 
 ## Deskripsi Tugas
-Issue ini mencakup perbaikan skema database, penyesuaian logika validasi keamanan registrasi, serta peningkatan sistem penanganan error (Error Handling) agar lebih aman, terstandarisasi, dan *production-ready*.
+Tugas ini bertujuan untuk membangun struktur lapisan database untuk menyimpan data koleksi kanji. Entitas tabel `Kanji` yang dibuat akan berisi rincian huruf kanji, tingkat kesulitan (JLPT), cara baca (onyomi/kunyomi), serta artinya. 
 
-## Spesifikasi Perubahan
+## Spesifikasi Schema Database (Prisma)
 
-### 1. Database Schema
-Kini token autentikasi tidak harus diisi dengan *default value* berupa string kosong sejak awal (sebelum user login).
-- Ubah definisi kolom `token` pada model `User` menjadi nullable:
-  `token String? @unique @db.VarChar(255)`
+Kamu perlu memodifikasi file `schema.prisma` dengan menambahkan *Enum* dan *Model/Table* baru sesuai spesifikasi di bawah.
 
-### 2. Logic Registrasi
-Memperbaiki bug pontesial ketika terjadi anomali banyak data pada DB yang menyebabkan nilai `countUser` tidak tepat 1.
-- Ubah pengecekan validasi pada blok registrasi email di `user-service.js` dari `countUser === 1` menjadi `countUser > 0`.
-
-### 3. Peningkatan Error Handling
-Standarisasi format JSON error yang diberikan ke klien dan perlindungan dari kebocoran jejak *stack errors*.
-- **Controlled Error**: Jika error adalah turunan/instansi `ResponseError` (error 400/401/404 yang dikelola), sampaikan pesan secara ramah pengguna (user-friendly).
-- **Unexpected Error**: Jika error bukan dari `ResponseError` (bisa dari Prisma, Syntax, 500 dsb), lakukan pemblokiran pesan asli menuju klien dan timpa dengan balasan statis `"Internal Server Error"` pada mode Produksi.
-- **Logging**: Rekam *stack* atau *message detail* dari error secara penuh menggunakan *winston* atau *console.error* hanya di terminal/console backend server. Jangan sampai terkirim (*send*) ke *response payload* client.
-- **Standarisasi JSON**: Bungkus setiap pengembalian error dalam format `{ error: { code, message } }`. 
-  Lalu, jika *environment* sedang tidak berada di `'production'`, sertakan rincian (*details/stack*) secara terpisah di JSON response.
+1. **Enum JlptLevel**: Tipe data khusus untuk menjamin nilai tingkatan JLPT valid (misalnya hanya N5, N4, N3, N2, N1).
+2. **Model Kanji**:
+   - `id`: Tipe `String` yang dibentuk dari UUID, di-set sebagai *Primary Key*.
+   - `character`: Tipe `String`, maksimal 10 karakter, bersifat `Unique`.
+   - `jlptLevel`: Menggunakan tipe bentukan enum `JlptLevel`.
+   - `onyomi`: Tipe `String`, batas maksimal 255 karakter.
+   - `kunyomi`: Tipe `String`, batas maksimal 255 karakter.
+   - `meaning`: Tipe `String`, batas diperbesar maksimal 500 karakter karena terjemahan bahasa bisa panjang.
+   - `strokeCount`: Tipe angka `Integer` *(Opsional / Nullable)*, menyimpan rasio jumlah coretan kuas.
+   - `radical`: Tipe `String`, maksimal 10 karakter *(Opsional / Nullable)*.
+   - `createdAt`: Tipe `DateTime` dengan nilai default `now()`.
 
 ---
 
-## Tahapan Implementasi (Untuk Junior Programmer / AI Model)
+## Tahapan Implementasi (Panduan Untuk Junior Programmer / AI)
 
-Ikuti langkah teknis ini dengan hati-hati.
+Silakan ikuti instruksi teknis di bawah dengan teliti:
 
-### Tahap 1: Perbarui Schema & Lakukan Migrasi
-1. Buka file `backend/prisma/schema.prisma`.
-2. Cari definisi data model `User`. Hapus atribut `@default("")` pada konfigurasi kolom `token`.
-3. Tambahkan tanda tanya `?` di tipe data `String` untuk menjadikannya *nullable* (*optional*).
-   Contoh kode baru: `token String? @unique @db.VarChar(255)`
-4. Pastikan Docker/MySQL sedang berjalan lalu buka terminal di `backend/`.
-5. Eksekusi deklarasi migrasinya melaui: `bun x prisma migrate dev --name alter_token_nullable`
+### Tahap 1: Modifikasi File Prisma Schema
+1. Buka file di dalam *directory codebase*: `backend/prisma/schema.prisma`.
+2. Pertama, definisikan `enum` bernama `JlptLevel` (ini penting karena tipe data ini dipakai oleh model `Kanji`). Kamu bisa menaruhnya di bawah blok `model User` atau dekat awal baris.
+   Formatnya:
+   ```prisma
+   enum JlptLevel {
+     N5
+     N4
+     N3
+     N2
+     N1
+   }
+   ```
+3. Kedua, deklarasikan bentuk blok skema tabelnya. Salin struktur dan relasi *database map* di bawah ini secara utuh:
+   ```prisma
+   model Kanji {
+     id          String    @id @default(uuid())
+     character   String    @unique @db.VarChar(10)  
+     jlptLevel   JlptLevel
+     onyomi      String    @db.VarChar(255)
+     kunyomi     String    @db.VarChar(255)
+     meaning     String    @db.VarChar(500)
+     strokeCount Int?
+     radical     String?   @db.VarChar(10)
+     createdAt   DateTime  @default(now())
+   
+     // Kami membiasakan standarisasi nama tabel bentuk jamak/plural
+     @@map("kanjis")
+   }
+   ```
+   **Penting:** Perhatikan simbol tanda tanya `?` pada nilai `Int?` dan `String?` yang berarti nilainya boleh kosong (Not Required/Nullable).
 
-### Tahap 2: Tambal Bug Pada Validasi Registrasi (`src/services/user-service.js`)
-1. Buka file `backend/src/services/user-service.js`.
-2. Pada fungsi `register`, scroll ke bagian *query count* ke Prisma untuk memastikan email valid/belum terdaftar.
-3. Kamu akan menemukan baris kondisi: `if (countUser === 1)`. Ubah parameter kondisi tersebut ke versi yang lebih kuat: `if (countUser > 0)`.
+### Tahap 2: Sinkronisasi ke Database (Migrasi)
+Setelah kode Prisma selesai dimasukkan dan disimpan (`.prisma`), saatnya menerapkan struktur ini ke Server Database lokal mu.
 
-### Tahap 3: Konstruksi Ulang Error Middleware (`src/error/error-middleware.js`)
-1. Buka file sentral penanganan error: `backend/src/error/error-middleware.js`.
-2. Di dalam *function* `errorMiddleware`, kumpulkan status *environment*:
-   `const isProduction = process.env.NODE_ENV === 'production';`
-3. Letakkan baris perintah untuk melayangkan *Logging Console Server* terlebih dahulu sebelum mengirim respons ke klien: 
-   `console.error('[SERVER ERROR]:', err);` (Gunakan implementasi *winston* jika Anda berinisiatif men-*setup*-nya).
-4. Buat penanganan dua alur format pengecekan error:
-   - **Blok "if (err instanceof ResponseError)"**:
-     Kirim status sesuai instansiat class (`err.status`) dan tanggapan berdasar kemasan:
-     ```javascript
-     res.status(err.status).json({
-       error: {
-         code: err.status,
-         message: err.message
-       }
-     }).end();
-     ```
-   - **Blok *Else* (Unexpected Server Error / Format 500)**:
-     Set respons ke kode 500. Jika variabel kondisi `isProduction` bernilai `true`, beri tanggapan `message` generik seperti: `"Internal Server Error"`. Jika bernilai `false`, beri message/detail jejak (*stack*) `err.message` aslinya.
-     ```javascript
-     const statusCode = 500;
-     const errorMessage = isProduction ? "Internal Server Error" : err.message;
-     const errorPayload = {
-       code: statusCode,
-       message: errorMessage
-     };
-     // Hanya tempel detail stack aslinya bagi para pengembang selama fase development
-     if (!isProduction) {
-       errorPayload.details = err.stack;
-     }
+1. Buka *terminal/command line* di direktori `backend/`.
+2. Pastikan servis database MySQL menyala, dan file `.env` kamu terkonfigurasi dengan benar.
+3. Jalankan sintaks:
+   ```bash
+   bun x prisma migrate dev --name create_kanji_table
+   ```
+4. Apabila berhasil, terminal akan memunculkan konfirmasi bahwa file SQL migrasi terbentuk di dalam folder `prisma/migrations/` dan *Prisma Client* yang baru berhasil di-*generate*.
 
-     res.status(statusCode).json({ error: errorPayload }).end();
-     ```
-5. Simpan file `error-middleware.js`. Dengan modifikasi pada *Error Handler Global* ini, tidak perlu mengutak-atik lapisan *Controller* lagi karena blok *Catch* `next(e)` pada fungsi-fungsi controller sebelumnya akan mengeksekusi format ini dengan otomatis.
+### Tahap 3: Verifikasi
+Uji periksa apakah migrasimu berhasil dengan menjalankan Prisma Studio.
+- Jalankan perintah: `bun x prisma studio` (Bila di dalam folder backend).
+- Buka browser yang terpampang di konsol dan periksa keberadaan tab tabel **`Kanji`**. Pastikan kolom opsional maupun validasinya tertata dengan benar sesuai susunan `schema.prisma`.
