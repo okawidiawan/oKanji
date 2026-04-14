@@ -1,73 +1,77 @@
-# Feature: Login User
+# Peningkatan Kode: Perbaikan Schema, Logic Registrasi & Standarisasi Error Handling
 
-## Deskripsi Fitur
-Membuat endpoint API untuk fitur login pengguna menggunakan Express JS, Prisma ORM, MySQL, dan `bcrypt` (untuk komparasi hash password). Proses login yang berhasil akan men-*generate* `uuid` sebagai token autentikasi yang kemudian disimpan ke database.
+## Deskripsi Tugas
+Issue ini mencakup perbaikan skema database, penyesuaian logika validasi keamanan registrasi, serta peningkatan sistem penanganan error (Error Handling) agar lebih aman, terstandarisasi, dan *production-ready*.
 
-## Spesifikasi Endpoint API
+## Spesifikasi Perubahan
 
-- **Metode & Endpoint**: `POST /api/users/login`
-- **Request Body**:
-```json
-{
-	"email": "oka@localhost",
-	"password": "rahasia"
-}
-```
-- **Response Body (Success / 200 OK)**:
-```json
-{
-	"data": "token_uuid_yang_di_generate"
-}
-```
-- **Response Body (Error / 401 Unauthorized)**:
-```json
-{
-	"error": "Email atau password salah"
-}
-```
+### 1. Database Schema
+Kini token autentikasi tidak harus diisi dengan *default value* berupa string kosong sejak awal (sebelum user login).
+- Ubah definisi kolom `token` pada model `User` menjadi nullable:
+  `token String? @unique @db.VarChar(255)`
 
-## Arsitektur & Struktur Folder
+### 2. Logic Registrasi
+Memperbaiki bug pontesial ketika terjadi anomali banyak data pada DB yang menyebabkan nilai `countUser` tidak tepat 1.
+- Ubah pengecekan validasi pada blok registrasi email di `user-service.js` dari `countUser === 1` menjadi `countUser > 0`.
 
-Lanjutkan penggunaan struktur folder MVC yang sudah ada di dalam direktori `backend/src`:
-- `routes/`: Tempat mendeklarasikan API endpoint. (Gunakan file: `user-route.js`)
-- `services/`: Tempat menulis business logic utama (validasi form login, mencocokkan password, generate & sinkronisasi token di DB). (Gunakan file: `user-service.js`)
-- `controller/`: Bertindak memproses input request, meneruskan data ke service, lalu mengirimkan respons JSON kembali. (Gunakan file: `user-controller.js`)
-- `error/`: Mengandalkan middleware error handler yang sudah dibuat pada fitur registrasi sebelumnya (`response-error.js`).
+### 3. Peningkatan Error Handling
+Standarisasi format JSON error yang diberikan ke klien dan perlindungan dari kebocoran jejak *stack errors*.
+- **Controlled Error**: Jika error adalah turunan/instansi `ResponseError` (error 400/401/404 yang dikelola), sampaikan pesan secara ramah pengguna (user-friendly).
+- **Unexpected Error**: Jika error bukan dari `ResponseError` (bisa dari Prisma, Syntax, 500 dsb), lakukan pemblokiran pesan asli menuju klien dan timpa dengan balasan statis `"Internal Server Error"` pada mode Produksi.
+- **Logging**: Rekam *stack* atau *message detail* dari error secara penuh menggunakan *winston* atau *console.error* hanya di terminal/console backend server. Jangan sampai terkirim (*send*) ke *response payload* client.
+- **Standarisasi JSON**: Bungkus setiap pengembalian error dalam format `{ error: { code, message } }`. 
+  Lalu, jika *environment* sedang tidak berada di `'production'`, sertakan rincian (*details/stack*) secara terpisah di JSON response.
 
 ---
 
-## Tahapan Implementasi (Instruksi Teknis Junior/AI)
+## Tahapan Implementasi (Untuk Junior Programmer / AI Model)
 
-Ikuti langkah-langkah runut ini:
+Ikuti langkah teknis ini dengan hati-hati.
 
-### 1. Install Dependency Library `uuid`
-- Kamu memerlukan package `uuid` untuk men-*generate* string token secara acak dan unik.
-- Buka terminal, pastikan kamu berada di dalam direktori `backend/`, dan jalankan: `bun add uuid`.
+### Tahap 1: Perbarui Schema & Lakukan Migrasi
+1. Buka file `backend/prisma/schema.prisma`.
+2. Cari definisi data model `User`. Hapus atribut `@default("")` pada konfigurasi kolom `token`.
+3. Tambahkan tanda tanya `?` di tipe data `String` untuk menjadikannya *nullable* (*optional*).
+   Contoh kode baru: `token String? @unique @db.VarChar(255)`
+4. Pastikan Docker/MySQL sedang berjalan lalu buka terminal di `backend/`.
+5. Eksekusi deklarasi migrasinya melaui: `bun x prisma migrate dev --name alter_token_nullable`
 
-### 2. Penambahan Logic di Service (`src/services/user-service.js`)
-- Buka file `src/services/user-service.js`.
-- *Import* library UUID di baris paling atas: `const { v4: uuid } = require('uuid');`.
-- Buat dan *export* asynchronous fungsi baru bernama `login(request)`.
-- **Cari Data User:** Gunakan fungsi `prisma.user.findUnique()` terhadap email yang di-*submit* (`request.email`).
-- **Validasi Data:** Jika data user bernilai `null` (tidak ditemukan), berhentikan fungsi dan *throw error* menggunakan custom error class: `throw new ResponseError(401, "Email atau password salah")`. 
-- **Komparasi Password:** Jika data user ada, verifikasikan password menggunakan `await bcrypt.compare(request.password, user.password)`.
-- Jika `bcrypt.compare` me-return `false`, gunakan kembali *throw error*: `throw new ResponseError(401, "Email atau password salah")`. Pastikan menggunakan pesan yang sama demi keamanan asimetris.
-- **Generate Token:** Hasilkan UUID unik: `const token = uuid();`.
-- **Simpan Token:** Gunakan fungsi `prisma.user.update()` untuk *update* field `token` dengan UUID terbaru untuk user dengan format record pencarian berdasarkan ID atribut tabel atau Email di Database.
-- **Kembalikan Token:** Return string `token` dari fungsi.
+### Tahap 2: Tambal Bug Pada Validasi Registrasi (`src/services/user-service.js`)
+1. Buka file `backend/src/services/user-service.js`.
+2. Pada fungsi `register`, scroll ke bagian *query count* ke Prisma untuk memastikan email valid/belum terdaftar.
+3. Kamu akan menemukan baris kondisi: `if (countUser === 1)`. Ubah parameter kondisi tersebut ke versi yang lebih kuat: `if (countUser > 0)`.
 
-### 3. Penambahan Controller (`src/controller/user-controller.js`)
-- Buka file `src/controller/user-controller.js`.
-- Buat dan *export* asynchronous *handler function* bernama `login(req, res, next)`.
-- Gunakan blok standard `try...catch`. 
-- Pada ruas `try`, panggil `const token = await userService.login(req.body);`. 
-- Return JSON response format standard `{ data: token }` beserta `.status(200)`.
-- Pada blok `catch(e)`, panggil middleware interseptor lewat pemanggilan `next(e)`.
+### Tahap 3: Konstruksi Ulang Error Middleware (`src/error/error-middleware.js`)
+1. Buka file sentral penanganan error: `backend/src/error/error-middleware.js`.
+2. Di dalam *function* `errorMiddleware`, kumpulkan status *environment*:
+   `const isProduction = process.env.NODE_ENV === 'production';`
+3. Letakkan baris perintah untuk melayangkan *Logging Console Server* terlebih dahulu sebelum mengirim respons ke klien: 
+   `console.error('[SERVER ERROR]:', err);` (Gunakan implementasi *winston* jika Anda berinisiatif men-*setup*-nya).
+4. Buat penanganan dua alur format pengecekan error:
+   - **Blok "if (err instanceof ResponseError)"**:
+     Kirim status sesuai instansiat class (`err.status`) dan tanggapan berdasar kemasan:
+     ```javascript
+     res.status(err.status).json({
+       error: {
+         code: err.status,
+         message: err.message
+       }
+     }).end();
+     ```
+   - **Blok *Else* (Unexpected Server Error / Format 500)**:
+     Set respons ke kode 500. Jika variabel kondisi `isProduction` bernilai `true`, beri tanggapan `message` generik seperti: `"Internal Server Error"`. Jika bernilai `false`, beri message/detail jejak (*stack*) `err.message` aslinya.
+     ```javascript
+     const statusCode = 500;
+     const errorMessage = isProduction ? "Internal Server Error" : err.message;
+     const errorPayload = {
+       code: statusCode,
+       message: errorMessage
+     };
+     // Hanya tempel detail stack aslinya bagi para pengembang selama fase development
+     if (!isProduction) {
+       errorPayload.details = err.stack;
+     }
 
-### 4. Pendaftaran Routing API (`src/routes/user-route.js`)
-- Buka file rute `src/routes/user-route.js`.
-- Modifikasi inisialisasi *router* untuk langsung membawahi API Endpoint Login:
-  `userRouter.post('/api/users/login', userController.login);`.
-- Simpan file.
-
-Pastikan kamu mengikuti detail kembalian pesan JSON (entah berhasil atau parameter keliru) yang tercantum persis pada format Spesifikasi Endpoint API di dokumen ini.
+     res.status(statusCode).json({ error: errorPayload }).end();
+     ```
+5. Simpan file `error-middleware.js`. Dengan modifikasi pada *Error Handler Global* ini, tidak perlu mengutak-atik lapisan *Controller* lagi karena blok *Catch* `next(e)` pada fungsi-fungsi controller sebelumnya akan mengeksekusi format ini dengan otomatis.

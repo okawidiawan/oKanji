@@ -12,7 +12,7 @@ const register = async (request) => {
     }
   });
 
-  if (countUser === 1) {
+  if (countUser > 0) {
     throw new ResponseError(400, "Email sudah terdaftar");
   }
 
