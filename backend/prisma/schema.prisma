@@ -17,3 +17,25 @@ model User {
 
   @@map("users")
 }
+
+enum JlptLevel {
+  N5
+  N4
+  N3
+  N2
+  N1
+}
+
+model Kanji {
+  id          String    @id @default(uuid())
+  character   String    @unique @db.VarChar(10)
+  jlptLevel   JlptLevel
+  onyomi      String    @db.VarChar(255)
+  kunyomi     String    @db.VarChar(255)
+  meaning     String    @db.VarChar(500)
+  strokeCount Int?
+  radical     String?   @db.VarChar(10)
+  createdAt   DateTime  @default(now())
+
+  @@map("kanjis")
+}
