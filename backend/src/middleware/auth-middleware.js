@@ -1,4 +1,4 @@
-const { prisma } = require('../application/database');
+import { prisma } from '../application/database.js';
 
 const authMiddleware = async (req, res, next) => {
     const token = req.get('Authorization');
@@ -32,6 +32,4 @@ const authMiddleware = async (req, res, next) => {
     next();
 };
 
-module.exports = {
-    authMiddleware
-};
+export { authMiddleware };

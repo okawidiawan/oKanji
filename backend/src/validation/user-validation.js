@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
 const registerUserValidation = z.object({
     name: z.string().min(1, "Nama tidak boleh kosong").max(255),
@@ -11,7 +11,4 @@ const loginUserValidation = z.object({
     password: z.string().min(1, "Password tidak boleh kosong").max(255),
 });
 
-module.exports = {
-    registerUserValidation,
-    loginUserValidation
-};
+export { registerUserValidation, loginUserValidation };

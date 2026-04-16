@@ -1,4 +1,4 @@
-const { z } = require('zod');
+import { z } from 'zod';
 
 const createOrUpdateUserKanjiValidation = z.object({
     kanjiId: z.string().uuid(),
@@ -15,7 +15,7 @@ const listUserKanjiValidation = z.object({
     isMemorized: z.coerce.boolean().optional(),
 });
 
-module.exports = {
+export {
     createOrUpdateUserKanjiValidation,
     getUserKanjiValidation,
     listUserKanjiValidation

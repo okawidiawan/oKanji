@@ -1,6 +1,10 @@
-const { prisma } = require('../application/database');
-const { ResponseError } = require('../error/response-error');
-const { createOrUpdateUserKanjiValidation, getUserKanjiValidation, listUserKanjiValidation } = require('../validation/user-kanji-validation');
+import { prisma } from '../application/database.js';
+import { ResponseError } from '../error/response-error.js';
+import {
+    createOrUpdateUserKanjiValidation,
+    getUserKanjiValidation,
+    listUserKanjiValidation
+} from '../validation/user-kanji-validation.js';
 
 const upsert = async (user, request) => {
     const validatedRequest = createOrUpdateUserKanjiValidation.parse(request);
@@ -24,7 +28,7 @@ const upsert = async (user, request) => {
 
     const now = new Date();
     let memorizedAt = existing?.memorizedAt;
-    
+
     // Set memorizedAt if first time marked as memorized
     if (validatedRequest.isMemorized === true && !existing?.isMemorized) {
         memorizedAt = now;
@@ -119,8 +123,4 @@ const list = async (user, request) => {
     };
 };
 
-module.exports = {
-    upsert,
-    get,
-    list
-};
+export { upsert, get, list };
