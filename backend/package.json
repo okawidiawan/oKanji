@@ -9,7 +9,9 @@
   "devDependencies": {
     "@types/bun": "latest",
     "nodemon": "^3.1.14",
-    "prisma": "^6"
+    "prisma": "^6",
+    "supertest": "^7.2.2",
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
     "typescript": "^5"
