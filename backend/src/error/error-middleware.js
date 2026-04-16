@@ -1,4 +1,5 @@
 const { ResponseError } = require('./response-error');
+const { ZodError } = require('zod');
 
 const errorMiddleware = (err, req, res, next) => {
   if (!err) {
@@ -11,18 +12,31 @@ const errorMiddleware = (err, req, res, next) => {
   // Server-side logging
   console.error('[SERVER ERROR]:', err);
 
-  const errorResponse = {
-    error: {
-      code: 500,
-      message: isProduction ? "Internal Server Error" : err.message
-    }
-  };
-
   if (err instanceof ResponseError) {
-    errorResponse.error.code = err.status;
-    errorResponse.error.message = err.message;
-    res.status(err.status).json(errorResponse).end();
+    res.status(err.status).json({
+      error: {
+        code: err.status,
+        message: err.message
+      }
+    }).end();
+  } else if (err instanceof ZodError) {
+    res.status(400).json({
+      error: {
+        code: 400,
+        message: "Validation Error",
+        details: err.issues.map(e => ({
+          field: e.path.join('.'),
+          message: e.message
+        }))
+      }
+    }).end();
   } else {
+    const errorResponse = {
+      error: {
+        code: 500,
+        message: isProduction ? "Internal Server Error" : err.message
+      }
+    };
     // Non-production: add stack trace/details
     if (!isProduction) {
       errorResponse.error.details = err.stack;

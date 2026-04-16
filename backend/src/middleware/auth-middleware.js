@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { prisma } = require('../application/database');
 
 const authMiddleware = async (req, res, next) => {
     const token = req.get('Authorization');
@@ -13,6 +12,12 @@ const authMiddleware = async (req, res, next) => {
     const user = await prisma.user.findUnique({
         where: {
             token: token
+        },
+        select: {
+            id: true,
+            username: true,
+            email: true,
+            token: true
         }
     });
 
