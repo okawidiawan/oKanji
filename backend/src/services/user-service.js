@@ -63,4 +63,18 @@ const login = async (request) => {
     });
 };
 
-export { register, login };
+const logout = async (email) => {
+    return prisma.user.update({
+        where: {
+            email: email
+        },
+        data: {
+            token: null
+        },
+        select: {
+            email: true
+        }
+    });
+};
+
+export { register, login, logout };
