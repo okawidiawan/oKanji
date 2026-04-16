@@ -1,7 +1,8 @@
 import { prisma } from "../application/database.js";
 
 const authMiddleware = async (req, res, next) => {
-  const token = req.get("Authorization");
+  const authHeader = req.get("Authorization");
+  const token = authHeader ? authHeader.replace("Bearer ", "") : undefined;
   if (!token) {
     res
       .status(401)
