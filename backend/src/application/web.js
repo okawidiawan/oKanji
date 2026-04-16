@@ -1,11 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
-const { userRouter } = require('../routes/user-route');
-const { userKanjiRouter } = require('../routes/user-kanji-route');
-const { errorMiddleware } = require('../error/error-middleware');
+import { userRouter } from '../routes/user-route.js';
+import { userKanjiRouter } from '../routes/user-kanji-route.js';
+import { errorMiddleware } from '../error/error-middleware.js';
 
 const app = express();
 
@@ -50,4 +50,4 @@ app.use(userKanjiRouter);
 // Error middleware (must be after routes)
 app.use(errorMiddleware);
 
-module.exports = { app };
+export { app };

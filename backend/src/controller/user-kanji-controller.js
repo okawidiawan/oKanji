@@ -1,4 +1,4 @@
-const userKanjiService = require('../services/user-kanji-service');
+import * as userKanjiService from '../services/user-kanji-service.js';
 
 const upsert = async (req, res, next) => {
     try {
@@ -47,8 +47,4 @@ const list = async (req, res, next) => {
     }
 };
 
-module.exports = {
-    upsert,
-    get,
-    list
-};
+export { upsert, get, list };

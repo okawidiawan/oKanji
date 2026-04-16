@@ -1,8 +1,8 @@
-const express = require('express');
-const { authMiddleware } = require('../middleware/auth-middleware');
-const userKanjiController = require('../controller/user-kanji-controller');
+import express from 'express';
+import { authMiddleware } from '../middleware/auth-middleware.js';
+import * as userKanjiController from '../controller/user-kanji-controller.js';
 
-const userKanjiRouter = new express.Router();
+const userKanjiRouter = express.Router();
 
 userKanjiRouter.use(authMiddleware);
 
@@ -11,6 +11,4 @@ userKanjiRouter.put('/api/user-kanji/:kanjiId', userKanjiController.upsert);
 userKanjiRouter.get('/api/user-kanji', userKanjiController.list);
 userKanjiRouter.get('/api/user-kanji/:kanjiId', userKanjiController.get);
 
-module.exports = {
-    userKanjiRouter
-};
+export { userKanjiRouter };

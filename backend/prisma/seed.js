@@ -9,9 +9,9 @@
 // atau sesuaikan path XML_PATH di bawah.
 // ============================================================
 
-const { PrismaClient } = require('@prisma/client')
-const fs = require('fs')
-const { XMLParser } = require('fast-xml-parser')
+import { PrismaClient } from '@prisma/client'
+import fs from 'fs'
+import { XMLParser } from 'fast-xml-parser'
 
 const prisma = new PrismaClient()
 
