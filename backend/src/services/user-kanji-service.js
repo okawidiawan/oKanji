@@ -1,8 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
+const { prisma } = require('../application/database');
 const { ResponseError } = require('../error/response-error');
 const { createOrUpdateUserKanjiValidation, getUserKanjiValidation, listUserKanjiValidation } = require('../validation/user-kanji-validation');
-
-const prisma = new PrismaClient();
 
 const upsert = async (user, request) => {
     const validatedRequest = createOrUpdateUserKanjiValidation.parse(request);

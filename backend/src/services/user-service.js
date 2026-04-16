@@ -1,11 +1,12 @@
 const bcrypt = require('bcrypt');
-const { PrismaClient } = require('@prisma/client');
+const { prisma } = require('../application/database');
 const { ResponseError } = require('../error/response-error');
 const { v4: uuid } = require('uuid');
-
-const prisma = new PrismaClient();
+const { registerUserValidation, loginUserValidation } = require('../validation/user-validation');
 
 const register = async (request) => {
+  request = registerUserValidation.parse(request);
+
   const countUser = await prisma.user.count({
     where: {
       email: request.email
@@ -31,6 +32,8 @@ const register = async (request) => {
 };
 
 const login = async (request) => {
+  request = loginUserValidation.parse(request);
+
   const user = await prisma.user.findUnique({
     where: {
       email: request.email
