@@ -22,4 +22,15 @@ const login = async (req, res, next) => {
     }
 };
 
-export { register, login };
+const logout = async (req, res, next) => {
+    try {
+        await userService.logout(req.user.email);
+        res.status(200).json({
+            data: "OK"
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
+export { register, login, logout };
