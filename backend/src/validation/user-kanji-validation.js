@@ -4,7 +4,7 @@ const createOrUpdateUserKanjiValidation = z.object({
     kanjiId: z.string().uuid("Format ID Kanji tidak valid"),
     isMemorized: z.boolean().optional(),
     difficulty: z.number().min(1, "Tingkat kesulitan minimal 1").max(5, "Tingkat kesulitan maksimal 5").optional(),
-    note: z.string().optional(),
+    note: z.string().max(2000, "Catatan maksimal 2000 karakter").optional(),
 });
 
 const getUserKanjiValidation = z.string().uuid("Format ID Kanji tidak valid");

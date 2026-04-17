@@ -1,71 +1,70 @@
-# Implementasi Unit Test untuk API oKanji
+# Standarisasi Pesan Error (Custom Error Zod)
 
 ## 1. Background & Tujuan
-Saat ini project oKanji belum memiliki unit test untuk setiap endpoint API yang tersedia. Tujuan dari issue ini adalah untuk merencanakan dan mendokumentasikan penambahan unit test skala penuh. Unit test ini akan mencakup User API, Kanji API, dan User Kanji API. Mocking mutlak diterapkan untuk objek Prisma client sehingga tidak ada interaksi terhadap database sungguhan ketika testing berjalan.
+Saat ini, proyek oKanji sudah memakai validasi dari library ekosistem Zod (`zod`). Namun untuk sebagian besar konfigurasinya—terutama terkait pembatasan *maximum limit*—belum mendefinisikan kustomisasi peringatan dengan format Bahasa Indonesia.
 
-## 2. Perubahan yang Diperlukan (Before vs After)
+Tujuan *issue* ini adalah untuk menambahkan pesan error custom dalam Bahasa Indonesia pada fungsi `.max()` (atau batas lain yang belum berbahasa Indonesia) di setiap skema validasi. Hal ini agar API senantiasa me-*return* informasi yang konsisten untuk kenyamanan pengguna (*user experience*), serta menjaga agar UI dapat menggunakan pesan API secara langsung.
 
-**Struktur Direktori:**
-*   **Before:** Tidak ada folder test khusus maupun implementasi test pada API terkait.
-*   **After:** Akan ada direktori `tests/` di dalam project (misal `backend/tests/`) dengan pola penamaan file js yang seragam.
+## 2. Perubahan yang Diperlukan
 
-**Perubahan per File:**
+Berikut adalah daftar file yang perlu diperbarui valuenya.
 
-*   **[NEW] `tests/users-test.js`**: File pengujian fungsionalitas User: fungsi Registrasi, Login, dan Logout.
-*   **[NEW] `tests/kanji-test.js`**: File pengujian fungsionalitas list data Kanji, filter berdasarkan `jlptLevel`, serta pengujian sistem paginasi.
-*   **[NEW] `tests/user-kanji-test.js`**: File pengujian fungsionalitas interaksi User dan Kanji: menandai kanji sebagai `isMemorized`, melihat list hafalan, dan proteksi otorisasi dari endpoint tersebut.
+### **1. `backend/src/validation/user-validation.js`**
+**Before (Register):**
+```javascript
+name: z.string().min(1, "Nama tidak boleh kosong").max(255),
+email: z.string().email("Format email tidak valid").max(255),
+password: z.string().min(8, "Password minimal 8 karakter").max(255),
+```
+**After (Register):**
+```javascript
+name: z.string().min(1, "Nama tidak boleh kosong").max(255, "Nama maksimal 255 karakter"),
+email: z.string().email("Format email tidak valid").max(255, "Email maksimal 255 karakter"),
+password: z.string().min(8, "Password minimal 8 karakter").max(255, "Password maksimal 255 karakter"),
+```
+*(Terapkan perlakuan yang persis sama untuk schema `loginUserValidation` pada parameter `email` dan `password` di file yang sama).*
+
+### **2. `backend/src/validation/kanji-validation.js`**
+**Before (List Kanji):**
+```javascript
+limit: z.coerce.number().min(1).max(100).default(20),
+```
+**After (List Kanji):**
+```javascript
+limit: z.coerce.number()
+  .min(1, "Limit minimal adalah 1")
+  .max(100, "Limit maksimal adalah 100")
+  .default(20),
+```
+*(Tambahkan pesan `min(1, ...)` juga pada parameter `page`).*
+
+### **3. `backend/src/validation/user-kanji-validation.js`**
+**(Upsert Data Kanji):**
+```javascript
+// Tambahkan pesan custom pada error min dan max rating
+difficulty: z.number()
+  .min(1, "Tingkat kesulitan minimal 1")
+  .max(5, "Tingkat kesulitan maksimal 5")
+  .optional(),
+```
+**(List Kanji Pagination):**
+```javascript
+// Tambahkan constraint yang sama dengan kanji-validation
+size: z.coerce.number()
+  .min(1, "Size minimal adalah 1")
+  .max(100, "Size maksimal adalah 100")
+  .default(10),
+```
 
 ## 3. Step-by-step Implementasi
-Berikut adalah panduan pengerjaan bagi *developer*/AI Model:
+1. Buka file `user-validation.js`, tambahkan argumen kedua pada fungsi `max` berupa string berbahasa Indonesia yang informatif.
+2. Buka file `kanji-validation.js`, temukan limit, dan berikan pesan pada `min` dan `max`.
+3. Buka file `user-kanji-validation.js`, dan lengkapi pesan eror untuk `difficulty` (max 5) dan `size` (max 100).
+4. Pastikan unit test di branch Anda saat ini berjalan sukses menggunakan `bun test` usai Anda mengganti pesannya *(Anda difasilitasi kebebasan mengubah isi string, test suite kita dinamis dan tak akan break)*.
 
-1.  **Persiapan Folder dan File Test:**
-    *   Buat directory test dengan nama `tests`.
-    *   Buat tiga file kosong sesuai penamaan yang disyaratkan: `users-test.js`, `kanji-test.js`, dan `user-kanji-test.js`.
-
-2.  **Persiapan Mock Prisma:**
-    *   Buat setup utilitas untuk melakukan intersep (mock) pada client Prisma secara _in-logic_ (tergantung *test-runner* yang mendukung untuk *stubbing* dan *mocking* dalam project tanpa module tambahan).
-    *   Pastikan seluruh eksekusi kueri terisolasi dengan menggunakan mock dan bukan koneksi real Prisma.
-
-3.  **Membuat Setup `beforeEach`:**
-    *   Setiap file test (`users-test.js`, `kanji-test.js`, `user-kanji-test.js`) wajib diinisialisasi dengan fungsi `beforeEach`.
-    *   Gunakan block fungsi `beforeEach` untuk me-*reset* status mock/stub Prisma dari test bed sebelumnya sehingga setiap test (*it block*) bersifat mandiri (independent).
-
-4.  **Implementasi `users-test.js` (User API):**
-    *   Bungkus test dengan `describe('User API', () => { ... })`.
-    *   **Registrasi:** Tulis *positive case* dan *negative cases* (contoh: email sudah dipakai, field kosong).
-    *   **Login:** Tulis *positive case* (menerima token) dan *negative cases* (user tidak valid/password salah).
-    *   **Logout:** Tulis *positive case* (user berhasil logout) dan *negative cases* (mencoba logout tanpa header Auth / tidak resmi).
-
-5.  **Implementasi `kanji-test.js` (Kanji API):**
-    *   Bungkus test dengan `describe('Kanji API', () => { ... })`.
-    *   **List Kanji:** Tulis uji coba pengembalian array kosong dan list berisi data (*mock* response DB).
-    *   **Filter level (untuk JLPT):** Uji logika query saat parameter `level` dilempar (bukan `jlptLevel`).
-    *   **Paginasi Lengkap:** Validasi response payload untuk object meta berjalan dengan detail `page`, `limit`, `total_page`, dan `total_item` yang dikalkulasi benar.
-    *   **Nilai Default Paginasi:** Lakukan test pengambilan list tanpa *query string* (`page` atau `limit` tidak dikirim), pastikan logic default page dan limit bekerja. Berikan uji batas *negative case* (misal page bernilai huruf, limit < 1).
-
-6.  **Implementasi `user-kanji-test.js` (User Kanji API):**
-    *   Bungkus test dengan `describe('User Kanji API', () => { ... })`.
-    *   **Requirement Auth (Global file ini):** Lakukan *negative case* saat pengguna sama sekali tidak mencantumkan `Authorization` token header. Pastikan API mem-blokir akses dengan response error (401).
-    *   **Get Status Spesifik Kanji (`get`)**: Buat skenario pengujian untuk mengambil status hafalan 1 kanji spesifik berdasarkan `kanjiId`. Pastikan penanganan saat kanji valid maupun invalid/tidak ditemukan tercover.
-    *   **Tambah/Update Data Hafalan (`upsert`):** Validasi interaksi update `isMemorized` berhasil dengan dua skenario *source* ID: saat `kanjiId` dikirim lewat *URL Parameter* (`req.params.kanjiId`) maupun lewat *Request Body* (`req.body.kanjiId`). Lakukan validasi saat ID kanji fiktif atau tidak ditemukan (*negative case*).
-    *   **Lihat List Hafalan (`list`):** Tangani skenario pengambilan list hafalan: pastikan menggunakan query parameter `size` (bukan limit), dan juga uji keberhasilan filter boolean menggunakan query parameter `isMemorized` (`?isMemorized=true/false`).
-
-7.  **Standardisasi Bahasa Deskripsi:**
-    *   Khusus argumen pertama pada format *describe* dan *it* **wajib memakai bahasa Indonesia**.
-    *   *(Contoh)*: `it('seharusnya berhasil mendaftarkan pengguna baru', ...)` atau `it('seharusnya mengembalikan error 400 jika username null', ...)`.
-
-## 4. Acceptance Criteria (AC)
-
-Pekerjaan dianggap selesai jika semua hal berikut terpenuhi:
-
-- [ ] Folder test dibuat dengan nama tepat `tests`.
-- [ ] Nama file tepat: `users-test.js`, `kanji-test.js`, dan `user-kanji-test.js`.
-- [ ] Pengujian sama sekali tidak menyentuh database rill (mock Prisma dapat dipertanggungjawabkan).
-- [ ] Setiap file test menyertakan blok utama `describe` dan sub-case `it` yang deskriptif.
-- [ ] Blok `beforeEach` aktif bekerja di semua file test untuk membersihkan mock tiap skenario.
-- [ ] Seluruh skenario User API dan validasinya (positive/negative case) tersedia (Registrasi, Login, Logout).
-- [ ] Uji Kanji API sukses memberikan keyakinan bahwa filter *level* (untuk JLPT), pengembalian list dasar, pembacaan struktur *pagination* (page, limit, total_page, total_item) beserta behavior *default value*-nya aman dari *bugs*.
-- [ ] Uji User Kanji API memvalidasi seluruh fungsionalitas: endpoint `get` spesifik kanji, fungsi `upsert` yang bisa menerima *kanjiId* dari param/body, pengambilan paginasi list dengan param `size` dan argumen khusus filter *isMemorized*, dan proteksi Authorization global.
-- [ ] Tidak ada modifikasi/rubahan di file di luar ruang lingkup skenario testing yang disebutkan.
-- [ ] Tidak menambahkan package/dependensi test di `package.json` yang saat ini ada.
-- [ ] Penamaan skenario eksklusif dalam Bahasa Indonesia (untuk seluruh string message di unit test `describe` & `it`).
+## 4. Acceptance Criteria
+- [ ] Argument pesan *custom* berbahasa Indonesia disematkan pada seluruh batasan batas atas (max) karakter untuk pendaftaran dan login *user*.
+- [ ] Argument pesan disertakan pada constraint limit paginasi (Kanji & User-Kanji api).
+- [ ] Argument pesan disertakan pada constraint skala `difficulty` (skala maksimum 5).
+- [ ] Bebas dari kata bawaan bahasa Inggris (seperti `String must contain at most 255 character(s)`).
+- [ ] Unit Test `bun test` dikonfirmasi masih mencapai level *Success* hijau 100%.
