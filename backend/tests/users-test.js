@@ -29,7 +29,8 @@ describe("User API", () => {
         it("seharusnya berhasil mendaftarkan pengguna baru", async () => {
             prismaMock.user.count.mockResolvedValue(0);
             prismaMock.user.create.mockResolvedValue({
-                email: "test@example.com"
+                email: "test@example.com",
+                name: "Test User"
             });
             spyOn(bcrypt, "hash").mockResolvedValue("hashedpassword");
 
@@ -165,6 +166,7 @@ describe("User API", () => {
             prismaMock.user.findUnique.mockResolvedValue({
                 id: "user-1",
                 username: "okawidiawan",
+                name: "Oka Widiawan",
                 email: "oka@gmail.com",
                 token: "dummy-token"
             });
@@ -175,6 +177,7 @@ describe("User API", () => {
 
             expect(response.status).toBe(200);
             expect(response.body.data.username).toBe("okawidiawan");
+            expect(response.body.data.name).toBe("Oka Widiawan");
             expect(response.body.data.email).toBe("oka@gmail.com");
         });
 

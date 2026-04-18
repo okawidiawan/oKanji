@@ -22,11 +22,13 @@ const register = async (request) => {
     return prisma.user.create({
         data: {
             username: request.name,
+            name: request.name,
             email: request.email,
             password: password
         },
         select: {
-            email: true
+            email: true,
+            name: true
         }
     });
 };
@@ -84,7 +86,8 @@ const get = async (email) => {
         },
         select: {
             username: true,
-            email: true
+            email: true,
+            name: true
         }
     });
 

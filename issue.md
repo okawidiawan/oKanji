@@ -1,60 +1,41 @@
-# Refactor: Pemisahan Publik dan Authorized API Router
+# Feature: Penambahan Kolom Name pada Table User
 
 ## 1. Background & Tujuan
-Saat ini, rute API (routing) pada proyek oKanji tersebar di dalam beberapa file yang spesifik per *entity* (`user-route.js`, `kanji-route.js`, `user-kanji-route.js`). Struktur ini berpotensi membingungkan ketika membedakan mana endpoint yang bersifat publik dan mana yang membutuhkan otorisasi keamanan. 
+Saat ini, tabel `users` pada database hanya menyimpan `username`, `email`, dan `password`. Padahal pada pendaftaran (registrasi), payload menerima atribut `name` yang kini di-*mapping* secara paksa menjadi `username`. 
 
-Tujuan dari perbaikan ini adalah merapikan manajemen rute dengan memecahnya ke dalam dua file utama: `public-api.js` untuk rute bebas akses dan `api.js` untuk rute terotorisasi. Hal ini akan mempermudah pembacaan kode, penerapan *middleware* perlindungan secara massal (tanpa memanggil berulang kali), serta menyederhanakan deklarasi rute di file `web.js`.
+Tujuan dari perbaikan ini adalah menambahkan kolom (field) `name` secara eksplisit pada tabel `users` untuk menyimpan "Nama Asli / Display Name" dari pengguna. Sehingga antara `username` (sebagai identitas logik) dan `name` (sebagai label personalisasi) memiliki kedudukan yang independen.
 
 ## 2. Spesifikasi Teknis
-### API Public (`src/routes/public-api.js`)
-Semua endpoint di sini **tidak** membutuhkan validasi `authMiddleware` maupun token *header*.
-- `POST /api/users` (User Register)
-- `POST /api/users/login` (User Login)
+- **Skema Database**: Menambahkan kolom `name` bertipe `String` (`VARCHAR(255)`) pada tabel `users` yang bersifat **Wajib (Not Null)**. Karena perubahan ini memengaruhi data lama yang tidak memiliki field `name`, instruksikan untuk menghapus seluruh data pengguna lama terlebih dahulu (*database reset*).
+- **Service API Terpengaruh**:
+  - `POST /api/users` (Register): Harus memasukkan data dari `request.name` ke kolom `name`.
+  - `GET /api/users/current`: Harus menambahkan `name` ke dalam *select response* sehingga objek kembalian menjadi `{ "username": "...", "email": "...", "name": "..." }`.
 
-### API Non-Public/Authorized (`src/routes/api.js`)
-Semua endpoint di sini wajib memuat *request header*: `Authorization: Bearer <token>`.
-Semua endpoint memiliki lapisan *auth middleware* secara otomatis dengan menempelkannya langsung ke level *Router*.
-- `DELETE /api/users/logout` (User Logout)
-- `GET /api/users/current` (User Get Current)
-- `GET /api/kanjis` (Get All Kanji List)
-- `GET /api/user-kanji` (Get User Kanji List)
-- Dan seluruh metode CRUD tersisa pada fitur `user-kanji`.
+## 3. Step-by-step Implementasi
+Terdiri dari perubahan Skema, Logic, dan Testing. Patuhi urutan spesifik di bawah ini:
 
-## 3. Step-by-step Implementasi Terperinci
+1. **`backend/prisma/schema.prisma`**
+   - Hapus semua data di tabel `users` MySQL terlebih dahulu untuk menghindari *error migration* (bisa menggunakan GUI seperti DBeaver/TablePlus, atau melalui perintah reset Prisma).
+   - Buka model `User`.
+   - Tambahkan properti/field baru: `name String @db.VarChar(255)` tepat di bawah `username`.
+   - Buka *terminal* pada folder `backend/`, lalu jalankan eksekusi pembaruan schema ke MySQL:
+     `npx prisma db push --force-reset` (atau `--accept-data-loss` bila diperlukan untuk menghapus data lama dan menerapkan schema mutlak).
 
-1. **Membuat `src/routes/public-api.js`**
-   - Buat file baru bernama `public-api.js`.
-   - Inisialisasi Express router (`const publicRouter = express.Router();`).
-   - Impor fungsi `register` dan `login` dari `user-controller.js`.
-   - Cukup daftarkan: `publicRouter.post('/api/users', userController.register);` dan `publicRouter.post('/api/users/login', userController.login);`.
-   - _Export_ `publicRouter`.
+2. **`backend/src/services/user-service.js`**
+   - Cari blok fungsi `register`.
+   - Pada metode `prisma.user.create({ data: { ... } })`, tambahkan deklarasi *insert* untuk: `name: request.name`.
+   - Bebaskan nilai `username` pada bagian insert (misalnya tetap menggunakan `request.name` atau dibiarkan saja bergantung instruksi yang sudah ada, asalkan kolom `name` ikut terisi).
+   - Selanjutnya cari blok fungsi `get` (current user).
+   - Pada metode pencariannya (`select`), tambahkan *property* `name: true`.
 
-2. **Membuat `src/routes/api.js`**
-   - Buat file baru bernama `api.js`.
-   - Inisialisasi Express router (`const apiRouter = express.Router();`).
-   - Impor `authMiddleware` dan segera pasang di level global router ini menggunakan `apiRouter.use(authMiddleware);`.
-   - Impor semua _controller_ (`userController`, `kanjiController`, `userKanjiController`).
-   - Pindahkan seluruh deklarasi rute URL sisa dari API pengguna (logout, current) serta seluruh API milik kanji dan user-kanji dari file rute lama menjadi `apiRouter.get(...)`, `apiRouter.post(...)`, dsb.
-   - _Export_ `apiRouter`.
-
-3. **Memodifikasi `src/application/web.js`**
-   - Hapus impor rute lama (`userRouter`, `kanjiRouter`, `userKanjiRouter`).
-   - Impor `publicRouter` dan `apiRouter` dari file konfigurasi yang baru dibuat.
-   - Hapus blok registrasi router `.use()` yang lama.
-   - Gantilah dengan:
-     ```javascript
-     app.use(publicRouter);
-     app.use(apiRouter); // apiRouter sudah memiliki authMiddleware di dalamnya
-     ```
-
-4. **Pembersihan File Bekas**
-   - Hapus 3 file lama yang sudah diekstrak sepenuhnya: `src/routes/user-route.js`, `src/routes/kanji-route.js`, dan `src/routes/user-kanji-route.js`.
-   - Pastikan Anda memodifikasi file *testing* apabila terdapat error _import path_ (meskipun hal ini tidak akan terjadi jika _setup test_ merujuk pada file `web.js`).
+3. **`backend/tests/users-test.js`**
+   - Sesuaikan ekspektasi mock *test* pada skenario `GET /api/users/current`.
+   - Buka object mock `prismaMock.user.findUnique.mockResolvedValue` dan pastikan menambah *dummy data* `name: "Oka Widiawan"`.
+   - Tambahkan asersi (`expect(response.body.data.name).toBe("Oka Widiawan");`) untuk membuktikan *field* baru berhasil dikirim sampai ke *client*.
 
 ## 4. Acceptance Criteria
-- [ ] Tersedia tepat dua file *router* terpusat terbaru: `public-api.js` dan `api.js`.
-- [ ] Endpoint pendaftaran (register) dan login berhasil dieksekusi tanpa adanya halangan validasi token (berada tepat di dalam *Public API*).
-- [ ] API tertutup memblokir seluruh operasi yang tidak menyertakan _Authorization Header_ (via integrasi API Router).
-- [ ] Validasi tes menggunakan `bun test` melaporkan status hijau 100% tanpa adanya kegagalan routing satupun.
-- [ ] Tidak ada berkas rute lawas (`user-route.js`, `user-kanji-route.js`, dll) yang tertinggal di *codebase*.
-- [ ] Berpegang teguh pada ketentuan modifikasi yang hanya merombak level `routes` dan `web.js` tanpa menyentuh *Controllers* maupun *Services*.
+- [ ] Kolom `name` berhasil ditambahkan di tabel `users` MySQL (dibuktikan via `prisma db push` sukses).
+- [ ] Proses registrasi (`POST /api/users`) tidak *error* dan mampu menyimpan input nama pengguna ke dalam kolom `name`.
+- [ ] Endpoint Get Current User mendistribusikan JSON response yang berisi parameter `name`.
+- [ ] Tidak ada struktur *database* lain yang berubah di luar tabel `User`.
+- [ ] Evaluasi pengujian unit (`bun test ./tests/users-test.js`) mencetak pesan *100% pass*.
