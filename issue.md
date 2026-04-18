@@ -1,41 +1,79 @@
-# Feature: Penambahan Kolom Name pada Table User
+# Feature: API Update Current User
 
 ## 1. Background & Tujuan
-Saat ini, tabel `users` pada database hanya menyimpan `username`, `email`, dan `password`. Padahal pada pendaftaran (registrasi), payload menerima atribut `name` yang kini di-*mapping* secara paksa menjadi `username`. 
+Aplikasi oKanji memerlukan mekanisme bagi pengguna yang sudah login untuk memodifikasi profil pribadi mereka (seperti mengganti nama tampilan atau password). Fitur ini penting untuk memberikan kebebasan kustomisasi akun pada antarmuka Frontend.
 
-Tujuan dari perbaikan ini adalah menambahkan kolom (field) `name` secara eksplisit pada tabel `users` untuk menyimpan "Nama Asli / Display Name" dari pengguna. Sehingga antara `username` (sebagai identitas logik) dan `name` (sebagai label personalisasi) memiliki kedudukan yang independen.
+Issue ini ditujukan untuk membuat fungsionalitas pembaruan data (Update) yang dilakukan mematuhi prinsip **Security First**, di mana *user* tidak diperbolehkan dan secara logik tidak bisa mengubah profil pengguna lain.
 
 ## 2. Spesifikasi Teknis
-- **Skema Database**: Menambahkan kolom `name` bertipe `String` (`VARCHAR(255)`) pada tabel `users` yang bersifat **Wajib (Not Null)**. Karena perubahan ini memengaruhi data lama yang tidak memiliki field `name`, instruksikan untuk menghapus seluruh data pengguna lama terlebih dahulu (*database reset*).
-- **Service API Terpengaruh**:
-  - `POST /api/users` (Register): Harus memasukkan data dari `request.name` ke kolom `name`.
-  - `GET /api/users/current`: Harus menambahkan `name` ke dalam *select response* sehingga objek kembalian menjadi `{ "username": "...", "email": "...", "name": "..." }`.
+- **Endpoint**: `PATCH /api/users/current`
+- **Auth**: Menggunakan *Bearer Token* via header `Authorization: Bearer <token>`.
+- **Payload/Body**:
+  ```json
+  {
+    "name": "Oka Widiawan Update",
+    "password": "newpassword123" 
+  }
+  ```
+  *(Kedua atribut di atas bersifat opsional; user bisa mengirim name saja, password saja, atau keduanya)*.
+- **Batasan Akses Opsional**: User **hanya** dikembalikan dan dapat meng-update datanya sendiri berdasarkan token yang digunakan. Tidak boleh ada ID URL param yang bisa dimanipulasi oleh *client*.
+- **Contoh Response Success (200 OK)**:
+  ```json
+  {
+    "data": {
+      "username": "okawidiawan",
+      "name": "Oka Widiawan Update"
+    }
+  }
+  ```
+- **Contoh Response Error (401 Unauthorized)**:
+  ```json
+  {
+    "errors": "Unauthorized"
+  }
+  ```
 
-## 3. Step-by-step Implementasi
-Terdiri dari perubahan Skema, Logic, dan Testing. Patuhi urutan spesifik di bawah ini:
+## 3. Step-by-step Implementasi Terperinci
+Ikuti daftar langkah di bawah ini secara sekronologis dan batasi perubahan hanya pada file-file berikut:
 
-1. **`backend/prisma/schema.prisma`**
-   - Hapus semua data di tabel `users` MySQL terlebih dahulu untuk menghindari *error migration* (bisa menggunakan GUI seperti DBeaver/TablePlus, atau melalui perintah reset Prisma).
-   - Buka model `User`.
-   - Tambahkan properti/field baru: `name String @db.VarChar(255)` tepat di bawah `username`.
-   - Buka *terminal* pada folder `backend/`, lalu jalankan eksekusi pembaruan schema ke MySQL:
-     `npx prisma db push --force-reset` (atau `--accept-data-loss` bila diperlukan untuk menghapus data lama dan menerapkan schema mutlak).
+1. **`backend/src/validation/user-validation.js`**
+   - Buat fungsi validasi Zod baru bernama `updateUserValidation`.
+   - Konfigurasi skema *object* dengan struktur:
+     - `name`: string, maksimal 255 karakter, bersifat `.optional()`
+     - `password`: string, minimal 8 karakter, maksimal 255 karakter, bersifat `.optional()`
+   - Pasang pesan *error* Bahasa Indonesia yang konsisten dengan rute sebelumnya (misal: "Nama maksimal 255 karakter", dsb).
+   - Pastikan variabel ditambahkan pada direktif `export` di baris terbawah.
 
 2. **`backend/src/services/user-service.js`**
-   - Cari blok fungsi `register`.
-   - Pada metode `prisma.user.create({ data: { ... } })`, tambahkan deklarasi *insert* untuk: `name: request.name`.
-   - Bebaskan nilai `username` pada bagian insert (misalnya tetap menggunakan `request.name` atau dibiarkan saja bergantung instruksi yang sudah ada, asalkan kolom `name` ikut terisi).
-   - Selanjutnya cari blok fungsi `get` (current user).
-   - Pada metode pencariannya (`select`), tambahkan *property* `name: true`.
+   - Impor modul `bcrypt` untuk melakukan eksekusi *hashing* password dan `updateUserValidation`.
+   - Buat *async function* baru: `const update = async (email, request) => { ... }`.
+   - Validasi data parameter `request` terlebih dahulu menggunakan `updateUserValidation.parse(request)`.
+   - Cek database menggunakan `prisma.user.findUnique` untuk memastikan `email` *(didapat dari token)* benar-benar exist.
+   - Apabila parameter *password* ikut dikirimkan pada `request`, lakukan `await bcrypt.hash(request.password, 10)` dan sematkan hasilnya untuk diupdate. Apabila tidak ada *password*, abaikan.
+   - Panggil `prisma.user.update` dengan kondisi filter `where: { email: email }`.
+   - Masukkan *data payload* (berupa *name/password* dari request) ke klausa `data`.
+   - Pada akhirnya, return hasil melalui blok `select: { username: true, name: true }`.
+   - *Export* fungsi `update`.
 
-3. **`backend/tests/users-test.js`**
-   - Sesuaikan ekspektasi mock *test* pada skenario `GET /api/users/current`.
-   - Buka object mock `prismaMock.user.findUnique.mockResolvedValue` dan pastikan menambah *dummy data* `name: "Oka Widiawan"`.
-   - Tambahkan asersi (`expect(response.body.data.name).toBe("Oka Widiawan");`) untuk membuktikan *field* baru berhasil dikirim sampai ke *client*.
+3. **`backend/src/controller/user-controller.js`**
+   - Buat metode fungsi *async* `update = async (req, res, next) => { ... }` 
+   - Di dalamnya, bungkus logika di blok `try ... catch (e) { next(e) }`.
+   - Panggil nilai pengembalian Service: `const result = await userService.update(req.user.email, req.body);`
+   - Berikan kembalian JSON dengan struktur `{ data: result }` diiringi HTTP status `200`.
+   - Ekspor fungsi `update`.
+
+4. **`backend/src/routes/api.js`**
+   - Daftarkan metode `userController.update` ke Express *Router* yang sudah ada.
+   - Selipkan kode rute berikut di bawah baris fitur `GET /api/users/current`:
+     `apiRouter.patch('/api/users/current', userController.update);`
+
+5. **`backend/tests/users-test.js`** (Opsional untuk Jaminan)
+   - Disarankan secara kuat untuk menambah *describe block* guna mencoba skenario `PATCH /api/users/current`. Uji saat mengubah *password* valid, *name* valid, dan error ketika memodifikasi dengan Bearer token fiktif.
 
 ## 4. Acceptance Criteria
-- [ ] Kolom `name` berhasil ditambahkan di tabel `users` MySQL (dibuktikan via `prisma db push` sukses).
-- [ ] Proses registrasi (`POST /api/users`) tidak *error* dan mampu menyimpan input nama pengguna ke dalam kolom `name`.
-- [ ] Endpoint Get Current User mendistribusikan JSON response yang berisi parameter `name`.
-- [ ] Tidak ada struktur *database* lain yang berubah di luar tabel `User`.
-- [ ] Evaluasi pengujian unit (`bun test ./tests/users-test.js`) mencetak pesan *100% pass*.
+- [ ] Endpoint `PATCH /api/users/current` berhasil terdaftar dan memproses pembaruan data _name_, _password_, atau kombinasi keduanya dengan benar.
+- [ ] Validasi keamanan `authMiddleware` dan isolasi data berfungsi maksimal (user tak mungkin mengakses data di luar identitas token).
+- [ ] `password` baru secara otomatis menempuh enkripsi (via `bcrypt.hash`) sebelum didorong ke Prisma.
+- [ ] Proses pembaruan jika me-*request* satu kolom saja tidak menghapus status kolom lama (Data ter-*merge*/parsial dengan lancar).
+- [ ] Tes unit menunjukkan *coverage test pass* 100%.
+- [ ] Berpegang pada larangan ketat: jangan modifikasi _Routing Public_ maupun mengunduh _dependency npm_ baru.

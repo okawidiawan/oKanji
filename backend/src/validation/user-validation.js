@@ -11,4 +11,9 @@ const loginUserValidation = z.object({
     password: z.string().min(1, "Password tidak boleh kosong").max(255, "Password maksimal 255 karakter"),
 });
 
-export { registerUserValidation, loginUserValidation };
+const updateUserValidation = z.object({
+    name: z.string().min(1, "Nama tidak boleh kosong").max(255, "Nama maksimal 255 karakter").optional(),
+    password: z.string().min(8, "Password minimal 8 karakter").max(255, "Password maksimal 255 karakter").optional(),
+});
+
+export { registerUserValidation, loginUserValidation, updateUserValidation };
