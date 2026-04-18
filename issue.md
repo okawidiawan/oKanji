@@ -1,69 +1,60 @@
-# Feature: Implementasi API Get Current User
+# Refactor: Pemisahan Publik dan Authorized API Router
 
 ## 1. Background & Tujuan
+Saat ini, rute API (routing) pada proyek oKanji tersebar di dalam beberapa file yang spesifik per *entity* (`user-route.js`, `kanji-route.js`, `user-kanji-route.js`). Struktur ini berpotensi membingungkan ketika membedakan mana endpoint yang bersifat publik dan mana yang membutuhkan otorisasi keamanan. 
 
-Aplikasi oKanji memerlukan fitur untuk mengambil data profil pengguna (user) yang saat ini sedang dalam status login aktif. Fitur ini esensial bagi antarmuka pengguna (Frontend) untuk menampilkan nama dan memastikan bahwa token yang disimpan pada sesi saat ini masih valid di sisi server.
-
-Issue ini dirancang secara terisolasi agar dapat dengan mudah dikerjakan dan diterapkan ke _codebase_ utama yang berorientasi pada layer Service, Controller, dan Router.
+Tujuan dari perbaikan ini adalah merapikan manajemen rute dengan memecahnya ke dalam dua file utama: `public-api.js` untuk rute bebas akses dan `api.js` untuk rute terotorisasi. Hal ini akan mempermudah pembacaan kode, penerapan *middleware* perlindungan secara massal (tanpa memanggil berulang kali), serta menyederhanakan deklarasi rute di file `web.js`.
 
 ## 2. Spesifikasi Teknis
+### API Public (`src/routes/public-api.js`)
+Semua endpoint di sini **tidak** membutuhkan validasi `authMiddleware` maupun token *header*.
+- `POST /api/users` (User Register)
+- `POST /api/users/login` (User Login)
 
-- **Endpoint**: `GET /api/users/current`
-- **Tipe Auth**: Menggunakan Bearer Token yang sudah tervalidasi melalui `auth-middleware`.
-- **Request Header**:
-  - `Authorization: Bearer <token>`
-- **Logic**:
-  - Middleware `authMiddleware` akan bertugas memblokir akses jika token tidak valid (menghasilkan 401 Unauthorized).
-  - Jika lolos layer otentikasi, _Controller_ akan meneruskan identitas (misal: email dari `req.user`) ke _Service_.
-  - _Service_ mengambil data terbaru `username` user dari database.
-- **Contoh Response Success (200 OK)**:
-  ```json
-  {
-    "data": {
-      "username": "okawidiawan",
-      "email": "oka@gmail.com"
-    }
-  }
-  ```
-- **Contoh Response Error (401 Unauthorized)**:
-  ```json
-  {
-    "errors": "Unauthorized"
-  }
-  ```
+### API Non-Public/Authorized (`src/routes/api.js`)
+Semua endpoint di sini wajib memuat *request header*: `Authorization: Bearer <token>`.
+Semua endpoint memiliki lapisan *auth middleware* secara otomatis dengan menempelkannya langsung ke level *Router*.
+- `DELETE /api/users/logout` (User Logout)
+- `GET /api/users/current` (User Get Current)
+- `GET /api/kanjis` (Get All Kanji List)
+- `GET /api/user-kanji` (Get User Kanji List)
+- Dan seluruh metode CRUD tersisa pada fitur `user-kanji`.
 
-## 3. Step-by-step Implementasi
+## 3. Step-by-step Implementasi Terperinci
 
-Terapkan modifikasi ini secara berurutan:
+1. **Membuat `src/routes/public-api.js`**
+   - Buat file baru bernama `public-api.js`.
+   - Inisialisasi Express router (`const publicRouter = express.Router();`).
+   - Impor fungsi `register` dan `login` dari `user-controller.js`.
+   - Cukup daftarkan: `publicRouter.post('/api/users', userController.register);` dan `publicRouter.post('/api/users/login', userController.login);`.
+   - _Export_ `publicRouter`.
 
-1. **`backend/src/services/user-service.js`**
-   - Buat sebuah konstanta fungsi _async_ baru dengan nama `get`.
-   - Fungsi ini menerima satu parameter (contoh: `email` pengguna yang didapat dari `req.user`).
-   - Gunakan `prisma.user.findUnique` untuk mencari user berdasarkan `email` tersebut.
-   - Di dalam pencariannya, gunakan `select: { username: true, email: true }` untuk meminimalkan _payload_ sesuai spesifikasi respons.
-   - Jika user entah kenapa tidak ditemukan, _throw error_ melalui `new ResponseError(404, "User is not found")`.
-   - _Return_ data _object_ user yang didapat (`{ username: "...", email: "..." }`).
-   - Ekspor fungsi `get` pada modul di baris terakhir.
+2. **Membuat `src/routes/api.js`**
+   - Buat file baru bernama `api.js`.
+   - Inisialisasi Express router (`const apiRouter = express.Router();`).
+   - Impor `authMiddleware` dan segera pasang di level global router ini menggunakan `apiRouter.use(authMiddleware);`.
+   - Impor semua _controller_ (`userController`, `kanjiController`, `userKanjiController`).
+   - Pindahkan seluruh deklarasi rute URL sisa dari API pengguna (logout, current) serta seluruh API milik kanji dan user-kanji dari file rute lama menjadi `apiRouter.get(...)`, `apiRouter.post(...)`, dsb.
+   - _Export_ `apiRouter`.
 
-2. **`backend/src/controller/user-controller.js`**
-   - Impor fungsi `get` dari `user-service.js` (jika belum mengimpor _all services_).
-   - Buat konstanta _async controller_ dengan nama `get(req, res, next)`.
-   - Gunakan _try-catch_ block layaknya arsitektur pada _controller_ lain.
-   - Panggil fungsi _service_: `const result = await userService.get(req.user.email);` (di oKanji, object `req.user` disuapi secara otomatis saat lolos dari `authMiddleware`).
-   - Lempar _respons JSON_: `res.status(200).json({ data: result });`
-   - Jangan lupa mengeksekusi `next(e)` apabila ada error pada blok _catch_.
-   - Tambahkan `get` ke statemen ekspor (_export_).
+3. **Memodifikasi `src/application/web.js`**
+   - Hapus impor rute lama (`userRouter`, `kanjiRouter`, `userKanjiRouter`).
+   - Impor `publicRouter` dan `apiRouter` dari file konfigurasi yang baru dibuat.
+   - Hapus blok registrasi router `.use()` yang lama.
+   - Gantilah dengan:
+     ```javascript
+     app.use(publicRouter);
+     app.use(apiRouter); // apiRouter sudah memiliki authMiddleware di dalamnya
+     ```
 
-3. **`backend/src/routes/user-route.js`**
-   - Lakukan impor untuk fungsi `get` dari `userController` (otomatis jika destructuring sudah terjadi).
-   - Tambahkan rute baru tepat di area kode _protected route_ (setelah inisialisasi `authMiddleware`).
-   - Daftarkan sintaks rute: `userRouter.get('/api/users/current', authMiddleware, userController.get);`
+4. **Pembersihan File Bekas**
+   - Hapus 3 file lama yang sudah diekstrak sepenuhnya: `src/routes/user-route.js`, `src/routes/kanji-route.js`, dan `src/routes/user-kanji-route.js`.
+   - Pastikan Anda memodifikasi file *testing* apabila terdapat error _import path_ (meskipun hal ini tidak akan terjadi jika _setup test_ merujuk pada file `web.js`).
 
 ## 4. Acceptance Criteria
-
-- [ ] Endpoint merespons dengan HTTP Status Code 200 dan mengembalikan object json `{ data: { username: "...", email: "..." } }` apabila _request header_ menyertakan Bearer token _valid_.
-- [ ] Endpoint dikawal sempurna oleh `authMiddleware` dan merespons `401 Unauthorized` secara presisi apabila token _invalid_ atau tidak disertakan pada _header_.
-- [ ] Proses pengecekan parameter/validasi token **sepenuhnya** terjadi di middleware `auth-middleware.js`, bukan terselip manual via kode logic di baris _controller_.
-- [ ] **Data Isolation**: User hanya dikembalikan datanya sendiri berdadsarkan identitas dari token. User sama sekali tidak bisa dan tidak boleh meminta atau melihat profil milik orang lain.
-- [ ] Modifikasi dipastikan **hanya** berkutat pada tiga file scope di atas (`user-service`, `user-controller`, dan `user-route`).
-- [ ] **Tidak** terdeteksi _dependency_ bawaan baru pada file `package.json`.
+- [ ] Tersedia tepat dua file *router* terpusat terbaru: `public-api.js` dan `api.js`.
+- [ ] Endpoint pendaftaran (register) dan login berhasil dieksekusi tanpa adanya halangan validasi token (berada tepat di dalam *Public API*).
+- [ ] API tertutup memblokir seluruh operasi yang tidak menyertakan _Authorization Header_ (via integrasi API Router).
+- [ ] Validasi tes menggunakan `bun test` melaporkan status hijau 100% tanpa adanya kegagalan routing satupun.
+- [ ] Tidak ada berkas rute lawas (`user-route.js`, `user-kanji-route.js`, dll) yang tertinggal di *codebase*.
+- [ ] Berpegang teguh pada ketentuan modifikasi yang hanya merombak level `routes` dan `web.js` tanpa menyentuh *Controllers* maupun *Services*.

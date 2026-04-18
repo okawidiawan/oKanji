@@ -3,9 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 
-import { userRouter } from "../routes/user-route.js";
-import { userKanjiRouter } from "../routes/user-kanji-route.js";
-import { kanjiRouter } from "../routes/kanji-route.js";
+import { publicRouter } from "../routes/public-api.js";
+import { apiRouter } from "../routes/api.js";
 import { errorMiddleware } from "../error/error-middleware.js";
 
 const app = express();
@@ -45,9 +44,8 @@ app.get("/api/health", (req, res) => {
 });
 
 // Routes
-app.use(userRouter);
-app.use(userKanjiRouter);
-app.use(kanjiRouter);
+app.use(publicRouter);
+app.use(apiRouter);
 
 // Error middleware (must be after routes)
 app.use(errorMiddleware);
