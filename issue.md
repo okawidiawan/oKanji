@@ -1,70 +1,69 @@
-# Standarisasi Pesan Error (Custom Error Zod)
+# Feature: Implementasi API Get Current User
 
 ## 1. Background & Tujuan
-Saat ini, proyek oKanji sudah memakai validasi dari library ekosistem Zod (`zod`). Namun untuk sebagian besar konfigurasinya—terutama terkait pembatasan *maximum limit*—belum mendefinisikan kustomisasi peringatan dengan format Bahasa Indonesia.
 
-Tujuan *issue* ini adalah untuk menambahkan pesan error custom dalam Bahasa Indonesia pada fungsi `.max()` (atau batas lain yang belum berbahasa Indonesia) di setiap skema validasi. Hal ini agar API senantiasa me-*return* informasi yang konsisten untuk kenyamanan pengguna (*user experience*), serta menjaga agar UI dapat menggunakan pesan API secara langsung.
+Aplikasi oKanji memerlukan fitur untuk mengambil data profil pengguna (user) yang saat ini sedang dalam status login aktif. Fitur ini esensial bagi antarmuka pengguna (Frontend) untuk menampilkan nama dan memastikan bahwa token yang disimpan pada sesi saat ini masih valid di sisi server.
 
-## 2. Perubahan yang Diperlukan
+Issue ini dirancang secara terisolasi agar dapat dengan mudah dikerjakan dan diterapkan ke _codebase_ utama yang berorientasi pada layer Service, Controller, dan Router.
 
-Berikut adalah daftar file yang perlu diperbarui valuenya.
+## 2. Spesifikasi Teknis
 
-### **1. `backend/src/validation/user-validation.js`**
-**Before (Register):**
-```javascript
-name: z.string().min(1, "Nama tidak boleh kosong").max(255),
-email: z.string().email("Format email tidak valid").max(255),
-password: z.string().min(8, "Password minimal 8 karakter").max(255),
-```
-**After (Register):**
-```javascript
-name: z.string().min(1, "Nama tidak boleh kosong").max(255, "Nama maksimal 255 karakter"),
-email: z.string().email("Format email tidak valid").max(255, "Email maksimal 255 karakter"),
-password: z.string().min(8, "Password minimal 8 karakter").max(255, "Password maksimal 255 karakter"),
-```
-*(Terapkan perlakuan yang persis sama untuk schema `loginUserValidation` pada parameter `email` dan `password` di file yang sama).*
-
-### **2. `backend/src/validation/kanji-validation.js`**
-**Before (List Kanji):**
-```javascript
-limit: z.coerce.number().min(1).max(100).default(20),
-```
-**After (List Kanji):**
-```javascript
-limit: z.coerce.number()
-  .min(1, "Limit minimal adalah 1")
-  .max(100, "Limit maksimal adalah 100")
-  .default(20),
-```
-*(Tambahkan pesan `min(1, ...)` juga pada parameter `page`).*
-
-### **3. `backend/src/validation/user-kanji-validation.js`**
-**(Upsert Data Kanji):**
-```javascript
-// Tambahkan pesan custom pada error min dan max rating
-difficulty: z.number()
-  .min(1, "Tingkat kesulitan minimal 1")
-  .max(5, "Tingkat kesulitan maksimal 5")
-  .optional(),
-```
-**(List Kanji Pagination):**
-```javascript
-// Tambahkan constraint yang sama dengan kanji-validation
-size: z.coerce.number()
-  .min(1, "Size minimal adalah 1")
-  .max(100, "Size maksimal adalah 100")
-  .default(10),
-```
+- **Endpoint**: `GET /api/users/current`
+- **Tipe Auth**: Menggunakan Bearer Token yang sudah tervalidasi melalui `auth-middleware`.
+- **Request Header**:
+  - `Authorization: Bearer <token>`
+- **Logic**:
+  - Middleware `authMiddleware` akan bertugas memblokir akses jika token tidak valid (menghasilkan 401 Unauthorized).
+  - Jika lolos layer otentikasi, _Controller_ akan meneruskan identitas (misal: email dari `req.user`) ke _Service_.
+  - _Service_ mengambil data terbaru `username` user dari database.
+- **Contoh Response Success (200 OK)**:
+  ```json
+  {
+    "data": {
+      "username": "okawidiawan",
+      "email": "oka@gmail.com"
+    }
+  }
+  ```
+- **Contoh Response Error (401 Unauthorized)**:
+  ```json
+  {
+    "errors": "Unauthorized"
+  }
+  ```
 
 ## 3. Step-by-step Implementasi
-1. Buka file `user-validation.js`, tambahkan argumen kedua pada fungsi `max` berupa string berbahasa Indonesia yang informatif.
-2. Buka file `kanji-validation.js`, temukan limit, dan berikan pesan pada `min` dan `max`.
-3. Buka file `user-kanji-validation.js`, dan lengkapi pesan eror untuk `difficulty` (max 5) dan `size` (max 100).
-4. Pastikan unit test di branch Anda saat ini berjalan sukses menggunakan `bun test` usai Anda mengganti pesannya *(Anda difasilitasi kebebasan mengubah isi string, test suite kita dinamis dan tak akan break)*.
+
+Terapkan modifikasi ini secara berurutan:
+
+1. **`backend/src/services/user-service.js`**
+   - Buat sebuah konstanta fungsi _async_ baru dengan nama `get`.
+   - Fungsi ini menerima satu parameter (contoh: `email` pengguna yang didapat dari `req.user`).
+   - Gunakan `prisma.user.findUnique` untuk mencari user berdasarkan `email` tersebut.
+   - Di dalam pencariannya, gunakan `select: { username: true, email: true }` untuk meminimalkan _payload_ sesuai spesifikasi respons.
+   - Jika user entah kenapa tidak ditemukan, _throw error_ melalui `new ResponseError(404, "User is not found")`.
+   - _Return_ data _object_ user yang didapat (`{ username: "...", email: "..." }`).
+   - Ekspor fungsi `get` pada modul di baris terakhir.
+
+2. **`backend/src/controller/user-controller.js`**
+   - Impor fungsi `get` dari `user-service.js` (jika belum mengimpor _all services_).
+   - Buat konstanta _async controller_ dengan nama `get(req, res, next)`.
+   - Gunakan _try-catch_ block layaknya arsitektur pada _controller_ lain.
+   - Panggil fungsi _service_: `const result = await userService.get(req.user.email);` (di oKanji, object `req.user` disuapi secara otomatis saat lolos dari `authMiddleware`).
+   - Lempar _respons JSON_: `res.status(200).json({ data: result });`
+   - Jangan lupa mengeksekusi `next(e)` apabila ada error pada blok _catch_.
+   - Tambahkan `get` ke statemen ekspor (_export_).
+
+3. **`backend/src/routes/user-route.js`**
+   - Lakukan impor untuk fungsi `get` dari `userController` (otomatis jika destructuring sudah terjadi).
+   - Tambahkan rute baru tepat di area kode _protected route_ (setelah inisialisasi `authMiddleware`).
+   - Daftarkan sintaks rute: `userRouter.get('/api/users/current', authMiddleware, userController.get);`
 
 ## 4. Acceptance Criteria
-- [ ] Argument pesan *custom* berbahasa Indonesia disematkan pada seluruh batasan batas atas (max) karakter untuk pendaftaran dan login *user*.
-- [ ] Argument pesan disertakan pada constraint limit paginasi (Kanji & User-Kanji api).
-- [ ] Argument pesan disertakan pada constraint skala `difficulty` (skala maksimum 5).
-- [ ] Bebas dari kata bawaan bahasa Inggris (seperti `String must contain at most 255 character(s)`).
-- [ ] Unit Test `bun test` dikonfirmasi masih mencapai level *Success* hijau 100%.
+
+- [ ] Endpoint merespons dengan HTTP Status Code 200 dan mengembalikan object json `{ data: { username: "...", email: "..." } }` apabila _request header_ menyertakan Bearer token _valid_.
+- [ ] Endpoint dikawal sempurna oleh `authMiddleware` dan merespons `401 Unauthorized` secara presisi apabila token _invalid_ atau tidak disertakan pada _header_.
+- [ ] Proses pengecekan parameter/validasi token **sepenuhnya** terjadi di middleware `auth-middleware.js`, bukan terselip manual via kode logic di baris _controller_.
+- [ ] **Data Isolation**: User hanya dikembalikan datanya sendiri berdadsarkan identitas dari token. User sama sekali tidak bisa dan tidak boleh meminta atau melihat profil milik orang lain.
+- [ ] Modifikasi dipastikan **hanya** berkutat pada tiga file scope di atas (`user-service`, `user-controller`, dan `user-route`).
+- [ ] **Tidak** terdeteksi _dependency_ bawaan baru pada file `package.json`.

@@ -33,4 +33,15 @@ const logout = async (req, res, next) => {
     }
 };
 
-export { register, login, logout };
+const get = async (req, res, next) => {
+    try {
+        const result = await userService.get(req.user.email);
+        res.status(200).json({
+            data: result
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
+export { register, login, logout, get };
