@@ -160,4 +160,33 @@ describe("User API", () => {
             expect(response.body.errors).toBe("Unauthorized");
         });
     });
+    describe("GET /api/users/current", () => {
+        it("seharusnya berhasil mengambil data user yang sedang login", async () => {
+            prismaMock.user.findUnique.mockResolvedValue({
+                id: "user-1",
+                username: "okawidiawan",
+                email: "oka@gmail.com",
+                token: "dummy-token"
+            });
+
+            const response = await request(app)
+                .get("/api/users/current")
+                .set("Authorization", "Bearer dummy-token");
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.username).toBe("okawidiawan");
+            expect(response.body.data.email).toBe("oka@gmail.com");
+        });
+
+        it("seharusnya gagal (401) jika token tidak valid", async () => {
+            prismaMock.user.findUnique.mockResolvedValue(null);
+
+            const response = await request(app)
+                .get("/api/users/current")
+                .set("Authorization", "Bearer invalid-token");
+
+            expect(response.status).toBe(401);
+            expect(response.body.errors).toBe("Unauthorized");
+        });
+    });
 });
