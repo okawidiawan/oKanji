@@ -192,4 +192,83 @@ describe("User API", () => {
             expect(response.body.errors).toBe("Unauthorized");
         });
     });
+
+    describe("PATCH /api/users/current", () => {
+        it("seharusnya berhasil memperbarui nama", async () => {
+            prismaMock.user.findUnique.mockResolvedValue({
+                id: 1,
+                email: "test@example.com",
+                token: "dummy-token"
+            });
+
+            prismaMock.user.update.mockResolvedValue({
+                username: "testuser",
+                name: "Updated Name"
+            });
+
+            const response = await request(app)
+                .patch("/api/users/current")
+                .set("Authorization", "Bearer dummy-token")
+                .send({
+                    name: "Updated Name"
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.name).toBe("Updated Name");
+        });
+
+        it("seharusnya berhasil memperbarui password", async () => {
+            prismaMock.user.findUnique.mockResolvedValue({
+                id: 1,
+                email: "test@example.com",
+                token: "dummy-token"
+            });
+
+            prismaMock.user.update.mockResolvedValue({
+                username: "testuser",
+                name: "Test User"
+            });
+
+            spyOn(bcrypt, "hash").mockResolvedValue("newhashedpassword");
+
+            const response = await request(app)
+                .patch("/api/users/current")
+                .set("Authorization", "Bearer dummy-token")
+                .send({
+                    password: "newpassword123"
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.username).toBe("testuser");
+        });
+
+        it("seharusnya gagal jika nama tidak valid (kosong)", async () => {
+            prismaMock.user.findUnique.mockResolvedValue({
+                id: 1,
+                email: "test@example.com",
+                token: "dummy-token"
+            });
+
+            const response = await request(app)
+                .patch("/api/users/current")
+                .set("Authorization", "Bearer dummy-token")
+                .send({
+                    name: ""
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBeDefined();
+        });
+
+        it("seharusnya gagal (401) jika tidak terautentikasi", async () => {
+            const response = await request(app)
+                .patch("/api/users/current")
+                .send({
+                    name: "Ghost Update"
+                });
+
+            expect(response.status).toBe(401);
+            expect(response.body.errors).toBe("Unauthorized");
+        });
+    });
 });
