@@ -19,7 +19,12 @@ Dokumen ini berfungsi sebagai ringkasan teknis dan arsitektur proyek oKanji untu
 
 ### Frontend
 
-- **Framework/Build Tool**: [Vite](https://vitejs.dev/)
+- **Framework/Build Tool**: [Vite](https://vitejs.dev/) + **React 19**
+- **Routing**: [React Router v7](https://reactrouter.com/) (Single Page App mode)
+- **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
+- **HTTP Client**: [Axios](https://axios-http.com/) with interceptors.
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **Module System**: ES Modules.
 
 ---
 
@@ -38,6 +43,18 @@ backend/
 │   ├── error/            # Centralized Error Handling
 │   └── index.js          # Entry point aplikasi
 └── tests/                # Unit & Integration testing (Bun Test)
+
+frontend/
+├── src/
+│   ├── components/       # Reusable components (ui/ & common/)
+│   ├── layouts/          # Page layouts (MainLayout, AuthLayout)
+│   ├── pages/            # Page components (auth/, kanji/, user/)
+│   ├── stores/           # Zustand stores (use-auth-store, dll)
+│   ├── router/           # React Router config
+│   ├── lib/              # Library config (api instance)
+│   ├── hooks/            # Custom React hooks
+│   └── main.jsx          # Entry point frontend
+└── tailwind.config.js    # Konfigurasi styling
 ```
 
 ---
@@ -76,6 +93,17 @@ backend/
   - [x] `PUT /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Upsert).
   - [x] `GET /api/user-kanji`: List progres hafalan pengguna.
   - [x] `GET /api/user-kanji/:kanjiId`: Detail progres untuk kanji tertentu.
+
+### Frontend Scaffolding
+
+- [x] Setup Project with Vite & React.
+- [x] Integrasi React Router v7 & Layouts.
+- [x] Integrasi Zustand (Auth & Kanji Store).
+- [x] Konfigurasi Axios & Base API.
+- [x] Setup Tailwind CSS v4.
+- [x] Domain-driven Folder Structure.
+- [ ] Implementasi UI Komponen (Planned).
+- [ ] Integrasi Login/Register (Planned).
 
 ---
 

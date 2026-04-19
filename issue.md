@@ -1,41 +1,50 @@
-# Feature: Penambahan Kolom Name pada Table User
+# Issue: Implementasi Logika Bisnis & Integrasi API Frontend
 
-## 1. Background & Tujuan
-Saat ini, tabel `users` pada database hanya menyimpan `username`, `email`, dan `password`. Padahal pada pendaftaran (registrasi), payload menerima atribut `name` yang kini di-*mapping* secara paksa menjadi `username`. 
+## Deskripsi
+Setelah scaffolding frontend oKanji selesai disiapkan, langkah selanjutnya adalah mengimplementasikan logika bisnis, manajemen state, dan integrasi API ke dalam komponen-komponen yang telah tersedia.
 
-Tujuan dari perbaikan ini adalah menambahkan kolom (field) `name` secara eksplisit pada tabel `users` untuk menyimpan "Nama Asli / Display Name" dari pengguna. Sehingga antara `username` (sebagai identitas logik) dan `name` (sebagai label personalisasi) memiliki kedudukan yang independen.
+## Tujuan
+- Menyelesaikan alur autentikasi (Login, Register, Logout).
+- Mengintegrasikan data kanji dari backend ke UI.
+- Mengelola progres hafalan pengguna secara real-time.
 
-## 2. Spesifikasi Teknis
-- **Skema Database**: Menambahkan kolom `name` bertipe `String` (`VARCHAR(255)`) pada tabel `users` yang bersifat **Wajib (Not Null)**. Karena perubahan ini memengaruhi data lama yang tidak memiliki field `name`, instruksikan untuk menghapus seluruh data pengguna lama terlebih dahulu (*database reset*).
-- **Service API Terpengaruh**:
-  - `POST /api/users` (Register): Harus memasukkan data dari `request.name` ke kolom `name`.
-  - `GET /api/users/current`: Harus menambahkan `name` ke dalam *select response* sehingga objek kembalian menjadi `{ "username": "...", "email": "...", "name": "..." }`.
+## Tech Stack & Integrasi
+- **Base API**: Gunakan axios instance di `src/lib/api.js`.
+- **State Management**: Gunakan Zustand store di `src/stores/`.
+- **Routing**: Gunakan React Router v7 di `src/router/index.jsx`.
+- **Styling**: Tailwind CSS v4.
 
-## 3. Step-by-step Implementasi
-Terdiri dari perubahan Skema, Logic, dan Testing. Patuhi urutan spesifik di bawah ini:
+## Daftar Tugas
 
-1. **`backend/prisma/schema.prisma`**
-   - Hapus semua data di tabel `users` MySQL terlebih dahulu untuk menghindari *error migration* (bisa menggunakan GUI seperti DBeaver/TablePlus, atau melalui perintah reset Prisma).
-   - Buka model `User`.
-   - Tambahkan properti/field baru: `name String @db.VarChar(255)` tepat di bawah `username`.
-   - Buka *terminal* pada folder `backend/`, lalu jalankan eksekusi pembaruan schema ke MySQL:
-     `npx prisma db push --force-reset` (atau `--accept-data-loss` bila diperlukan untuk menghapus data lama dan menerapkan schema mutlak).
+### 1. Autentikasi & Authorization
+- [ ] Implementasi login di `LoginPage.jsx` & integrasi dengan `useAuthStore`.
+- [ ] Implementasi registrasi di `RegisterPage.jsx`.
+- [ ] Tambahkan logic redirect jika user belum login (Protected Routes).
+- [ ] Implementasi fungsi logout di Navbar/Profile.
 
-2. **`backend/src/services/user-service.js`**
-   - Cari blok fungsi `register`.
-   - Pada metode `prisma.user.create({ data: { ... } })`, tambahkan deklarasi *insert* untuk: `name: request.name`.
-   - Bebaskan nilai `username` pada bagian insert (misalnya tetap menggunakan `request.name` atau dibiarkan saja bergantung instruksi yang sudah ada, asalkan kolom `name` ikut terisi).
-   - Selanjutnya cari blok fungsi `get` (current user).
-   - Pada metode pencariannya (`select`), tambahkan *property* `name: true`.
+### 2. Fitur Kanji
+- [ ] Fetch dan tampilkan daftar kanji di `KanjiListPage.jsx`.
+- [ ] Implementasi filter berdasarkan tingkat JLPT (N1-N5).
+- [ ] Implementasi pagination untuk daftar kanji.
+- [ ] Fetch detail kanji di `KanjiDetailPage.jsx` berdasarkan ID.
 
-3. **`backend/tests/users-test.js`**
-   - Sesuaikan ekspektasi mock *test* pada skenario `GET /api/users/current`.
-   - Buka object mock `prismaMock.user.findUnique.mockResolvedValue` dan pastikan menambah *dummy data* `name: "Oka Widiawan"`.
-   - Tambahkan asersi (`expect(response.body.data.name).toBe("Oka Widiawan");`) untuk membuktikan *field* baru berhasil dikirim sampai ke *client*.
+### 3. Progres Pengguna
+- [ ] Implementasi form/button untuk update progres hafalan (Upsert User-Kanji).
+- [ ] Tampilkan status progres pengguna pada list dan detail kanji.
+- [ ] Sinkronisasi data progres ke `useAuthStore` atau store terkait.
 
-## 4. Acceptance Criteria
-- [ ] Kolom `name` berhasil ditambahkan di tabel `users` MySQL (dibuktikan via `prisma db push` sukses).
-- [ ] Proses registrasi (`POST /api/users`) tidak *error* dan mampu menyimpan input nama pengguna ke dalam kolom `name`.
-- [ ] Endpoint Get Current User mendistribusikan JSON response yang berisi parameter `name`.
-- [ ] Tidak ada struktur *database* lain yang berubah di luar tabel `User`.
-- [ ] Evaluasi pengujian unit (`bun test ./tests/users-test.js`) mencetak pesan *100% pass*.
+### 4. Profil & Pengaturan
+- [ ] Tampilkan data user yang sedang login di `ProfilePage.jsx`.
+- [ ] Implementasi fitur update nama/password.
+
+## Konvensi Kode
+- Gunakan `camelCase` untuk variabel/fungsi.
+- Gunakan `PascalCase.jsx` untuk komponen React.
+- Error handling harus konsisten menggunakan `try...catch` dan menampilkan pesan ke user.
+- Ikuti panduan di `CONTEXT.md`.
+
+## Kriteria Penerimaan
+- User dapat login/register dan datanya tersimpan di state.
+- Daftar kanji dapat dimuat dengan lancar dari API.
+- Update progres tersimpan ke database backend.
+- UI responsif dan menggunakan tema warna oKanji.
