@@ -12,6 +12,7 @@ apiRouter.use(authMiddleware);
 // User API
 apiRouter.delete('/api/users/logout', userController.logout);
 apiRouter.get('/api/users/current', userController.get);
+apiRouter.patch('/api/users/current', userController.update);
 
 // Kanji API
 apiRouter.get('/api/kanjis', kanjiController.list);
