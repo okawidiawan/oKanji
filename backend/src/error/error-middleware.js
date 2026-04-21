@@ -1,7 +1,12 @@
 import { ResponseError } from './response-error.js';
 import { ZodError } from 'zod';
 
+/**
+ * Middleware untuk menangani error secara terpusat.
+ * Mengonversi berbagai jenis error (Zod, ResponseError, generic) ke format JSON yang konsisten.
+ */
 const errorMiddleware = (err, req, res, next) => {
+    // Jika tidak ada error, lanjut ke middleware berikutnya
     if (!err) {
         next();
         return;
@@ -9,10 +14,11 @@ const errorMiddleware = (err, req, res, next) => {
 
     const isProduction = process.env.NODE_ENV === 'production';
 
-    // Server-side logging
+    // Logging error ke sisi server untuk debugging
     console.error('[SERVER ERROR]:', err);
 
     if (err instanceof ResponseError) {
+        // Menangani error kustom aplikasi (misal: 400, 404, 401)
         res.status(err.status).json({
             error: {
                 code: err.status,
@@ -20,6 +26,7 @@ const errorMiddleware = (err, req, res, next) => {
             }
         }).end();
     } else if (err instanceof ZodError) {
+        // Menangani error validasi dari Zod
         res.status(400).json({
             error: {
                 code: 400,
@@ -31,12 +38,14 @@ const errorMiddleware = (err, req, res, next) => {
             }
         }).end();
     } else {
+        // Menangani error internal server (500)
         const errorResponse = {
             error: {
                 code: 500,
                 message: isProduction ? "Internal Server Error" : err.message
             }
         };
+        // Menyertakan stack trace hanya jika bukan di environment produksi
         if (!isProduction) {
             errorResponse.error.details = err.stack;
         }

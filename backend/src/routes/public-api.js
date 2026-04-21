@@ -3,7 +3,10 @@ import * as userController from '../controller/user-controller.js';
 
 const publicRouter = express.Router();
 
-publicRouter.post('/api/users', userController.register);
-publicRouter.post('/api/users/login', userController.login);
+/**
+ * API Publik: Endpoint yang bisa diakses tanpa token autentikasi.
+ */
+publicRouter.post('/api/users', userController.register); // Registrasi user baru
+publicRouter.post('/api/users/login', userController.login);    // Login user
 
 export { publicRouter };
