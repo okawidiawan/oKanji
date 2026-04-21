@@ -95,8 +95,8 @@ describe("User Kanji API", () => {
         });
     });
 
-    describe("POST/PUT /api/user-kanji (Upsert)", () => {
-        it("seharusnya berhasil mengupdate hafalan kanji lewat body parameter", async () => {
+    describe("POST /api/user-kanji/:kanjiId (Add Progress)", () => {
+        it("seharusnya berhasil menambah hafalan kanji lewat url parameter tanpa body", async () => {
             mockAuthSuccess();
             
             prismaMock.kanji.count.mockResolvedValue(1);
@@ -106,21 +106,19 @@ describe("User Kanji API", () => {
             });
 
             const response = await request(app)
-                .post("/api/user-kanji")
+                .post("/api/user-kanji/123e4567-e89b-12d3-a456-426614174003")
                 .set("Authorization", "Bearer valid-token")
-                .send({
-                    kanjiId: "123e4567-e89b-12d3-a456-426614174003",
-                    isMemorized: true
-                });
+                .send({}); // Body kosong
 
             expect(response.status).toBe(200);
             expect(response.body.data.isMemorized).toBe(true);
             expect(prismaMock.userKanji.upsert).toHaveBeenCalledWith(expect.objectContaining({
-                 where: { userId_kanjiId: { userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174003" } }
+                 where: { userId_kanjiId: { userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174003" } },
+                 create: expect.objectContaining({ isMemorized: true })
             }));
         });
 
-        it("seharusnya berhasil mengupdate hafalan kanji lewat url parameter", async () => {
+        it("seharusnya tetap berhasil mengupdate hafalan kanji jika sudah ada", async () => {
             mockAuthSuccess();
             prismaMock.kanji.count.mockResolvedValue(1);
             prismaMock.userKanji.findUnique.mockResolvedValue({ isMemorized: false }); 
@@ -129,14 +127,12 @@ describe("User Kanji API", () => {
             });
 
             const response = await request(app)
-                .put("/api/user-kanji/123e4567-e89b-12d3-a456-426614174004")
-                .set("Authorization", "Bearer valid-token")
-                .send({
-                    isMemorized: true
-                });
+                .post("/api/user-kanji/123e4567-e89b-12d3-a456-426614174004")
+                .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(200);
             expect(response.body.data.kanjiId).toBe("123e4567-e89b-12d3-a456-426614174004");
+            expect(response.body.data.isMemorized).toBe(true);
         });
 
         it("seharusnya gagal di-update (404) jika kanjinya fiktif/tidak ada", async () => {
@@ -144,12 +140,8 @@ describe("User Kanji API", () => {
             prismaMock.kanji.count.mockResolvedValue(0);
 
             const response = await request(app)
-                .post("/api/user-kanji")
-                .set("Authorization", "Bearer valid-token")
-                .send({
-                    kanjiId: "123e4567-e89b-12d3-a456-426614174005",
-                    isMemorized: true
-                });
+                .post("/api/user-kanji/123e4567-e89b-12d3-a456-426614174005")
+                .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
             expect(prismaMock.userKanji.upsert).not.toHaveBeenCalled();

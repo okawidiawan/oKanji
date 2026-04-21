@@ -27,8 +27,7 @@ apiRouter.get('/api/kanjis', kanjiController.list);
 /**
  * API User Kanji: Mengelola progres belajar kanji tiap pengguna.
  */
-apiRouter.post('/api/user-kanji', userKanjiController.upsert);
-apiRouter.put('/api/user-kanji/:kanjiId', userKanjiController.upsert);
+apiRouter.post('/api/user-kanji/:kanjiId', userKanjiController.add);
 apiRouter.get('/api/user-kanji', userKanjiController.list);
 apiRouter.get('/api/user-kanji/:kanjiId', userKanjiController.get);
 

@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Skema validasi untuk membuat atau memperbarui progres belajar kanji.
  */
-const createOrUpdateUserKanjiValidation = z.object({
+const addUserKanjiValidation = z.object({
     kanjiId: z.string().uuid("Format ID Kanji tidak valid"),
     isMemorized: z.boolean().optional(),
     difficulty: z.number().min(1, "Tingkat kesulitan minimal 1").max(5, "Tingkat kesulitan maksimal 5").optional(),
@@ -25,7 +25,7 @@ const listUserKanjiValidation = z.object({
 });
 
 export {
-    createOrUpdateUserKanjiValidation,
+    addUserKanjiValidation,
     getUserKanjiValidation,
     listUserKanjiValidation
 };
