@@ -4,6 +4,7 @@ const list = async (req, res, next) => {
   try {
     const request = {
       level: req.query.level,
+      search: req.query.search,
       page: req.query.page,
       limit: req.query.limit
     };

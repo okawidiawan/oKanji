@@ -86,7 +86,7 @@ frontend/
   - [x] `PATCH /api/users/current`: Memperbarui nama atau password user.
   - [x] `DELETE /api/users/logout`: Menghapus token (Logout).
 - **Kanji Data**:
-  - [x] `GET /api/kanjis`: Mengambil list kanji (pagination & filter JLPT N1-N5).
+  - [x] `GET /api/kanjis`: Mengambil list kanji (pagination, filter JLPT, & search karakter/makna).
   - [ ] `GET /api/kanjis/:id`: Mengambil detail satu kanji (Planned).
 - **User Progress**:
   - [x] `POST /api/user-kanji`: Simpan/update progres hafalan (Upsert).
@@ -122,6 +122,7 @@ frontend/
 2. **Stateless Authentication**: Database menyimpan `token` pada tabel `User`. Validasi dilakukan dengan mencocokkan token di header `Authorization` dengan database.
 3. **Data Isolation**: Logika pengambilan/pembaruan data pribadi selalu menggunakan `req.user.email` untuk memastikan pengguna hanya bisa mengakses data mereka sendiri.
 4. **Validation Messaging**: Pesan error Zod dikustomisasi menggunakan Bahasa Indonesia untuk kemudahan integrasi dengan Frontend.
+5. **Multi-field Search Logic**: Pencarian kanji mendukung parameter `search` yang akan difilter menggunakan operator `OR` pada kolom `character` dan `meaning` dengan metode `contains` (substring search) untuk fleksibilitas hasil.
 
 ---
 
