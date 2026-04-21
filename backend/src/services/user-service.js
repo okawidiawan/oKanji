@@ -4,9 +4,15 @@ import { ResponseError } from '../error/response-error.js';
 import { v4 as uuid } from 'uuid';
 import { registerUserValidation, loginUserValidation, updateUserValidation } from '../validation/user-validation.js';
 
+/**
+ * Melakukan registrasi pengguna baru.
+ * Mencakup validasi data, pengecekan email unik, dan hashing password.
+ */
 const register = async (request) => {
+    // Validasi skema data registrasi
     request = registerUserValidation.parse(request);
 
+    // Memastikan email belum pernah digunakan
     const countUser = await prisma.user.count({
         where: {
             email: request.email
@@ -17,6 +23,7 @@ const register = async (request) => {
         throw new ResponseError(400, "Email sudah terdaftar");
     }
 
+    // Hashing password demi keamanan sebelum disimpan
     const password = await bcrypt.hash(request.password, 10);
 
     return prisma.user.create({
@@ -33,24 +40,33 @@ const register = async (request) => {
     });
 };
 
+/**
+ * Melakukan proses login user.
+ * Memverifikasi email dan password, lalu mengembalikan token akses unik.
+ */
 const login = async (request) => {
+    // Validasi skema input login
     request = loginUserValidation.parse(request);
 
+    // Mencari user berdasarkan email
     const user = await prisma.user.findUnique({
         where: {
             email: request.email
         }
     });
 
+    // Validasi keberadaan user
     if (!user) {
         throw new ResponseError(401, "Email atau password salah");
     }
 
+    // Memverifikasi kecocokan password dengan hash di database
     const isPasswordValid = await bcrypt.compare(request.password, user.password);
     if (!isPasswordValid) {
         throw new ResponseError(401, "Email atau password salah");
     }
 
+    // Membuat token akses baru (UUID) untuk sesi user
     const token = uuid();
     return prisma.user.update({
         where: {
@@ -65,6 +81,9 @@ const login = async (request) => {
     });
 };
 
+/**
+ * Melakukan logout dengan menghapus token akses user.
+ */
 const logout = async (email) => {
     return prisma.user.update({
         where: {
@@ -79,6 +98,9 @@ const logout = async (email) => {
     });
 };
 
+/**
+ * Mengambil profil data diri pengguna berdasarkan email.
+ */
 const get = async (email) => {
     const user = await prisma.user.findUnique({
         where: {
@@ -98,9 +120,15 @@ const get = async (email) => {
     return user;
 };
 
+/**
+ * Memperbarui data diri pengguna (nama atau password).
+ * Mendukung update parsial.
+ */
 const update = async (email, request) => {
+    // Validasi skema update data
     const userRequest = updateUserValidation.parse(request);
 
+    // Memastikan user yang akan di-update ada di database
     const user = await prisma.user.findUnique({
         where: {
             email: email
@@ -111,6 +139,7 @@ const update = async (email, request) => {
         throw new ResponseError(404, "User is not found");
     }
 
+    // Menyiapkan data yang akan di-update (jika disediakan)
     const data = {};
     if (userRequest.name) {
         data.name = userRequest.name;

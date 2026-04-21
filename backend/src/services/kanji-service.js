@@ -1,15 +1,23 @@
 import { prisma } from '../application/database.js';
 import { getKanjiValidation } from '../validation/kanji-validation.js';
 
+/**
+ * Mengambil daftar data kanji.
+ * Mendukung filter level JLPT, pencarian teks (pada karakter atau arti), dan paginasi.
+ */
 const list = async (request) => {
+  // Validasi input request menggunakan Zod
   const validatedRequest = getKanjiValidation.parse(request);
   const skip = (validatedRequest.page - 1) * validatedRequest.limit;
 
   const filters = {};
+  
+  // Menambahkan filter level JLPT jika disediakan
   if (validatedRequest.level) {
     filters.jlptLevel = validatedRequest.level;
   }
 
+  // Menambahkan logic pencarian (OR) pada kolom character atau meaning
   if (validatedRequest.search) {
     filters.OR = [
       { character: { contains: validatedRequest.search } },
@@ -17,6 +25,7 @@ const list = async (request) => {
     ];
   }
 
+  // Mengambil data dan total item secara paralel untuk efisiensi
   const [data, total] = await Promise.all([
     prisma.kanji.findMany({
       where: filters,
@@ -28,6 +37,7 @@ const list = async (request) => {
     })
   ]);
 
+  // Mengembalikan data beserta informasi paginasi
   return {
     data,
     paging: {

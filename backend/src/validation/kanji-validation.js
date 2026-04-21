@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/**
+ * Skema validasi untuk mengambil daftar kanji (query parameters).
+ */
 const getKanjiValidation = z.object({
   level: z.string().regex(/^N[1-5]$/, "Format Level harus N1-N5").optional(),
   search: z.string().min(1).max(50).optional(),

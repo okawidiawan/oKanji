@@ -6,18 +6,27 @@ import * as userKanjiController from '../controller/user-kanji-controller.js';
 
 const apiRouter = express.Router();
 
-// Global middleware for all routes in this router
+/**
+ * Middleware Global untuk semua rute dalam router ini.
+ * Memastikan semua endpoint di bawah ini memerlukan autentikasi.
+ */
 apiRouter.use(authMiddleware);
 
-// User API
+/**
+ * API User: Mengelola data profil dan sesi pengguna.
+ */
 apiRouter.delete('/api/users/logout', userController.logout);
 apiRouter.get('/api/users/current', userController.get);
 apiRouter.patch('/api/users/current', userController.update);
 
-// Kanji API
+/**
+ * API Kanji: Mengambil data referensi kanji.
+ */
 apiRouter.get('/api/kanjis', kanjiController.list);
 
-// User Kanji API
+/**
+ * API User Kanji: Mengelola progres belajar kanji tiap pengguna.
+ */
 apiRouter.post('/api/user-kanji', userKanjiController.upsert);
 apiRouter.put('/api/user-kanji/:kanjiId', userKanjiController.upsert);
 apiRouter.get('/api/user-kanji', userKanjiController.list);
