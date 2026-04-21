@@ -10,6 +10,13 @@ const list = async (request) => {
     filters.jlptLevel = validatedRequest.level;
   }
 
+  if (validatedRequest.search) {
+    filters.OR = [
+      { character: { contains: validatedRequest.search } },
+      { meaning: { contains: validatedRequest.search } }
+    ];
+  }
+
   const [data, total] = await Promise.all([
     prisma.kanji.findMany({
       where: filters,

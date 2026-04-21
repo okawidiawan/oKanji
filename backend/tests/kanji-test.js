@@ -107,6 +107,31 @@ describe("Kanji API", () => {
             }));
         });
 
+        it("seharusnya berhasil mencari kanji berdasarkan karakter atau makna", async () => {
+            mockAuthSuccess();
+            const mockData = [
+                { id: "1", character: "日", jlptLevel: "N5", meaning: "matahari, hari" },
+            ];
+
+            prismaMock.kanji.findMany.mockResolvedValue(mockData);
+            prismaMock.kanji.count.mockResolvedValue(1);
+
+            const response = await request(app)
+                .get("/api/kanjis?search=日")
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(200);
+            expect(response.body.data).toEqual(mockData);
+            expect(prismaMock.kanji.findMany).toHaveBeenCalledWith(expect.objectContaining({
+                where: {
+                    OR: [
+                        { character: { contains: "日" } },
+                        { meaning: { contains: "日" } }
+                    ]
+                }
+            }));
+        });
+
         it("seharusnya ditolak atau default bila parameter paginasi tidak valid", async () => {
              mockAuthSuccess();
              const response = await request(app)
