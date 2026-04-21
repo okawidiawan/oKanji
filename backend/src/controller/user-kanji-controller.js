@@ -4,17 +4,18 @@ import * as userKanjiService from '../services/user-kanji-service.js';
  * Menyimpan atau memperbarui progres belajar kanji (memorized, difficulty, note).
  * Mendukung input kanjiId via body atau parameter URL.
  */
-const upsert = async (req, res, next) => {
+const add = async (req, res, next) => {
     try {
         const user = req.user;
-        const request = req.body;
+        // Inisialisasi objek request, pastikan tidak undefined jika body kosong
+        const request = req.body || {};
         
-        // Memastikan kanjiId diambil dari params jika tersedia (mendukung PUT /:kanjiId)
+        // Memastikan kanjiId diambil dari params jika tersedia
         if (req.params.kanjiId) {
             request.kanjiId = req.params.kanjiId;
         }
 
-        const result = await userKanjiService.upsert(user, request);
+        const result = await userKanjiService.add(user, request);
         res.status(200).json({
             data: result
         });
@@ -59,4 +60,4 @@ const list = async (req, res, next) => {
     }
 };
 
-export { upsert, get, list };
+export { add, get, list };

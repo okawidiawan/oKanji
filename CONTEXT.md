@@ -86,12 +86,13 @@ frontend/
   - [x] `PATCH /api/users/current`: Memperbarui nama atau password user.
   - [x] `DELETE /api/users/logout`: Menghapus token (Logout).
 - **Kanji Data**:
-  - [x] `GET /api/kanjis`: Mengambil list kanji (pagination, filter JLPT, & search karakter/makna).
+  - [x] `GET /api/kanjis`: Mengambil list kanji.
+    - Query Params: `level` (N1-N5), `search` (karakter/makna), `page`, `limit`.
   - [ ] `GET /api/kanjis/:id`: Mengambil detail satu kanji (Planned).
 - **User Progress**:
-  - [x] `POST /api/user-kanji`: Simpan/update progres hafalan (Upsert).
-  - [x] `PUT /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Upsert).
+  - [x] `POST /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Hardcoded `isMemorized: true`).
   - [x] `GET /api/user-kanji`: List progres hafalan pengguna.
+    - Query Params: `isMemorized` (boolean), `page`, `size`.
   - [x] `GET /api/user-kanji/:kanjiId`: Detail progres untuk kanji tertentu.
 
 ### Frontend Scaffolding
@@ -109,8 +110,8 @@ frontend/
 
 ## 5. File Kunci & Fungsinya
 
-- `backend/prisma/schema.prisma`: Sumber kebenaran struktur database.
-- `backend/src/application/web.js`: Jantung konfigurasi Express dan registrasi rute.
+- `backend/prisma/schema.prisma`: Source struktur database.
+- `backend/src/application/web.js`: Konfigurasi Express dan registrasi rute.
 - `backend/src/middleware/auth-middleware.js`: Menangani validasi token Bearer dan menyediakan data user di `req.user`.
 - `backend/src/error/error-middleware.js`: Menstandarisasi format error JSON (Zod, 404, 500, dll).
 
@@ -123,6 +124,7 @@ frontend/
 3. **Data Isolation**: Logika pengambilan/pembaruan data pribadi selalu menggunakan `req.user.email` untuk memastikan pengguna hanya bisa mengakses data mereka sendiri.
 4. **Validation Messaging**: Pesan error Zod dikustomisasi menggunakan Bahasa Indonesia untuk kemudahan integrasi dengan Frontend.
 5. **Multi-field Search Logic**: Pencarian kanji mendukung parameter `search` yang akan difilter menggunakan operator `OR` pada kolom `character` dan `meaning` dengan metode `contains` (substring search) untuk fleksibilitas hasil.
+6. **Simplified Progress Tracking**: Penambahan progres kanji menggunakan endpoint `POST /api/user-kanji/:kanjiId` tanpa membutuhkan request body. Hal ini menyederhanakan interaksi Frontend (Quick Add) dan status hafalan secara otomatis di-set menjadi `true`.
 
 ---
 
@@ -150,13 +152,14 @@ frontend/
 3. Duplikat `.env.example` menjadi `.env` dan sesuaikan `DATABASE_URL` (MySQL).
 4. Generate Prisma Client: `npx prisma generate`.
 5. Sinkronisasi database: `npx prisma db push`.
-6. Jalankan server dev: `npm run dev`.
+6. Jalankan server dev: `bun run dev`.
+7. Akses via browser (default): `http://localhost:5000`.
 
 ### Frontend
 
 1. Masuk ke folder frontend: `cd frontend`.
 2. Install dependensi: `npm install` atau `bun install`.
-3. Jalankan aplikasi: `npm run dev`.
+3. Jalankan aplikasi: `bun run dev`.
 4. Akses via browser (default): `http://localhost:5173`.
 
 ## 9. Konvensi Git & Kolaborasi
@@ -171,3 +174,25 @@ frontend/
 
 - Format: sama dengan judul issue yang diselesaikan
 - Contoh: `Feature: Implementasi API Get Kanji`
+
+## 10. Instruksi untuk AI Assistant
+
+### Sebelum mulai task
+
+- Baca dan pahami seluruh isi CONTEXT.md ini
+- Ikuti semua konvensi yang tertulis di sini
+- Jangan berasumsi di luar yang tertulis di CONTEXT.md
+
+### Pada saat menjalankan task
+
+- Selalu buat dokumentasinya di baris program, jelaskan kegunaan function/method dengan bahasa Indonesia yang mudah dimengerti.
+
+### Setelah selesai task
+
+- Update CONTEXT.md jika ada:
+  - API baru yang selesai diimplementasi
+  - Keputusan arsitektur baru
+  - Perubahan konvensi kode
+  - Dependency baru yang ditambahkan
+- Jangan update CONTEXT.md jika hanya bug fix kecil
+  atau perubahan yang tidak mempengaruhi arsitektur

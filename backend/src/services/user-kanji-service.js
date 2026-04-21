@@ -1,7 +1,7 @@
 import { prisma } from '../application/database.js';
 import { ResponseError } from '../error/response-error.js';
 import {
-    createOrUpdateUserKanjiValidation,
+    addUserKanjiValidation,
     getUserKanjiValidation,
     listUserKanjiValidation
 } from '../validation/user-kanji-validation.js';
@@ -10,9 +10,9 @@ import {
  * Membuat atau memperbarui progres belajar kanji milik user.
  * Menggunakan operasi upsert untuk menangani penambahan baru atau pembaruan.
  */
-const upsert = async (user, request) => {
+const add = async (user, request) => {
     // Validasi input data progres
-    const validatedRequest = createOrUpdateUserKanjiValidation.parse(request);
+    const validatedRequest = addUserKanjiValidation.parse(request);
 
     // Memastikan data kanji yang direferensikan memang ada di database
     const kanjiCount = await prisma.kanji.count({
@@ -36,7 +36,8 @@ const upsert = async (user, request) => {
     let memorizedAt = existing?.memorizedAt;
 
     // Logika penentuan tanggal hafal: diatur saat pertama kali ditandai sebagai 'memorized'
-    if (validatedRequest.isMemorized === true && !existing?.isMemorized) {
+    // Karena sekarang di-hardcode menjadi true, maka set memorizedAt jika sebelumnya belum memorized
+    if (!existing?.isMemorized) {
         memorizedAt = now;
     }
 
@@ -49,22 +50,22 @@ const upsert = async (user, request) => {
             }
         },
         update: {
-            isMemorized: validatedRequest.isMemorized ?? existing?.isMemorized,
+            isMemorized: true, // Hardcoded to true
             difficulty: validatedRequest.difficulty ?? existing?.difficulty,
             note: validatedRequest.note ?? existing?.note,
-            reviewCount: { increment: 1 }, // Menambah hitungan review setiap kali di-update
+            reviewCount: { increment: 1 },
             lastReviewed: now,
             memorizedAt: memorizedAt
         },
         create: {
             userId: user.id,
             kanjiId: validatedRequest.kanjiId,
-            isMemorized: validatedRequest.isMemorized || false,
+            isMemorized: true, // Hardcoded to true
             difficulty: validatedRequest.difficulty,
             note: validatedRequest.note,
             reviewCount: 1,
             lastReviewed: now,
-            memorizedAt: validatedRequest.isMemorized ? now : null
+            memorizedAt: now
         }
     });
 };
@@ -143,4 +144,4 @@ const list = async (user, request) => {
     };
 };
 
-export { upsert, get, list };
+export { add, get, list };
