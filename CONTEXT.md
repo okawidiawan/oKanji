@@ -90,7 +90,7 @@ frontend/
     - Query Params: `level` (N1-N5), `search` (karakter/makna), `page`, `limit`.
   - [ ] `GET /api/kanjis/:id`: Mengambil detail satu kanji (Planned).
 - **User Progress**:
-  - [x] `POST /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Hardcoded `isMemorized: true`).
+  - [x] `POST /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Inisialisasi status progres).
   - [x] `PATCH /api/user-kanji/:kanjiId`: Memperbarui detail progres (difficulty, note, isMemorized).
   - [x] `DELETE /api/user-kanji/:kanjiId`: Menghapus progres kanji tertentu.
   - [x] `GET /api/user-kanji`: List progres hafalan pengguna.
@@ -126,7 +126,7 @@ frontend/
 3. **Data Isolation**: Logika pengambilan/pembaruan data pribadi selalu menggunakan `req.user.email` untuk memastikan pengguna hanya bisa mengakses data mereka sendiri.
 4. **Validation Messaging**: Pesan error Zod dikustomisasi menggunakan Bahasa Indonesia untuk kemudahan integrasi dengan Frontend.
 5. **Multi-field Search Logic**: Pencarian kanji mendukung parameter `search` yang akan difilter menggunakan operator `OR` pada kolom `character` dan `meaning` dengan metode `contains` (substring search) untuk fleksibilitas hasil.
-6. **Simplified Progress Tracking**: Penambahan progres kanji menggunakan endpoint `POST /api/user-kanji/:kanjiId` tanpa membutuhkan request body. Hal ini menyederhanakan interaksi Frontend (Quick Add) dan status hafalan secara otomatis di-set menjadi `true`.
+6. **Simplified Progress Tracking**: Penambahan progres kanji menggunakan endpoint `POST /api/user-kanji/:kanjiId` dapat dilakukan tanpa request body. Hal ini menyederhanakan interaksi Frontend (Quick Add). Status hafalan (`isMemorized`) kini dikelola secara manual oleh pengguna melalui endpoint `PATCH`.
 
 ---
 

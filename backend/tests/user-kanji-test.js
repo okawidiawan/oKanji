@@ -106,7 +106,7 @@ describe("User Kanji API", () => {
             prismaMock.kanji.count.mockResolvedValue(1);
             prismaMock.userKanji.findUnique.mockResolvedValue(null);
             prismaMock.userKanji.upsert.mockResolvedValue({
-                userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174003", isMemorized: true
+                userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174003", isMemorized: false
             });
 
             const response = await request(app)
@@ -115,10 +115,10 @@ describe("User Kanji API", () => {
                 .send({}); // Body kosong
 
             expect(response.status).toBe(200);
-            expect(response.body.data.isMemorized).toBe(true);
+            expect(response.body.data.isMemorized).toBe(false);
             expect(prismaMock.userKanji.upsert).toHaveBeenCalledWith(expect.objectContaining({
                  where: { userId_kanjiId: { userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174003" } },
-                 create: expect.objectContaining({ isMemorized: true })
+                 create: expect.objectContaining({ isMemorized: false })
             }));
         });
 
@@ -127,7 +127,7 @@ describe("User Kanji API", () => {
             prismaMock.kanji.count.mockResolvedValue(1);
             prismaMock.userKanji.findUnique.mockResolvedValue({ isMemorized: false }); 
             prismaMock.userKanji.upsert.mockResolvedValue({
-                userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174004", isMemorized: true
+                userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174004", isMemorized: false
             });
 
             const response = await request(app)
@@ -136,7 +136,7 @@ describe("User Kanji API", () => {
 
             expect(response.status).toBe(200);
             expect(response.body.data.kanjiId).toBe("123e4567-e89b-12d3-a456-426614174004");
-            expect(response.body.data.isMemorized).toBe(true);
+            expect(response.body.data.isMemorized).toBe(false);
         });
 
         it("seharusnya gagal di-update (404) jika kanjinya fiktif/tidak ada", async () => {
