@@ -20,30 +20,21 @@ const errorMiddleware = (err, req, res, next) => {
     if (err instanceof ResponseError) {
         // Menangani error kustom aplikasi (misal: 400, 404, 401)
         res.status(err.status).json({
-            error: {
-                code: err.status,
-                message: err.message
-            }
+            error: err.message
         }).end();
     } else if (err instanceof ZodError) {
         // Menangani error validasi dari Zod
         res.status(400).json({
-            error: {
-                code: 400,
-                message: "Validation Error",
-                details: err.issues.map(e => ({
-                    field: e.path.join('.'),
-                    message: e.message
-                }))
-            }
+            error: "Validation Error",
+            details: err.issues.map(e => ({
+                field: e.path.join('.'),
+                message: e.message
+            }))
         }).end();
     } else {
         // Menangani error internal server (500)
         const errorResponse = {
-            error: {
-                code: 500,
-                message: isProduction ? "Internal Server Error" : err.message
-            }
+            error: isProduction ? "Internal Server Error" : err.message
         };
         // Menyertakan stack trace hanya jika bukan di environment produksi
         if (!isProduction) {

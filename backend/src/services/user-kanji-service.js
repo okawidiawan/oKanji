@@ -76,7 +76,12 @@ const add = async (user, request) => {
  */
 const get = async (user, kanjiId) => {
     // Validasi format ID kanji
-    const validatedKanjiId = getUserKanjiValidation.parse(kanjiId);
+    // Jika format tidak valid (bukan UUID), langsung lempar 404 agar seragam dengan data tidak ditemukan
+    const validationResult = getUserKanjiValidation.safeParse(kanjiId);
+    if (!validationResult.success) {
+        throw new ResponseError(404, "User progress for this kanji not found");
+    }
+    const validatedKanjiId = validationResult.data;
 
     const userKanji = await prisma.userKanji.findUnique({
         where: {
@@ -144,4 +149,43 @@ const list = async (user, request) => {
     };
 };
 
-export { add, get, list };
+/**
+ * Menghapus data progres belajar kanji tertentu milik user.
+ * Memastikan data benar-benar milik user yang sedang login sebelum dihapus.
+ */
+const remove = async (user, kanjiId) => {
+    // Validasi format ID kanji
+    // Jika format tidak valid (bukan UUID), langsung lempar 404 agar seragam dengan data tidak ditemukan
+    const validationResult = getUserKanjiValidation.safeParse(kanjiId);
+    if (!validationResult.success) {
+        throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
+    }
+    const validatedKanjiId = validationResult.data;
+
+    // Mencari data progres berdasarkan userId dan kanjiId
+    const userKanji = await prisma.userKanji.findUnique({
+        where: {
+            userId_kanjiId: {
+                userId: user.id,
+                kanjiId: validatedKanjiId
+            }
+        }
+    });
+
+    // Jika data tidak ditemukan, lempar error 404
+    if (!userKanji) {
+        throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
+    }
+
+    // Menghapus data progres dari database
+    return prisma.userKanji.delete({
+        where: {
+            userId_kanjiId: {
+                userId: user.id,
+                kanjiId: validatedKanjiId
+            }
+        }
+    });
+};
+
+export { add, get, list, remove };

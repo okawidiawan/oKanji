@@ -30,5 +30,6 @@ apiRouter.get('/api/kanjis', kanjiController.list);
 apiRouter.post('/api/user-kanji/:kanjiId', userKanjiController.add);
 apiRouter.get('/api/user-kanji', userKanjiController.list);
 apiRouter.get('/api/user-kanji/:kanjiId', userKanjiController.get);
+apiRouter.delete('/api/user-kanji/:kanjiId', userKanjiController.remove);
 
 export { apiRouter };

@@ -91,6 +91,8 @@ frontend/
   - [ ] `GET /api/kanjis/:id`: Mengambil detail satu kanji (Planned).
 - **User Progress**:
   - [x] `POST /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Hardcoded `isMemorized: true`).
+  - [ ] `PATCH /api/user-kanji/:kanjiId`: Memperbarui detail progres (difficulty, note, isMemorized) (Planned).
+  - [x] `DELETE /api/user-kanji/:kanjiId`: Menghapus progres kanji tertentu.
   - [x] `GET /api/user-kanji`: List progres hafalan pengguna.
     - Query Params: `isMemorized` (boolean), `page`, `size`.
   - [x] `GET /api/user-kanji/:kanjiId`: Detail progres untuk kanji tertentu.
@@ -185,7 +187,12 @@ frontend/
 
 ### Pada saat menjalankan task
 
-- Selalu buat dokumentasinya di baris program, jelaskan kegunaan function/method dengan bahasa Indonesia yang mudah dimengerti.
+- Untuk AI Assistant yang melakukan coding :
+  Selalu buat dokumentasinya di baris program, jelaskan kegunaan function/method dengan bahasa Indonesia yang mudah dimengerti.
+  Selalu buat unit test untuk setiap API atau fitur baru yang ditambahkan atau setelah kode diperbaiki.
+  Selalu jalankan unit test yang sudah dibuat, dan harus lolos test dengan benar.
+- Untuk AI Assistant yang ditugaskan untuk membuat issue.md, jika tidak ada perintah untuk implementasi, jangan lakukan implementasi kode.
+- Untuk AI Assistant yang ditugaskan untuk mereview tidak perlu melakukan coding, lakukan review dan buatkan prompt yang sesuai dengan hasil review untuk digunakan oleh AI yang melakukan coding.
 
 ### Setelah selesai task
 

@@ -14,7 +14,7 @@ const authMiddleware = async (req, res, next) => {
     res
       .status(401)
       .json({
-        errors: "Unauthorized",
+        error: "Unauthorized",
       })
       .end();
     return;
@@ -38,7 +38,7 @@ const authMiddleware = async (req, res, next) => {
     res
       .status(401)
       .json({
-        errors: "Unauthorized",
+        error: "Unauthorized",
       })
       .end();
     return;
