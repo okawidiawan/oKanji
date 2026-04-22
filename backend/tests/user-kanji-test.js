@@ -13,7 +13,8 @@ const prismaMock = {
         upsert: mock(),
         findMany: mock(),
         count: mock(),
-        delete: mock()
+        delete: mock(),
+        update: mock()
     }
 };
 
@@ -32,6 +33,7 @@ describe("User Kanji API", () => {
         prismaMock.userKanji.findMany.mockReset();
         prismaMock.userKanji.count.mockReset();
         prismaMock.userKanji.delete.mockReset();
+        prismaMock.userKanji.update.mockReset();
     });
 
     const mockAuthSuccess = () => {
@@ -212,6 +214,85 @@ describe("User Kanji API", () => {
             expect(response.status).toBe(404);
             expect(response.body.error).toBe("Data Progress Kanji Tidak Ditemukan");
             expect(prismaMock.userKanji.delete).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("PATCH /api/user-kanji/:kanjiId (Update Progress)", () => {
+        it("seharusnya berhasil memperbarui semua field progres kanji", async () => {
+            mockAuthSuccess();
+            const kanjiId = "123e4567-e89b-12d3-a456-426614174001";
+            const existingData = {
+                userId: "user-1",
+                kanjiId: kanjiId,
+                isMemorized: false,
+                difficulty: 1,
+                note: "Lama"
+            };
+
+            prismaMock.userKanji.findUnique.mockResolvedValue(existingData);
+            prismaMock.userKanji.update.mockResolvedValue({
+                ...existingData,
+                isMemorized: true,
+                difficulty: 3,
+                note: "Baru",
+                lastReviewed: new Date()
+            });
+
+            const response = await request(app)
+                .patch(`/api/user-kanji/${kanjiId}`)
+                .set("Authorization", "Bearer valid-token")
+                .send({
+                    isMemorized: true,
+                    difficulty: 3,
+                    note: "Baru"
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.isMemorized).toBe(true);
+            expect(response.body.data.difficulty).toBe(3);
+            expect(response.body.data.note).toBe("Baru");
+            expect(prismaMock.userKanji.update).toHaveBeenCalledWith(expect.objectContaining({
+                where: { userId_kanjiId: { userId: "user-1", kanjiId: kanjiId } },
+                data: expect.objectContaining({ isMemorized: true, difficulty: 3, note: "Baru" })
+            }));
+        });
+
+        it("seharusnya gagal (404) jika mencoba mengupdate data milik user lain", async () => {
+            mockAuthSuccess();
+            const kanjiId = "123e4567-e89b-12d3-a456-426614174001";
+            
+            // findUnique mengembalikan null karena record tidak ditemukan untuk user ini
+            prismaMock.userKanji.findUnique.mockResolvedValue(null);
+
+            const response = await request(app)
+                .patch(`/api/user-kanji/${kanjiId}`)
+                .set("Authorization", "Bearer valid-token")
+                .send({ difficulty: 5 });
+
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Data Progress Kanji Tidak Ditemukan");
+        });
+
+        it("seharusnya gagal (400) jika body kosong (minimal satu field diperlukan)", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+                .patch("/api/user-kanji/123e4567-e89b-12d3-a456-426614174001")
+                .set("Authorization", "Bearer valid-token")
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBeDefined();
+        });
+
+        it("seharusnya gagal (400) jika tingkat kesulitan tidak valid (misal: 6)", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+                .patch("/api/user-kanji/123e4567-e89b-12d3-a456-426614174001")
+                .set("Authorization", "Bearer valid-token")
+                .send({ difficulty: 6 });
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Validation Error");
         });
     });
 });

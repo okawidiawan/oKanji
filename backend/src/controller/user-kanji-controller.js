@@ -77,4 +77,26 @@ const remove = async (req, res, next) => {
     }
 };
 
-export { add, get, list, remove };
+/**
+ * Memperbarui progres belajar kanji (partial update).
+ * Mengambil kanjiId dari URL parameter dan data pembaruan dari request body.
+ */
+const update = async (req, res, next) => {
+    try {
+        const user = req.user;
+        // Menggabungkan data dari body dengan kanjiId dari parameter URL
+        const request = {
+            ...req.body,
+            kanjiId: req.params.kanjiId
+        };
+
+        const result = await userKanjiService.update(user, request);
+        res.status(200).json({
+            data: result
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
+export { add, get, list, remove, update };

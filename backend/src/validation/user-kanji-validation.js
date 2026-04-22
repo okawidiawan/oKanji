@@ -24,8 +24,22 @@ const listUserKanjiValidation = z.object({
     isMemorized: z.coerce.boolean().optional(),
 });
 
+/**
+ * Skema validasi untuk memperbarui progres belajar kanji.
+ * Semua field opsional, namun minimal satu harus diisi.
+ */
+const updateUserKanjiValidation = z.object({
+    kanjiId: z.string().uuid("Format ID Kanji tidak valid"),
+    isMemorized: z.boolean().optional(),
+    difficulty: z.number().min(1, "Tingkat kesulitan minimal 1").max(5, "Tingkat kesulitan maksimal 5").optional(),
+    note: z.string().max(2000, "Catatan maksimal 2000 karakter").optional(),
+}).refine(data => data.isMemorized !== undefined || data.difficulty !== undefined || data.note !== undefined, {
+    message: "Minimal satu field harus diisi (isMemorized, difficulty, atau note)"
+});
+
 export {
     addUserKanjiValidation,
+    updateUserKanjiValidation,
     getUserKanjiValidation,
     listUserKanjiValidation
 };
