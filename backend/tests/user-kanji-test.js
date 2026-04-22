@@ -12,7 +12,8 @@ const prismaMock = {
         findUnique: mock(),
         upsert: mock(),
         findMany: mock(),
-        count: mock()
+        count: mock(),
+        delete: mock()
     }
 };
 
@@ -30,6 +31,7 @@ describe("User Kanji API", () => {
         prismaMock.userKanji.upsert.mockReset();
         prismaMock.userKanji.findMany.mockReset();
         prismaMock.userKanji.count.mockReset();
+        prismaMock.userKanji.delete.mockReset();
     });
 
     const mockAuthSuccess = () => {
@@ -45,7 +47,7 @@ describe("User Kanji API", () => {
         it("seharusnya ditolak (401) jika tidak mengirim token", async () => {
             const response = await request(app).get("/api/user-kanji");
             expect(response.status).toBe(401);
-            expect(response.body.errors).toBe("Unauthorized");
+            expect(response.body.error).toBe("Unauthorized");
         });
         
         it("seharusnya ditolak (401) jika token tidak ditemukan di database", async () => {
@@ -55,7 +57,7 @@ describe("User Kanji API", () => {
                 .set("Authorization", "Bearer invalid-token");
 
             expect(response.status).toBe(401);
-            expect(response.body.errors).toBe("Unauthorized");
+            expect(response.body.error).toBe("Unauthorized");
         });
     });
 
@@ -174,6 +176,42 @@ describe("User Kanji API", () => {
             expect(prismaMock.userKanji.count).toHaveBeenCalledWith(expect.objectContaining({
                 where: { userId: "user-1", isMemorized: true }
             }));
+        });
+    });
+
+    describe("DELETE /api/user-kanji/:kanjiId (Delete Progress)", () => {
+        it("seharusnya berhasil menghapus data hafalan kanji", async () => {
+            mockAuthSuccess();
+            const mockUserKanji = {
+                userId: "user-1",
+                kanjiId: "123e4567-e89b-12d3-a456-426614174001"
+            };
+
+            prismaMock.userKanji.findUnique.mockResolvedValue(mockUserKanji);
+            prismaMock.userKanji.delete.mockResolvedValue(mockUserKanji);
+
+            const response = await request(app)
+                .delete("/api/user-kanji/123e4567-e89b-12d3-a456-426614174001")
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(200);
+            expect(response.body.data).toBe("OK");
+            expect(prismaMock.userKanji.delete).toHaveBeenCalledWith(expect.objectContaining({
+                where: { userId_kanjiId: { userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174001" } }
+            }));
+        });
+
+        it("seharusnya gagal menghapus (404) jika data progres tidak ditemukan", async () => {
+            mockAuthSuccess();
+            prismaMock.userKanji.findUnique.mockResolvedValue(null);
+
+            const response = await request(app)
+                .delete("/api/user-kanji/123e4567-e89b-12d3-a456-426614174002")
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Data Progress Kanji Tidak Ditemukan");
+            expect(prismaMock.userKanji.delete).not.toHaveBeenCalled();
         });
     });
 });

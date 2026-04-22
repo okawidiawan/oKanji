@@ -60,4 +60,21 @@ const list = async (req, res, next) => {
     }
 };
 
-export { add, get, list };
+/**
+ * Menghapus progres belajar kanji milik user.
+ */
+const remove = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const kanjiId = req.params.kanjiId;
+
+        await userKanjiService.remove(user, kanjiId);
+        res.status(200).json({
+            data: "OK"
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
+export { add, get, list, remove };

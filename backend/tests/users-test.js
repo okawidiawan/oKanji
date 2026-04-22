@@ -158,7 +158,7 @@ describe("User API", () => {
                 .delete("/api/users/logout");
 
             expect(response.status).toBe(401);
-            expect(response.body.errors).toBe("Unauthorized");
+            expect(response.body.error).toBe("Unauthorized");
         });
     });
     describe("GET /api/users/current", () => {
@@ -189,7 +189,7 @@ describe("User API", () => {
                 .set("Authorization", "Bearer invalid-token");
 
             expect(response.status).toBe(401);
-            expect(response.body.errors).toBe("Unauthorized");
+            expect(response.body.error).toBe("Unauthorized");
         });
     });
 
@@ -268,7 +268,7 @@ describe("User API", () => {
                 });
 
             expect(response.status).toBe(401);
-            expect(response.body.errors).toBe("Unauthorized");
+            expect(response.body.error).toBe("Unauthorized");
         });
     });
 });
