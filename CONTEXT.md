@@ -91,7 +91,7 @@ frontend/
   - [ ] `GET /api/kanjis/:id`: Mengambil detail satu kanji (Planned).
 - **User Progress**:
   - [x] `POST /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Hardcoded `isMemorized: true`).
-  - [ ] `PATCH /api/user-kanji/:kanjiId`: Memperbarui detail progres (difficulty, note, isMemorized) (Planned).
+  - [x] `PATCH /api/user-kanji/:kanjiId`: Memperbarui detail progres (difficulty, note, isMemorized).
   - [x] `DELETE /api/user-kanji/:kanjiId`: Menghapus progres kanji tertentu.
   - [x] `GET /api/user-kanji`: List progres hafalan pengguna.
     - Query Params: `isMemorized` (boolean), `page`, `size`.

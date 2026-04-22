@@ -2,6 +2,7 @@ import { prisma } from '../application/database.js';
 import { ResponseError } from '../error/response-error.js';
 import {
     addUserKanjiValidation,
+    updateUserKanjiValidation,
     getUserKanjiValidation,
     listUserKanjiValidation
 } from '../validation/user-kanji-validation.js';
@@ -188,4 +189,54 @@ const remove = async (user, kanjiId) => {
     });
 };
 
-export { add, get, list, remove };
+/**
+ * Memperbarui progres belajar kanji milik user secara parsial.
+ * Menjamin keamanan data (Data Isolation) melalui pengecekan kepemilikan.
+ */
+const update = async (user, request) => {
+    // Validasi input pembaruan
+    const validatedRequest = updateUserKanjiValidation.parse(request);
+
+    // Mencari data progres yang ada untuk memastikan kepemilikan (Data Isolation)
+    const existing = await prisma.userKanji.findUnique({
+        where: {
+            userId_kanjiId: {
+                userId: user.id,
+                kanjiId: validatedRequest.kanjiId
+            }
+        }
+    });
+
+    // Jika data tidak ditemukan, lempar 404
+    if (!existing) {
+        throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
+    }
+
+    const now = new Date();
+    let memorizedAt = existing.memorizedAt;
+
+    // Logika pembaruan tanggal hafal: jika baru saja ditandai hafal
+    if (validatedRequest.isMemorized === true && !existing.isMemorized) {
+        memorizedAt = now;
+    }
+
+    // Melakukan pembaruan data progres di database
+    return prisma.userKanji.update({
+        where: {
+            userId_kanjiId: {
+                userId: user.id,
+                kanjiId: validatedRequest.kanjiId
+            }
+        },
+        data: {
+            isMemorized: validatedRequest.isMemorized ?? existing.isMemorized,
+            difficulty: validatedRequest.difficulty ?? existing.difficulty,
+            note: validatedRequest.note ?? existing.note,
+            reviewCount: { increment: 1 }, // Setiap interaksi dihitung sebagai review
+            lastReviewed: now,
+            memorizedAt: memorizedAt
+        }
+    });
+};
+
+export { add, get, list, remove, update };
