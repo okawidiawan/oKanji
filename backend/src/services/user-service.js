@@ -54,35 +54,40 @@ const register = async (request) => {
 
 /**
  * Melakukan proses login user.
- * Memverifikasi email dan password, lalu mengembalikan token akses unik.
+ * Memverifikasi username/email dan password, lalu mengembalikan token akses unik.
  */
 const login = async (request) => {
   // Validasi skema input login
   request = loginUserValidation.parse(request);
 
-  // Mencari user berdasarkan email
-  const user = await prisma.user.findUnique({
+  // Membangun filter pencarian secara dinamis (username atau email)
+  const filters = [];
+  if (request.email) filters.push({ email: request.email });
+  if (request.username) filters.push({ username: request.username });
+
+  // Mencari user berdasarkan identifier yang disediakan
+  const user = await prisma.user.findFirst({
     where: {
-      email: request.email,
+      OR: filters,
     },
   });
 
-  // Validasi keberadaan user
+  // Validasi kredensial (user harus ada dan password harus cocok)
   if (!user) {
-    throw new ResponseError(401, "Email atau password salah");
+    throw new ResponseError(401, "Email/Username atau password salah");
   }
 
   // Memverifikasi kecocokan password dengan hash di database
   const isPasswordValid = await bcrypt.compare(request.password, user.password);
   if (!isPasswordValid) {
-    throw new ResponseError(401, "Email atau password salah");
+    throw new ResponseError(401, "Email/Username atau password salah");
   }
 
   // Membuat token akses baru (UUID) untuk sesi user
   const token = uuid();
   return prisma.user.update({
     where: {
-      email: request.email,
+      id: user.id,
     },
     data: {
       token: token,

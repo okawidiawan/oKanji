@@ -190,6 +190,7 @@ frontend/
 
 - Untuk AI Assistant yang melakukan coding :
   Selalu buat dokumentasinya di baris program, jelaskan kegunaan function/method dengan bahasa Indonesia yang mudah dimengerti.
+  Jika ada perubahan logic pada setiap function, lakukan juga perubahan dokumentasinya.
   Selalu buat unit test untuk setiap API atau fitur baru yang ditambahkan atau setelah kode diperbaiki.
   Selalu jalankan unit test yang sudah dibuat, dan harus lolos test dengan benar.
   Jangan langsung lakukan commit, push, pull request jika tidak diminta.
