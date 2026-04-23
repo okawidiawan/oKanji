@@ -21,7 +21,7 @@ const errorMiddleware = (err, req, res, next) => {
         // Menangani error kustom aplikasi (misal: 400, 404, 401)
         res.status(err.status).json({
             error: err.message
-        }).end();
+        });
     } else if (err instanceof ZodError) {
         // Menangani error validasi dari Zod
         res.status(400).json({
@@ -30,7 +30,7 @@ const errorMiddleware = (err, req, res, next) => {
                 field: e.path.join('.'),
                 message: e.message
             }))
-        }).end();
+        });
     } else {
         // Menangani error internal server (500)
         const errorResponse = {
@@ -38,9 +38,9 @@ const errorMiddleware = (err, req, res, next) => {
         };
         // Menyertakan stack trace hanya jika bukan di environment produksi
         if (!isProduction) {
-            errorResponse.error.details = err.stack;
+            errorResponse.details = err.stack;
         }
-        res.status(500).json(errorResponse).end();
+        res.status(500).json(errorResponse);
     }
 };
 

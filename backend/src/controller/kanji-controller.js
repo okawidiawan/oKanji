@@ -10,7 +10,7 @@ const list = async (req, res, next) => {
       level: req.query.level,
       search: req.query.search,
       page: req.query.page,
-      limit: req.query.limit
+      size: req.query.size
     };
 
     // Memanggil service untuk mengambil data

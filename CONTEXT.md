@@ -83,11 +83,11 @@ frontend/
 
 - **User Profile**:
   - [x] `GET /api/users/current`: Mengambil profil user yang sedang login.
-  - [x] `PATCH /api/users/current`: Memperbarui nama atau password user.
+  - [x] `PATCH /api/users/current`: Memperbarui nama, email, atau password user.
   - [x] `DELETE /api/users/logout`: Menghapus token (Logout).
 - **Kanji Data**:
   - [x] `GET /api/kanjis`: Mengambil list kanji.
-    - Query Params: `level` (N1-N5), `search` (karakter/makna), `page`, `limit`.
+    - Query Params: `level` (N1-N5), `search` (karakter/makna), `page`, `size`.
   - [ ] `GET /api/kanjis/:id`: Mengambil detail satu kanji (Planned).
 - **User Progress**:
   - [x] `POST /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Inisialisasi status progres).
@@ -127,6 +127,7 @@ frontend/
 4. **Validation Messaging**: Pesan error Zod dikustomisasi menggunakan Bahasa Indonesia untuk kemudahan integrasi dengan Frontend.
 5. **Multi-field Search Logic**: Pencarian kanji mendukung parameter `search` yang akan difilter menggunakan operator `OR` pada kolom `character` dan `meaning` dengan metode `contains` (substring search) untuk fleksibilitas hasil.
 6. **Simplified Progress Tracking**: Penambahan progres kanji menggunakan endpoint `POST /api/user-kanji/:kanjiId` dapat dilakukan tanpa request body. Hal ini menyederhanakan interaksi Frontend (Quick Add). Status hafalan (`isMemorized`) kini dikelola secara manual oleh pengguna melalui endpoint `PATCH`.
+7. **Username Immutability**: Field `username` bersifat permanen dan di-set saat registrasi. Hanya `name`, `email`, dan `password` yang dapat diperbarui melalui `PATCH /api/users/current`. Registrasi memerlukan field `username` terpisah dari `name`.
 
 ---
 
@@ -191,6 +192,7 @@ frontend/
   Selalu buat dokumentasinya di baris program, jelaskan kegunaan function/method dengan bahasa Indonesia yang mudah dimengerti.
   Selalu buat unit test untuk setiap API atau fitur baru yang ditambahkan atau setelah kode diperbaiki.
   Selalu jalankan unit test yang sudah dibuat, dan harus lolos test dengan benar.
+  Jangan langsung lakukan commit, push, pull request jika tidak diminta.
 - Untuk AI Assistant yang ditugaskan untuk membuat issue.md, jika tidak ada perintah untuk implementasi, jangan lakukan implementasi kode.
 - Untuk AI Assistant yang ditugaskan untuk mereview tidak perlu melakukan coding, lakukan review dan buatkan prompt yang sesuai dengan hasil review untuk digunakan oleh AI yang melakukan coding.
 

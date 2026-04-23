@@ -8,5 +8,8 @@ const publicRouter = express.Router();
  */
 publicRouter.post('/api/users', userController.register); // Registrasi user baru
 publicRouter.post('/api/users/login', userController.login);    // Login user
+publicRouter.get('/api/health', (req, res) => {
+    res.json({ status: "OK", message: "Backend is running" });
+});
 
 export { publicRouter };
