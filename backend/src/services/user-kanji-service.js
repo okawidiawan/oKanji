@@ -15,7 +15,7 @@ const add = async (user, request) => {
     where: { id: validatedRequest.kanjiId },
   });
   if (kanjiCount === 0) {
-    throw new ResponseError(404, "Kanji not found");
+    throw new ResponseError(404, "Kanji tidak ditemukan");
   }
 
   // Mencari apakah sudah ada progres sebelumnya untuk pasangan user dan kanji ini
@@ -29,18 +29,9 @@ const add = async (user, request) => {
   });
 
   const now = new Date();
-  // Status hafalan diambil dari input, atau existing data, atau default false
-  const isMemorized = validatedRequest.isMemorized ?? existing?.isMemorized ?? false;
-  let memorizedAt = existing?.memorizedAt;
-
-  // Logika penentuan tanggal hafal: diatur jika status berubah menjadi 'memorized'
-  if (isMemorized && !existing?.isMemorized) {
-    memorizedAt = now;
-  } else if (!isMemorized) {
-    memorizedAt = null;
-  }
 
   // Melakukan operasi upsert (update if exists, create if not)
+  // FIX-5: isMemorized di-hardcode ke false saat create dan tidak diubah saat update di endpoint add
   return prisma.userKanji.upsert({
     where: {
       userId_kanjiId: {
@@ -49,22 +40,20 @@ const add = async (user, request) => {
       },
     },
     update: {
-      isMemorized: isMemorized,
       difficulty: validatedRequest.difficulty ?? existing?.difficulty,
       note: validatedRequest.note ?? existing?.note,
       reviewCount: { increment: 1 },
       lastReviewed: now,
-      memorizedAt: memorizedAt,
     },
     create: {
       userId: user.id,
       kanjiId: validatedRequest.kanjiId,
-      isMemorized: isMemorized,
+      isMemorized: false,
       difficulty: validatedRequest.difficulty,
       note: validatedRequest.note,
       reviewCount: 1,
       lastReviewed: now,
-      memorizedAt: isMemorized ? now : null,
+      memorizedAt: null,
     },
   });
 };
@@ -78,7 +67,7 @@ const get = async (user, kanjiId) => {
   // Jika format tidak valid (bukan UUID), langsung lempar 404 agar seragam dengan data tidak ditemukan
   const validationResult = getUserKanjiValidation.safeParse(kanjiId);
   if (!validationResult.success) {
-    throw new ResponseError(404, "User progress for this kanji not found");
+    throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
   }
   const validatedKanjiId = validationResult.data;
 
@@ -96,7 +85,7 @@ const get = async (user, kanjiId) => {
 
   // Jika data progres belum ada, kembalikan 404
   if (!userKanji) {
-    throw new ResponseError(404, "User progress for this kanji not found");
+    throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
   }
 
   return userKanji;
@@ -213,9 +202,11 @@ const update = async (user, request) => {
   const now = new Date();
   let memorizedAt = existing.memorizedAt;
 
-  // Logika pembaruan tanggal hafal: jika baru saja ditandai hafal
+  // Logika pembaruan tanggal hafal: jika baru saja ditandai hafal atau dibatalkan
   if (validatedRequest.isMemorized === true && !existing.isMemorized) {
     memorizedAt = now;
+  } else if (validatedRequest.isMemorized === false) {
+    memorizedAt = null;
   }
 
   // Melakukan pembaruan data progres di database

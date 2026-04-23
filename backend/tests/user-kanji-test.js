@@ -294,5 +294,47 @@ describe("User Kanji API", () => {
             expect(response.status).toBe(400);
             expect(response.body.error).toBe("Validation Error");
         });
+
+        it("seharusnya gagal (404) jika mengambil data dengan kanjiId format invalid (non-UUID)", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+                .get("/api/user-kanji/invalid-id")
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Data Progress Kanji Tidak Ditemukan");
+        });
+
+        it("seharusnya reset memorizedAt menjadi null jika isMemorized berubah dari true ke false", async () => {
+            mockAuthSuccess();
+            const kanjiId = "123e4567-e89b-12d3-a456-426614174001";
+            const existingData = {
+                userId: "user-1",
+                kanjiId: kanjiId,
+                isMemorized: true,
+                memorizedAt: new Date()
+            };
+
+            prismaMock.userKanji.findUnique.mockResolvedValue(existingData);
+            prismaMock.userKanji.update.mockResolvedValue({
+                ...existingData,
+                isMemorized: false,
+                memorizedAt: null
+            });
+
+            const response = await request(app)
+                .patch(`/api/user-kanji/${kanjiId}`)
+                .set("Authorization", "Bearer valid-token")
+                .send({
+                    isMemorized: false
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.isMemorized).toBe(false);
+            expect(response.body.data.memorizedAt).toBeNull();
+            expect(prismaMock.userKanji.update).toHaveBeenCalledWith(expect.objectContaining({
+                data: expect.objectContaining({ isMemorized: false, memorizedAt: null })
+            }));
+        });
     });
 });

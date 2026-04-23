@@ -38,10 +38,7 @@ app.use(
 );
 app.use(express.json());
 
-// Basic health check
-app.get("/api/health", (req, res) => {
-  res.json({ status: "OK", message: "Backend is running" });
-});
+
 
 // Routes
 app.use(publicRouter);

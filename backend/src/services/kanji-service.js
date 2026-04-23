@@ -8,7 +8,7 @@ import { getKanjiValidation } from '../validation/kanji-validation.js';
 const list = async (request) => {
   // Validasi input request menggunakan Zod
   const validatedRequest = getKanjiValidation.parse(request);
-  const skip = (validatedRequest.page - 1) * validatedRequest.limit;
+  const skip = (validatedRequest.page - 1) * validatedRequest.size;
 
   const filters = {};
   
@@ -29,7 +29,7 @@ const list = async (request) => {
   const [data, total] = await Promise.all([
     prisma.kanji.findMany({
       where: filters,
-      take: validatedRequest.limit,
+      take: validatedRequest.size,
       skip: skip
     }),
     prisma.kanji.count({
@@ -43,7 +43,7 @@ const list = async (request) => {
     paging: {
       page: validatedRequest.page,
       total_item: total,
-      total_page: Math.ceil(total / validatedRequest.limit)
+      total_page: Math.ceil(total / validatedRequest.size)
     }
   };
 };

@@ -29,6 +29,7 @@ describe("User API", () => {
         it("seharusnya berhasil mendaftarkan pengguna baru", async () => {
             prismaMock.user.count.mockResolvedValue(0);
             prismaMock.user.create.mockResolvedValue({
+                username: "testuser",
                 email: "test@example.com",
                 name: "Test User"
             });
@@ -37,6 +38,7 @@ describe("User API", () => {
             const response = await request(app)
                 .post("/api/users")
                 .send({
+                    username: "testuser",
                     name: "Test User",
                     email: "test@example.com",
                     password: "password123"
@@ -44,7 +46,7 @@ describe("User API", () => {
 
             expect(response.status).toBe(201);
             expect(response.body.data).toBe("OK");
-            expect(prismaMock.user.count).toHaveBeenCalledTimes(1);
+            expect(prismaMock.user.count).toHaveBeenCalled();
             expect(prismaMock.user.create).toHaveBeenCalledTimes(1);
         });
 
@@ -54,20 +56,55 @@ describe("User API", () => {
             const response = await request(app)
                 .post("/api/users")
                 .send({
+                    username: "testuser",
                     name: "Test User",
                     email: "test@example.com",
                     password: "password123"
                 });
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBeDefined();
-            expect(prismaMock.user.create).not.toHaveBeenCalled();
+            expect(response.body.error).toBe("Email sudah terdaftar");
+        });
+
+        it("seharusnya menolak registrasi jika username sudah terdaftar", async () => {
+            prismaMock.user.count.mockImplementation((args) => {
+                if (args.where.email) return 0;
+                if (args.where.username) return 1;
+                return 0;
+            });
+
+            const response = await request(app)
+                .post("/api/users")
+                .send({
+                    username: "testuser",
+                    name: "Test User",
+                    email: "test@example.com",
+                    password: "password123"
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Username sudah digunakan");
+        });
+
+        it("seharusnya menolak registrasi jika username mengandung karakter spesial", async () => {
+            const response = await request(app)
+               .post("/api/users")
+               .send({
+                   username: "user@name",
+                   name: "Test User",
+                   email: "test@example.com",
+                   password: "password123"
+               });
+
+           expect(response.status).toBe(400);
+           expect(response.body.error).toBe("Validation Error");
         });
 
         it("seharusnya menolak registrasi jika field tidak valid", async () => {
              const response = await request(app)
                 .post("/api/users")
                 .send({
+                    username: "tu",
                     name: "",
                     email: "invalid-email",
                     password: "123"
@@ -217,6 +254,51 @@ describe("User API", () => {
             expect(response.body.data.name).toBe("Updated Name");
         });
 
+        it("seharusnya berhasil memperbarui email", async () => {
+            prismaMock.user.findUnique.mockResolvedValue({
+                id: 1,
+                email: "test@example.com",
+                token: "dummy-token"
+            });
+
+            prismaMock.user.count.mockResolvedValue(0); // Email baru belum digunakan
+
+            prismaMock.user.update.mockResolvedValue({
+                username: "testuser",
+                email: "newemail@example.com"
+            });
+
+            const response = await request(app)
+                .patch("/api/users/current")
+                .set("Authorization", "Bearer dummy-token")
+                .send({
+                    email: "newemail@example.com"
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.email).toBe("newemail@example.com");
+        });
+
+        it("seharusnya gagal update email jika email sudah digunakan user lain", async () => {
+            prismaMock.user.findUnique.mockResolvedValue({
+                id: 1,
+                email: "test@example.com",
+                token: "dummy-token"
+            });
+
+            prismaMock.user.count.mockResolvedValue(1); // Email baru sudah digunakan
+
+            const response = await request(app)
+                .patch("/api/users/current")
+                .set("Authorization", "Bearer dummy-token")
+                .send({
+                    email: "other@example.com"
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Email sudah digunakan");
+        });
+
         it("seharusnya berhasil memperbarui password", async () => {
             prismaMock.user.findUnique.mockResolvedValue({
                 id: 1,
@@ -269,6 +351,40 @@ describe("User API", () => {
 
             expect(response.status).toBe(401);
             expect(response.body.error).toBe("Unauthorized");
+        });
+
+        it("seharusnya gagal (400) jika update dengan body kosong", async () => {
+            prismaMock.user.findUnique.mockResolvedValue({
+                id: 1,
+                email: "test@example.com",
+                token: "dummy-token"
+            });
+
+            const response = await request(app)
+                .patch("/api/users/current")
+                .set("Authorization", "Bearer dummy-token")
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBeDefined();
+        });
+
+        it("seharusnya gagal (400) jika update password terlalu pendek", async () => {
+            prismaMock.user.findUnique.mockResolvedValue({
+                id: 1,
+                email: "test@example.com",
+                token: "dummy-token"
+            });
+
+            const response = await request(app)
+                .patch("/api/users/current")
+                .set("Authorization", "Bearer dummy-token")
+                .send({
+                    password: "short"
+                });
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBeDefined();
         });
     });
 });

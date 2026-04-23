@@ -34,7 +34,7 @@ describe("Kanji API", () => {
     };
 
     describe("GET /api/kanjis", () => {
-        it("seharusnya berhasil mengambil list kanji tanpa filter (default page 1, limit 20)", async () => {
+        it("seharusnya berhasil mengambil list kanji tanpa filter (default page 1, size 20)", async () => {
             mockAuthSuccess();
             const mockData = [
                 { id: "1", character: "日", jlptLevel: "N5" },
@@ -93,7 +93,7 @@ describe("Kanji API", () => {
             prismaMock.kanji.count.mockResolvedValue(15);
 
             const response = await request(app)
-                .get("/api/kanjis?page=2&limit=5")
+                .get("/api/kanjis?page=2&size=5")
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(200);
@@ -135,11 +135,43 @@ describe("Kanji API", () => {
         it("seharusnya ditolak atau default bila parameter paginasi tidak valid", async () => {
              mockAuthSuccess();
              const response = await request(app)
-                .get("/api/kanjis?page=-1&limit=999")
+                .get("/api/kanjis?page=-1&size=999")
                 .set("Authorization", "Bearer valid-token");
              
              expect(response.status).toBe(400);
              expect(response.body.error).toBeDefined();
+        });
+
+        it("seharusnya gagal (400) jika level tidak valid (misal N6)", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+               .get("/api/kanjis?level=N6")
+               .set("Authorization", "Bearer valid-token");
+            
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBeDefined();
+        });
+
+        it("seharusnya berhasil memfilter kombinasi level dan search secara bersamaan", async () => {
+            mockAuthSuccess();
+            const mockData = [{ id: "1", character: "日", jlptLevel: "N5" }];
+            prismaMock.kanji.findMany.mockResolvedValue(mockData);
+            prismaMock.kanji.count.mockResolvedValue(1);
+
+            const response = await request(app)
+               .get("/api/kanjis?level=N5&search=日")
+               .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(200);
+            expect(prismaMock.kanji.findMany).toHaveBeenCalledWith(expect.objectContaining({
+                where: {
+                    jlptLevel: "N5",
+                    OR: [
+                        { character: { contains: "日" } },
+                        { meaning: { contains: "日" } }
+                    ]
+                }
+            }));
         });
     });
 });
