@@ -1,3 +1,4 @@
+import { z, ZodError } from 'zod';
 import { prisma } from '../application/database.js';
 import { postKotobaValidation } from '../validation/kotoba-validation.js';
 import { ResponseError } from '../error/response-error.js';
@@ -7,6 +8,10 @@ import { ResponseError } from '../error/response-error.js';
  * @param {string[]} kanjiIds 
  */
 const validateKanjiExistence = async (kanjiIds) => {
+  // Validasi format UUID terlebih dahulu agar konsisten dengan project (ZodError)
+  const uuidSchema = z.array(z.string().uuid("Format Kanji ID harus UUID"));
+  uuidSchema.parse(kanjiIds);
+
   const uniqueKanjiIds = [...new Set(kanjiIds)];
   const count = await prisma.kanji.count({
     where: {
