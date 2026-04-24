@@ -1,7 +1,6 @@
 import { prisma } from "../application/database.js";
-import { postKotobaValidation } from "../validation/kotoba-validation.js";
+import { postKotobaValidation, kanjiIdValidation } from "../validation/kotoba-validation.js";
 import { ResponseError } from "../error/response-error.js";
-import { getUserKanjiValidation } from "../validation/user-kanji-validation.js";
 
 /**
  * Memastikan semua kanjiId yang dikirimkan ada di database.
@@ -12,9 +11,9 @@ const validateKanjiExistence = async (kanjiIds) => {
 
   // Validasi format UUID untuk setiap ID
   for (const id of uniqueKanjiIds) {
-    const validationResult = getUserKanjiValidation.safeParse(id);
+    const validationResult = kanjiIdValidation.safeParse(id);
     if (!validationResult.success) {
-      throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
+      throw new ResponseError(400, "Format ID Kanji tidak valid");
     }
   }
 
@@ -26,6 +25,24 @@ const validateKanjiExistence = async (kanjiIds) => {
 
   if (count !== uniqueKanjiIds.length) {
     throw new ResponseError(404, "Kanji tidak ditemukan");
+  }
+};
+
+/**
+ * Memastikan kombinasi word dan reading belum ada di database.
+ * @param {string} word
+ * @param {string} reading
+ */
+const validateDuplicateKotoba = async (word, reading) => {
+  const count = await prisma.kotoba.count({
+    where: {
+      word: word,
+      reading: reading,
+    },
+  });
+
+  if (count > 0) {
+    throw new ResponseError(400, "Kosakata sudah terdaftar");
   }
 };
 
@@ -45,6 +62,18 @@ const create = async (request) => {
     const result = await prisma.$transaction(async (tx) => {
       let count = 0;
       for (const item of validatedRequest) {
+        // Cek duplikat untuk tiap item dalam batch
+        const existing = await tx.kotoba.count({
+          where: {
+            word: item.word,
+            reading: item.reading,
+          },
+        });
+
+        if (existing > 0) {
+          throw new ResponseError(400, `Kosakata '${item.word}' sudah terdaftar`);
+        }
+
         await tx.kotoba.create({
           data: {
             word: item.word,
@@ -65,8 +94,9 @@ const create = async (request) => {
     return result;
   }
 
-  // Jika input adalah single object, validasi kanjiIds
+  // Jika input adalah single object, validasi kanjiIds dan duplikat
   await validateKanjiExistence(validatedRequest.kanjiIds);
+  await validateDuplicateKotoba(validatedRequest.word, validatedRequest.reading);
 
   const result = await prisma.kotoba.create({
     data: {

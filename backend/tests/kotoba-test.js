@@ -67,7 +67,7 @@ describe("Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token")
                 .send(payload);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(201);
             expect(response.body.data.id).toBe("kotoba-uuid-1");
             expect(response.body.data.kanjiIds).toEqual(["550e8400-e29b-41d4-a716-446655440000"]);
             expect(prismaMock.kotoba.create).toHaveBeenCalled();
@@ -91,7 +91,7 @@ describe("Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token")
                 .send(payload);
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(201);
             expect(response.body.data.count).toBe(2);
             expect(prismaMock.$transaction).toHaveBeenCalled();
             expect(prismaMock.kotoba.create).toHaveBeenCalledTimes(2);
@@ -148,6 +148,24 @@ describe("Kotoba API", () => {
 
             expect(response.status).toBe(404);
             expect(response.body.error).toBe("Kanji tidak ditemukan");
+        });
+
+        it("seharusnya gagal (400) jika format kanjiId bukan UUID", async () => {
+            mockAuthSuccess();
+            const payload = {
+                word: "食べる",
+                reading: "たべる",
+                meaning: "makan",
+                kanjiIds: ["bukan-uuid"]
+            };
+
+            const response = await request(app)
+                .post("/api/kotoba")
+                .set("Authorization", "Bearer valid-token")
+                .send(payload);
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Validation Error");
         });
     });
 });
