@@ -5,6 +5,9 @@ const prismaMock = {
     user: {
         findUnique: mock()
     },
+    kanji: {
+        count: mock()
+    },
     kotoba: {
         create: mock()
     },
@@ -21,6 +24,7 @@ describe("Kotoba API", () => {
     beforeEach(() => {
         prismaMock.user.findUnique.mockReset();
         prismaMock.kotoba.create.mockReset();
+        prismaMock.kanji.count.mockReset();
         prismaMock.$transaction.mockReset();
     });
 
@@ -55,6 +59,7 @@ describe("Kotoba API", () => {
                 ]
             };
 
+            prismaMock.kanji.count.mockResolvedValue(1);
             prismaMock.kotoba.create.mockResolvedValue(mockCreated);
 
             const response = await request(app)
@@ -75,6 +80,7 @@ describe("Kotoba API", () => {
                 { word: "食事", reading: "しょくじ", meaning: "makan (formal)", kanjiIds: ["550e8400-e29b-41d4-a716-446655440000"] }
             ];
 
+            prismaMock.kanji.count.mockResolvedValue(1);
             prismaMock.$transaction.mockImplementation(async (callback) => {
                 return await callback(prismaMock);
             });
@@ -121,6 +127,27 @@ describe("Kotoba API", () => {
 
             expect(response.status).toBe(401);
             expect(response.body.error).toBe("Unauthorized");
+        });
+
+        it("seharusnya gagal (404) jika kanjiId tidak ditemukan di database", async () => {
+            mockAuthSuccess();
+            const payload = {
+                word: "食べる",
+                reading: "たべる",
+                meaning: "makan",
+                kanjiIds: ["550e8400-e29b-41d4-a716-446655440000"]
+            };
+
+            // Mock kembalikan 0 (artinya kanji tidak ditemukan)
+            prismaMock.kanji.count.mockResolvedValue(0);
+
+            const response = await request(app)
+                .post("/api/kotoba")
+                .set("Authorization", "Bearer valid-token")
+                .send(payload);
+
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Kanji tidak ditemukan");
         });
     });
 });

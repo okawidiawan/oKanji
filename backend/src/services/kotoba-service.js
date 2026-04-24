@@ -1,5 +1,23 @@
 import { prisma } from '../application/database.js';
 import { postKotobaValidation } from '../validation/kotoba-validation.js';
+import { ResponseError } from '../error/response-error.js';
+
+/**
+ * Memastikan semua kanjiId yang dikirimkan ada di database.
+ * @param {string[]} kanjiIds 
+ */
+const validateKanjiExistence = async (kanjiIds) => {
+  const uniqueKanjiIds = [...new Set(kanjiIds)];
+  const count = await prisma.kanji.count({
+    where: {
+      id: { in: uniqueKanjiIds }
+    }
+  });
+
+  if (count !== uniqueKanjiIds.length) {
+    throw new ResponseError(404, "Kanji tidak ditemukan");
+  }
+};
 
 /**
  * Membuat data kotoba baru (single atau batch) dan menghubungkannya dengan kanji.
@@ -10,6 +28,10 @@ const create = async (request) => {
 
   // Jika input adalah batch (array)
   if (Array.isArray(validatedRequest)) {
+    // Ambil semua kanjiIds unik dari seluruh batch untuk validasi sekaligus
+    const allKanjiIds = validatedRequest.flatMap(item => item.kanjiIds);
+    await validateKanjiExistence(allKanjiIds);
+
     const result = await prisma.$transaction(async (tx) => {
       let count = 0;
       for (const item of validatedRequest) {
@@ -33,7 +55,9 @@ const create = async (request) => {
     return result;
   }
 
-  // Jika input adalah single object
+  // Jika input adalah single object, validasi kanjiIds
+  await validateKanjiExistence(validatedRequest.kanjiIds);
+
   const result = await prisma.kotoba.create({
     data: {
       word: validatedRequest.word,
