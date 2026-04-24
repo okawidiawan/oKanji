@@ -61,13 +61,20 @@ frontend/
 
 ## 3. Konvensi Kode
 
+> **📖 Pedoman lengkap ada di [`GUIDELINES.md`](./GUIDELINES.md)** — wajib dibaca sebelum menambah fitur baru.
+
 - **Naming Convention**:
   - Variabel/Fungsi: `camelCase`
   - File/Folder: `kebab-case.js`
+  - Skema Zod: `[aksi][Domain]Validation` (misal: `registerUserValidation`)
   - Komitmen Git: _Conventional Commits_ (`Feature:`, `Fix:`, `Refactor:`, `chore:`).
+- **Arsitektur Layer**: `Router → Controller → Service → Prisma`. Validasi hanya di Service, query database hanya di Service.
 - **Error Handling**: Terpusat pada `error-middleware.js` menggunakan class `ResponseError`. Selalu gunakan `try...catch` di Controller dan teruskan ke `next(e)`.
-- **Validation**: Validasi input dilakukan di layer **Service** menggunakan Zod sebelum menjalankan logika database.
+- **Validation**: Validasi input dilakukan di layer **Service** menggunakan Zod sebelum menjalankan logika database. Pesan error Zod wajib **Bahasa Indonesia**.
+- **Response Format**: Sukses → `{ data: ... }`, Error → `{ error: "..." }`, List → `{ data: [...], paging: { page, total_item, total_page } }`.
+- **Paginasi**: Gunakan parameter `page` dan `size`. Query data dan count secara paralel dengan `Promise.all`.
 - **Security by Default**: Menggunakan pemisahan Router (`public-api.js` vs `api.js`) untuk memastikan endpoint terproteksi secara eksplisit.
+- **Data Isolation**: Setiap query data milik user **wajib** menyertakan `user.id` dalam klausa `where`.
 
 ---
 
@@ -88,14 +95,22 @@ frontend/
 - **Kanji Data**:
   - [x] `GET /api/kanjis`: Mengambil list kanji.
     - Query Params: `level` (N1-N5), `search` (karakter/makna), `page`, `size`.
-  - [ ] `GET /api/kanjis/:id`: Mengambil detail satu kanji (Planned).
-- **User Progress**:
+  - [ ] `GET /api/kanjis/:kanjiId`: Mengambil detail satu kanji + list kotoba terkait (Planned).
+- **Kotoba Data (Input Manual)**:
+  - [ ] `POST /api/kotoba`: Membuat kotoba baru (single/batch) + hubungkan ke kanji via `kanjiIds` (Planned).
+  - [ ] `PATCH /api/kotoba/:kotobaId`: Memperbarui data kotoba (Planned).
+  - [ ] `DELETE /api/kotoba/:kotobaId`: Menghapus kotoba (Planned).
+- **User Kanji Progress**:
   - [x] `POST /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Inisialisasi status progres).
   - [x] `PATCH /api/user-kanji/:kanjiId`: Memperbarui detail progres (difficulty, note, isMemorized).
   - [x] `DELETE /api/user-kanji/:kanjiId`: Menghapus progres kanji tertentu.
   - [x] `GET /api/user-kanji`: List progres hafalan pengguna.
     - Query Params: `isMemorized` (boolean), `page`, `size`.
-  - [x] `GET /api/user-kanji/:kanjiId`: Detail progres untuk kanji tertentu.
+  - [x] `GET /api/user-kanji/:kanjiId`: Detail progres kanji + kotoba dengan progress user (Planned: include kotoba).
+- **User Kotoba Progress**:
+  - [ ] `POST /api/user-kotoba/:kotobaId`: Tambah kotoba ke hafalan user (Planned).
+  - [ ] `PATCH /api/user-kotoba/:kotobaId`: Memperbarui progress hafalan kotoba (Planned).
+  - [ ] `DELETE /api/user-kotoba/:kotobaId`: Menghapus progres kotoba (Planned).
 
 ### Frontend Scaffolding
 
@@ -128,6 +143,9 @@ frontend/
 5. **Multi-field Search Logic**: Pencarian kanji mendukung parameter `search` yang akan difilter menggunakan operator `OR` pada kolom `character` dan `meaning` dengan metode `contains` (substring search) untuk fleksibilitas hasil.
 6. **Simplified Progress Tracking**: Penambahan progres kanji menggunakan endpoint `POST /api/user-kanji/:kanjiId` dapat dilakukan tanpa request body. Hal ini menyederhanakan interaksi Frontend (Quick Add). Status hafalan (`isMemorized`) kini dikelola secara manual oleh pengguna melalui endpoint `PATCH`.
 7. **Username Immutability**: Field `username` bersifat permanen dan di-set saat registrasi. Hanya `name`, `email`, dan `password` yang dapat diperbarui melalui `PATCH /api/users/current`. Registrasi memerlukan field `username` terpisah dari `name`.
+8. **Kotoba sebagai Sub-resource Kanji**: Kotoba (kosakata) tidak memiliki endpoint list/detail mandiri. Kotoba selalu ditampilkan dalam konteks kanji melalui `GET /api/kanjis/:kanjiId` (data kotoba) dan `GET /api/user-kanji/:kanjiId` (data kotoba + progress user). Relasi Kanji ↔ Kotoba bersifat many-to-many melalui junction table `KanjiKotoba`.
+9. **Batch Input Kotoba**: Endpoint `POST /api/kotoba` mendukung input single (object) maupun batch (array) untuk mempermudah penambahan data kosakata secara manual. Relasi ke kanji dikirim langsung via field `kanjiIds` dalam body request.
+10. **Single Session Login**: Setiap login menimpa token sebelumnya. User hanya bisa memiliki satu sesi aktif.
 
 ---
 
@@ -140,6 +158,8 @@ frontend/
   - `users-test.js`: Mencakup registrasi, login, update profil, dan logout.
   - `kanji-test.js`: Mencakup list kanji dan paginasi.
   - `user-kanji-test.js`: Mencakup progres hafalan user (upsert & list).
+  - `kotoba-test.js`: Mencakup CRUD kotoba dan batch input (Planned).
+  - `user-kotoba-test.js`: Mencakup progres hafalan kotoba user (Planned).
 - **Cara Menjalankan Test**:
   1. Masuk ke folder backend: `cd backend`
   2. Jalankan perintah: `bun run test` atau `bun test`
