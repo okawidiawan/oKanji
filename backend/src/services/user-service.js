@@ -64,6 +64,9 @@ const login = async (request) => {
   const filters = [];
   if (request.email) filters.push({ email: request.email });
   if (request.username) filters.push({ username: request.username });
+  if (filters.length === 0) {
+    throw new ResponseError(401, "Email/Username atau password salah");
+  }
 
   // Mencari user berdasarkan identifier yang disediakan
   const user = await prisma.user.findFirst({
