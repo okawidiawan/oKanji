@@ -8,7 +8,7 @@ const createKotobaValidation = z.object({
   reading: z.string().min(1, "Reading tidak boleh kosong").max(100, "Reading maksimal 100 karakter"),
   meaning: z.string().min(1, "Meaning tidak boleh kosong").max(500, "Meaning maksimal 500 karakter"),
   jlptLevel: z.string().regex(/^N[1-5]$/, "Format Level harus N1-N5").optional(),
-  kanjiIds: z.array(z.string().uuid("Format Kanji ID harus UUID")).min(1, "Minimal harus terhubung ke satu kanji")
+  kanjiIds: z.array(z.string().uuid("Format ID Kanji tidak valid")).min(1, "Minimal harus terhubung ke satu kanji")
 });
 
 /**
