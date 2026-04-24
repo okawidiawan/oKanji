@@ -3,6 +3,7 @@ import { authMiddleware } from '../middleware/auth-middleware.js';
 import * as userController from '../controller/user-controller.js';
 import * as kanjiController from '../controller/kanji-controller.js';
 import * as userKanjiController from '../controller/user-kanji-controller.js';
+import * as kotobaController from '../controller/kotoba-controller.js';
 
 const apiRouter = express.Router();
 
@@ -23,6 +24,11 @@ apiRouter.patch('/api/users/current', userController.update);
  * API Kanji: Mengambil data referensi kanji.
  */
 apiRouter.get('/api/kanjis', kanjiController.list);
+
+/**
+ * API Kotoba: Mengelola data kosakata.
+ */
+apiRouter.post('/api/kotoba', kotobaController.create);
 
 /**
  * API User Kanji: Mengelola progres belajar kanji tiap pengguna.

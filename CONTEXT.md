@@ -97,7 +97,7 @@ frontend/
     - Query Params: `level` (N1-N5), `search` (karakter/makna), `page`, `size`.
   - [ ] `GET /api/kanjis/:kanjiId`: Mengambil detail satu kanji + list kotoba terkait (Planned).
 - **Kotoba Data (Input Manual)**:
-  - [ ] `POST /api/kotoba`: Membuat kotoba baru (single/batch) + hubungkan ke kanji via `kanjiIds` (Planned).
+  - [x] `POST /api/kotoba`: Membuat kotoba baru (single/batch) + hubungkan ke kanji via `kanjiIds`.
   - [ ] `PATCH /api/kotoba/:kotobaId`: Memperbarui data kotoba (Planned).
   - [ ] `DELETE /api/kotoba/:kotobaId`: Menghapus kotoba (Planned).
 - **User Kanji Progress**:
@@ -158,7 +158,7 @@ frontend/
   - `users-test.js`: Mencakup registrasi, login, update profil, dan logout.
   - `kanji-test.js`: Mencakup list kanji dan paginasi.
   - `user-kanji-test.js`: Mencakup progres hafalan user (upsert & list).
-  - `kotoba-test.js`: Mencakup CRUD kotoba dan batch input (Planned).
+  - `kotoba-test.js`: Mencakup CRUD kotoba dan batch input.
   - `user-kotoba-test.js`: Mencakup progres hafalan kotoba user (Planned).
 - **Cara Menjalankan Test**:
   1. Masuk ke folder backend: `cd backend`
