@@ -1,39 +1,128 @@
-# Feature: Menambahkan Schema Prisma untuk Kotoba, KanjiKotoba, dan UserKotoba
+# Feature: Implementasi API POST Kotoba (Single & Batch)
 
 ## 1. Background & Tujuan
-Tujuan dari issue ini adalah menambahkan tiga model baru pada skema database Prisma, yaitu `Kotoba`, `KanjiKotoba`, dan `UserKotoba`. Penambahan skema ini merupakan pondasi awal untuk mendukung fitur manajemen kosakata (kotoba) dan pelacakan progres hafalan kosakata oleh masing-masing pengguna (user kotoba), sesuai dengan rencana pengembangan fitur yang ada pada dokumen arsitektur proyek.
+Saat ini, proyek oKanji membutuhkan fitur untuk menambahkan data *kotoba* (kosakata) ke dalam database dan menghubungkannya dengan *kanji* tertentu. Sesuai dengan spesifikasi pada `CONTEXT.md`, kotoba bertindak sebagai *sub-resource* dari kanji, sehingga penambahannya perlu memuat relasi ke kanji terkait (`kanjiIds`). Endpoint ini ditujukan untuk memfasilitasi input data kotoba secara manual, baik dalam format tunggal (*single*) maupun masal (*batch*), untuk mempercepat dan mempermudah proses pengisian data kosakata ke dalam aplikasi.
 
-## 2. Spesifikasi Teknis (Endpoint, Request, Response)
-Fitur ini memiliki batasan yang terfokus **hanya** pada pembaruan/penambahan model schema pada file Prisma, sehingga belum mencakup pembuatan controller atau router API baru.
+## 2. Spesifikasi Teknis
+- **Endpoint**: `POST /api/kotoba`
+- **Authentication**: Diperlukan (`Authorization: Bearer <token>`)
+- **Logic**: 
+  - Menerima input berupa satu objek kotoba (*single*) atau sebuah *array* berisi beberapa objek kotoba (*batch*).
+  - Menyimpan data kotoba ke dalam database (tabel `Kotoba`).
+  - Membuat relasi (junction) antara kotoba yang ditambahkan dengan kanji yang dikirimkan pada `kanjiIds` (tabel `KanjiKotoba`).
+  - Endpoint ini harus terhubung dengan `authMiddleware` dan menggunakan validasi Zod berbahasa Indonesia.
 
-- **Endpoint**: N/A (Perubahan hanya terjadi pada level Database Schema)
-- **Request**: N/A
-- **Response**: N/A
+### Contoh Request Body
+**Single Input**:
+```json
+{
+  "word": "食べる",
+  "reading": "たべる",
+  "meaning": "makan",
+  "jlptLevel": "N5",
+  "kanjiIds": ["kanji-uuid-食"]
+}
+```
 
-*Catatan: Implementasi endpoint API untuk Kotoba dan User Kotoba (seperti POST, PATCH, DELETE) akan dikerjakan pada issue/tahapan yang terpisah.*
+**Batch Input**:
+```json
+[
+  { 
+    "word": "食べる", 
+    "reading": "たべる", 
+    "meaning": "makan", 
+    "jlptLevel": "N5",
+    "kanjiIds": ["kanji-uuid-食"] 
+  },
+  { 
+    "word": "食事", 
+    "reading": "しょくじ", 
+    "meaning": "makan (formal)", 
+    "jlptLevel": "N5",
+    "kanjiIds": ["kanji-uuid-食"] 
+  }
+]
+```
 
-## 3. Step-by-step Implementasi per File
+### Contoh Response Success
+**Single Input**:
+```json
+{
+  "data": {
+    "id": "uuid-kotoba-baru",
+    "word": "食べる",
+    "reading": "たべる",
+    "meaning": "makan",
+    "jlptLevel": "N5",
+    "kanjiIds": ["kanji-uuid-食"]
+  }
+}
+```
 
-1. **`backend/prisma/schema.prisma`**
-   - Tambahkan model `Kotoba` dengan kolom `id`, `word`, `reading`, `meaning`, `jlptLevel`, `createdAt`, beserta relasi array ke `KanjiKotoba` dan `UserKotoba`.
-   - Set mapping tabel menggunakan `@@map("kotoba")`.
-   - Tambahkan model `KanjiKotoba` sebagai *junction table* (Many-to-Many) antara `Kanji` dan `Kotoba` dengan field `kanjiId` dan `kotobaId` sebagai *composite key* `@@id([kanjiId, kotobaId])`, dengan relasi `onDelete: Cascade`.
-   - Set mapping tabel menggunakan `@@map("kanji_kotoba")`.
-   - Tambahkan model `UserKotoba` untuk merekam progres hafalan tiap user terhadap suatu kotoba, dengan *unique constraint* `@@unique([userId, kotobaId])` serta relasi `onDelete: Cascade`.
-   - Set mapping tabel menggunakan `@@map("user_kotoba")`.
-   - Cek dan pastikan pada model `Kanji` yang sudah ada ditambahkan *back-relation* ke `KanjiKotoba` (`kanjiKotoba KanjiKotoba[]`).
-   - Cek dan pastikan pada model `User` yang sudah ada ditambahkan *back-relation* ke `UserKotoba` (`userKotoba UserKotoba[]`).
+**Batch Input**:
+```json
+{
+  "data": {
+    "count": 2
+  }
+}
+```
 
-2. **Terminal (Command Line Execution)**
-   - Jalankan perintah `npx prisma format` untuk merapikan format dan memvalidasi `schema.prisma`.
-   - Jalankan perintah `npx prisma db push` untuk melakukan sinkronisasi/push perubahan skema ke database MySQL.
-   - Jalankan perintah `npx prisma generate` untuk men-*generate* ulang Prisma Client agar model baru (`Kotoba`, dll) terdeteksi pada proyek backend.
+### Contoh Response Error
+**Unauthorized**:
+```json
+{
+  "error": "Unauthorized"
+}
+```
+**Validation Error** (Contoh):
+```json
+{
+  "error": "Word tidak boleh kosong"
+}
+```
+
+## 3. Step-by-Step Implementasi Per File
+
+1. **`backend/src/validation/kotoba-validation.js`**:
+   - Buat file Zod validation untuk data kotoba (`createKotobaValidation`).
+   - Sediakan skema untuk `word`, `reading`, `meaning` (string wajib), `jlptLevel` (string opsional), dan `kanjiIds` (array string yang berisi UUID dari kanji).
+   - Pastikan *error message* menggunakan Bahasa Indonesia sesuai `CONTEXT.md`.
+   - Buat juga skema untuk batch validation: `z.array(createKotobaValidation)`.
+
+2. **`backend/src/services/kotoba-service.js`**:
+   - Buat fungsi `create(request)` yang membedakan apakah input berupa array (batch) atau objek tunggal (single).
+   - Lakukan validasi input menggunakan `kotoba-validation.js`.
+   - Jika *batch*, gunakan iterasi atau `Prisma.transaction` untuk membuat kumpulan data kotoba dan menyambungkannya ke `kanjiIds` via junction `KanjiKotoba`. Return jumlah yang berhasil dibuat (`count`).
+   - Jika *single*, langsung jalankan `prisma.kotoba.create` beserta relasi `kanjiIds`. Return format data kotoba tunggal yang berhasil dibuat.
+
+3. **`backend/src/controller/kotoba-controller.js`**:
+   - Buat `create` method.
+   - Panggil `kotobaService.create(req.body)`.
+   - Format response sesuai dengan bentuk hasil service (mengembalikan objek `{ data: { ... } }` jika single, atau `{ data: { count: X } }` jika batch).
+   - Panggil `next(e)` menggunakan standard `error-middleware.js` apabila terjadi error.
+
+4. **`backend/src/routes/api.js`**:
+   - Daftarkan endpoint `POST /api/kotoba`.
+   - Endpoint harus diletakkan pada rute yang menggunakan auth (di dalam `apiRouter` yang mengimplementasikan `authMiddleware`).
+   - Arahkan ke `kotobaController.create`.
+
+5. **`backend/tests/kotoba-test.js`**:
+   - Tulis unit test untuk skenario *single input success*.
+   - Tulis unit test untuk skenario *batch input success*.
+   - Tulis unit test untuk validasi yang salah (memastikan validation error Zod berbahasa Indonesia).
+   - Tulis unit test saat request tanpa token otorisasi (mengembalikan Unauthorized error).
+   - Jalankan test `bun test` untuk memastikan semua fungsi berjalan lancar.
+
+6. **`CONTEXT.md`**:
+   - Perbarui bagian *Authorized API* (opsional setelah selesai implementasi) dari `[ ] POST /api/kotoba` menjadi `[x] POST /api/kotoba`.
 
 ## 4. Acceptance Criteria
-- [ ] Skema untuk model `Kotoba`, `KanjiKotoba`, dan `UserKotoba` telah tertulis dengan benar di dalam `backend/prisma/schema.prisma`.
-- [ ] Relasi *Cascade* dan properti tipe data pada ketiga model baru terdefinisi sesuai spesifikasi di atas.
-- [ ] *Back-relation* pada model `Kanji` dan `User` telah ditambahkan untuk menghindari error pada Prisma.
-- [ ] Command `npx prisma format` berhasil dijalankan tanpa error validasi skema.
-- [ ] Command `npx prisma db push` berhasil mengeksekusi migrasi skema tabel ke dalam database MySQL.
-- [ ] Command `npx prisma generate` berhasil memperbarui tipe dari Prisma Client.
-- [ ] Tidak ada file/kode di luar lingkup Prisma (seperti backend logic/frontend) yang diubah pada issue ini.
+- [ ] Endpoint `POST /api/kotoba` dapat menerima payload berbentuk objek (*single*) maupun array dari objek (*batch*).
+- [ ] Request memvalidasi input menggunakan Zod dan mengembalikan pesan error menggunakan Bahasa Indonesia apabila input tak valid.
+- [ ] Endpoint mereturn HTTP 200 dan data kotoba yang baru dibuat (beserta data `kanjiIds`) apabila input *single* berhasil.
+- [ ] Endpoint mereturn HTTP 200 dan `count` apabila input *batch* berhasil.
+- [ ] Endpoint mengembalikan HTTP 401 dan response `{ "error": "Unauthorized" }` jika request dilakukan tanpa token otorisasi yang valid.
+- [ ] Tersimpannya relasi antara kotoba dengan kanji terkait yang berhasil disimpan di *junction table* (`KanjiKotoba`).
+- [ ] Telah dibuat unit test komprehensif di dalam `kotoba-test.js` yang melingkupi skenario single, batch, validasi error, dan unauthorized request.
+- [ ] Menjalankan *test runner* (`bun test`) menunjukkan semua pengujian terkait API ini telah dinyatakan sukses/passed.
