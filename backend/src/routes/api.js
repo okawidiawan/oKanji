@@ -29,6 +29,7 @@ apiRouter.get('/api/kanjis', kanjiController.list);
  * API Kotoba: Mengelola data kosakata.
  */
 apiRouter.post('/api/kotoba', kotobaController.create);
+apiRouter.patch('/api/kotoba/:kotobaId', kotobaController.update);
 
 /**
  * API User Kanji: Mengelola progres belajar kanji tiap pengguna.

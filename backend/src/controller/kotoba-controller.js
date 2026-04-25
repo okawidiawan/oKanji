@@ -14,4 +14,20 @@ const create = async (req, res, next) => {
   }
 };
 
-export { create };
+/**
+ * Menangani request untuk memperbarui data kotoba.
+ */
+const update = async (req, res, next) => {
+  try {
+    const kotobaId = req.params.kotobaId;
+    const request = req.body;
+    const result = await kotobaService.update(kotobaId, request);
+    res.status(200).json({
+      data: result
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+export { create, update };

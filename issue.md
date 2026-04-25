@@ -1,128 +1,102 @@
-# Feature: Implementasi API POST Kotoba (Single & Batch)
+# Feature: Implementasi API Update Kotoba
 
 ## 1. Background & Tujuan
-Saat ini, proyek oKanji membutuhkan fitur untuk menambahkan data *kotoba* (kosakata) ke dalam database dan menghubungkannya dengan *kanji* tertentu. Sesuai dengan spesifikasi pada `CONTEXT.md`, kotoba bertindak sebagai *sub-resource* dari kanji, sehingga penambahannya perlu memuat relasi ke kanji terkait (`kanjiIds`). Endpoint ini ditujukan untuk memfasilitasi input data kotoba secara manual, baik dalam format tunggal (*single*) maupun masal (*batch*), untuk mempercepat dan mempermudah proses pengisian data kosakata ke dalam aplikasi.
+
+Saat ini aplikasi sudah memiliki endpoint untuk menambahkan data kosakata baru (`POST /api/kotoba`), namun pengguna belum dapat memodifikasi atau memperbaiki data tersebut apabila terjadi kesalahan input atau jika data perlu diperbarui. Oleh karena itu, diperlukan endpoint baru `PATCH /api/kotoba/:kotobaId` untuk memperbarui detail informasi data kotoba secara persial atau keseluruhan (seperti `word`, `reading`, `meaning`, dan `jlptLevel`).
 
 ## 2. Spesifikasi Teknis
-- **Endpoint**: `POST /api/kotoba`
-- **Authentication**: Diperlukan (`Authorization: Bearer <token>`)
-- **Logic**: 
-  - Menerima input berupa satu objek kotoba (*single*) atau sebuah *array* berisi beberapa objek kotoba (*batch*).
-  - Menyimpan data kotoba ke dalam database (tabel `Kotoba`).
-  - Membuat relasi (junction) antara kotoba yang ditambahkan dengan kanji yang dikirimkan pada `kanjiIds` (tabel `KanjiKotoba`).
-  - Endpoint ini harus terhubung dengan `authMiddleware` dan menggunakan validasi Zod berbahasa Indonesia.
 
-### Contoh Request Body
-**Single Input**:
+- **Endpoint**: `PATCH /api/kotoba/:kotobaId`
+- **Auth**: Membutuhkan token (`Authorization: Bearer <token>`)
+- **Logic**: Memodifikasi atau mengubah satu kotoba yang sudah diinput berdasarkan `kotobaId` yang dikirimkan lewat params.
+
+**Contoh Request Body (Opsional untuk setiap field):**
+
 ```json
 {
   "word": "食べる",
   "reading": "たべる",
-  "meaning": "makan",
-  "jlptLevel": "N5",
-  "kanjiIds": ["kanji-uuid-食"]
+  "meaning": "Eat",
+  "jlptLevel": "N5"
 }
 ```
 
-**Batch Input**:
-```json
-[
-  { 
-    "word": "食べる", 
-    "reading": "たべる", 
-    "meaning": "makan", 
-    "jlptLevel": "N5",
-    "kanjiIds": ["kanji-uuid-食"] 
-  },
-  { 
-    "word": "食事", 
-    "reading": "しょくじ", 
-    "meaning": "makan (formal)", 
-    "jlptLevel": "N5",
-    "kanjiIds": ["kanji-uuid-食"] 
-  }
-]
-```
+**Contoh Response Success (200 OK):**
 
-### Contoh Response Success
-**Single Input**:
 ```json
 {
   "data": {
-    "id": "uuid-kotoba-baru",
     "word": "食べる",
     "reading": "たべる",
-    "meaning": "makan",
-    "jlptLevel": "N5",
-    "kanjiIds": ["kanji-uuid-食"]
+    "meaning": "Eat",
+    "jlptLevel": "N5"
   }
 }
 ```
 
-**Batch Input**:
-```json
-{
-  "data": {
-    "count": 2
-  }
-}
-```
+**Contoh Response Error - Unauthorized (401 Unauthorized):**
 
-### Contoh Response Error
-**Unauthorized**:
 ```json
 {
   "error": "Unauthorized"
 }
 ```
-**Validation Error** (Contoh):
+
+**Contoh Response Error - Not Found (404 Not Found):**
+
 ```json
 {
-  "error": "Word tidak boleh kosong"
+  "error": "Kotoba tidak Ditemukan"
 }
 ```
 
-## 3. Step-by-Step Implementasi Per File
+**Contoh Response Error - Validation (400 Bad Request):**
 
-1. **`backend/src/validation/kotoba-validation.js`**:
-   - Buat file Zod validation untuk data kotoba (`createKotobaValidation`).
-   - Sediakan skema untuk `word`, `reading`, `meaning` (string wajib), `jlptLevel` (string opsional), dan `kanjiIds` (array string yang berisi UUID dari kanji).
-   - Pastikan *error message* menggunakan Bahasa Indonesia sesuai `CONTEXT.md`.
-   - Buat juga skema untuk batch validation: `z.array(createKotobaValidation)`.
+```json
+{
+  "error": "..." // Pesan error validasi Zod berbahasa Indonesia
+}
+```
 
-2. **`backend/src/services/kotoba-service.js`**:
-   - Buat fungsi `create(request)` yang membedakan apakah input berupa array (batch) atau objek tunggal (single).
-   - Lakukan validasi input menggunakan `kotoba-validation.js`.
-   - Jika *batch*, gunakan iterasi atau `Prisma.transaction` untuk membuat kumpulan data kotoba dan menyambungkannya ke `kanjiIds` via junction `KanjiKotoba`. Return jumlah yang berhasil dibuat (`count`).
-   - Jika *single*, langsung jalankan `prisma.kotoba.create` beserta relasi `kanjiIds`. Return format data kotoba tunggal yang berhasil dibuat.
+## 3. Step-by-step Implementasi per File
 
-3. **`backend/src/controller/kotoba-controller.js`**:
-   - Buat `create` method.
-   - Panggil `kotobaService.create(req.body)`.
-   - Format response sesuai dengan bentuk hasil service (mengembalikan objek `{ data: { ... } }` jika single, atau `{ data: { count: X } }` jika batch).
-   - Panggil `next(e)` menggunakan standard `error-middleware.js` apabila terjadi error.
+1. **`backend/src/validation/kotoba-validation.js`**
+   - Buat skema validasi Zod bernama `updateKotobaValidation`.
+   - Skema ini harus mendefinisikan properti opsional untuk `word`, `reading`, `meaning`, dan `jlptLevel`. Berikan pesan error dengan Bahasa Indonesia untuk setiap properti jika tidak sesuai aturan.
+   - Buat/gunakan skema untuk memvalidasi parameter `kotobaId` yang dikirim.
 
-4. **`backend/src/routes/api.js`**:
-   - Daftarkan endpoint `POST /api/kotoba`.
-   - Endpoint harus diletakkan pada rute yang menggunakan auth (di dalam `apiRouter` yang mengimplementasikan `authMiddleware`).
-   - Arahkan ke `kotobaController.create`.
+2. **`backend/src/services/kotoba-service.js`**
+   - Tambahkan method `update(user, kotobaId, request)`.
+   - Validasi `kotobaId` dan input `request` dengan skema dari validation yang telah dibuat.
+   - Lakukan pemeriksaan database via Prisma untuk memastikan kotoba yang ingin diubah benar-benar ada (`findUnique`). Jika tidak ditemukan, lemparkan error menggunakan `new ResponseError(404, "Kotoba tidak Ditemukan")`.
+   - Jalankan `prisma.kotoba.update` untuk memperbarui data kotoba sesuai data yang lolos validasi.
+   - Kembalikan response berupa data kotoba yang telah terupdate.
 
-5. **`backend/tests/kotoba-test.js`**:
-   - Tulis unit test untuk skenario *single input success*.
-   - Tulis unit test untuk skenario *batch input success*.
-   - Tulis unit test untuk validasi yang salah (memastikan validation error Zod berbahasa Indonesia).
-   - Tulis unit test saat request tanpa token otorisasi (mengembalikan Unauthorized error).
-   - Jalankan test `bun test` untuk memastikan semua fungsi berjalan lancar.
+3. **`backend/src/controller/kotoba-controller.js`**
+   - Buat method controller `update(req, res, next)`.
+   - Tangkap informasi user dari middleware auth (`req.user`), kemudian ekstrak parameter (`req.params.kotobaId`), dan ekstrak payload dari request body (`req.body`).
+   - Panggil `kotobaService.update(req.user, kotobaId, request)`.
+   - Buat balasan respons HTTP status `200` dengan format standar `{ data: result }`.
+   - Bungkus semua proses di dalam `try...catch` dan pastikan jika terjadi error akan dilempar ke fungsi `next(e)` untuk ditangani error handler terpusat.
 
-6. **`CONTEXT.md`**:
-   - Perbarui bagian *Authorized API* (opsional setelah selesai implementasi) dari `[ ] POST /api/kotoba` menjadi `[x] POST /api/kotoba`.
+4. **`backend/src/routes/api.js`**
+   - Daftarkan endpoint routing baru: `apiRouter.patch('/api/kotoba/:kotobaId', kotobaController.update)`.
+   - (Router ini otomatis akan terlindungi oleh `authMiddleware` karena berada pada domain router API).
+
+5. **`backend/tests/kotoba-test.js`**
+   - Buat unit testing baru untuk endpoint `PATCH /api/kotoba/:kotobaId`.
+   - Tambahkan _test case_ skenario sukses dimana data diupdate dengan benar (semua / sebagian field terisi).
+   - Tambahkan _test case_ skenario error:
+     - ID kotoba salah atau tidak ditemukan (memastikan status 404).
+     - Payload yang dikirim salah atau tidak lolos validasi format (memastikan status 400).
+     - Token tidak diikutsertakan atau tidak valid (memastikan status 401).
 
 ## 4. Acceptance Criteria
-- [ ] Endpoint `POST /api/kotoba` dapat menerima payload berbentuk objek (*single*) maupun array dari objek (*batch*).
-- [ ] Request memvalidasi input menggunakan Zod dan mengembalikan pesan error menggunakan Bahasa Indonesia apabila input tak valid.
-- [ ] Endpoint mereturn HTTP 200 dan data kotoba yang baru dibuat (beserta data `kanjiIds`) apabila input *single* berhasil.
-- [ ] Endpoint mereturn HTTP 200 dan `count` apabila input *batch* berhasil.
-- [ ] Endpoint mengembalikan HTTP 401 dan response `{ "error": "Unauthorized" }` jika request dilakukan tanpa token otorisasi yang valid.
-- [ ] Tersimpannya relasi antara kotoba dengan kanji terkait yang berhasil disimpan di *junction table* (`KanjiKotoba`).
-- [ ] Telah dibuat unit test komprehensif di dalam `kotoba-test.js` yang melingkupi skenario single, batch, validasi error, dan unauthorized request.
-- [ ] Menjalankan *test runner* (`bun test`) menunjukkan semua pengujian terkait API ini telah dinyatakan sukses/passed.
+
+- [ ] Fungsi validasi pada Zod ditambahkan, pesan peringatan yang diberikan menggunakan Bahasa Indonesia yang mudah dimengerti.
+- [ ] Database data kotoba berhasil dimodifikasi lewat layer Service dan ditangani dengan exception yang sesuai bila tidak ada data.
+- [ ] Pemanggilan API Endpoint `PATCH /api/kotoba/:kotobaId` berfungsi dan mematuhi spesifikasi response yang diberikan.
+- [ ] Endpoint merespons dengan standarisasi object `{ data: ... }` saat suskes, dan `{ error: ... }` saat gagal, selaras dengan `CONTEXT.md`.
+- [ ] Unit testing komprehensif selesai ditulis, dijalankan (`bun test`), dan terjamin 100% lulus / pass untuk endpoint PATCH tersebut.
+- [ ] Modifikasi dilarang mengubah hal lain diluar konteks update Kotoba.
+- [ ] Tidak ada dependency / library baru yang ditambahkan.
