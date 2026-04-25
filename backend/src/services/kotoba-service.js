@@ -1,5 +1,5 @@
 import { prisma } from "../application/database.js";
-import { postKotobaValidation, kanjiIdValidation } from "../validation/kotoba-validation.js";
+import { postKotobaValidation, kanjiIdValidation, updateKotobaValidation, getKotobaValidation } from "../validation/kotoba-validation.js";
 import { ResponseError } from "../error/response-error.js";
 
 /**
@@ -132,4 +132,61 @@ const create = async (request) => {
   };
 };
 
-export { create };
+/**
+ * Memperbarui data kotoba yang ada.
+ * @param {string} kotobaId
+ * @param {Object} request
+ */
+const update = async (kotobaId, request) => {
+  // Validasi kotobaId
+  const validatedId = getKotobaValidation.parse(kotobaId);
+
+  // Validasi request body
+  const validatedRequest = updateKotobaValidation.parse(request);
+
+  // Pastikan kotoba ada di database
+  const kotoba = await prisma.kotoba.findUnique({
+    where: {
+      id: validatedId,
+    },
+  });
+
+  if (!kotoba) {
+    throw new ResponseError(404, "Kotoba tidak Ditemukan");
+  }
+
+  // Jika word atau reading diubah, pastikan tidak duplikat dengan data lain
+  if (validatedRequest.word || validatedRequest.reading) {
+    const checkWord = validatedRequest.word ?? kotoba.word;
+    const checkReading = validatedRequest.reading ?? kotoba.reading;
+
+    const duplicateCount = await prisma.kotoba.count({
+      where: {
+        word: checkWord,
+        reading: checkReading,
+        id: { not: validatedId }, // Pastikan tidak mengecek data itu sendiri
+      },
+    });
+
+    if (duplicateCount > 0) {
+      throw new ResponseError(400, "Kosakata sudah terdaftar");
+    }
+  }
+
+  // Lakukan update
+  return prisma.kotoba.update({
+    where: {
+      id: validatedId,
+    },
+    data: validatedRequest,
+    select: {
+      id: true,
+      word: true,
+      reading: true,
+      meaning: true,
+      jlptLevel: true,
+    },
+  });
+};
+
+export { create, update };

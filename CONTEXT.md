@@ -98,7 +98,7 @@ frontend/
   - [ ] `GET /api/kanjis/:kanjiId`: Mengambil detail satu kanji + list kotoba terkait (Planned).
 - **Kotoba Data (Input Manual)**:
   - [x] `POST /api/kotoba`: Membuat kotoba baru (single/batch) + hubungkan ke kanji via `kanjiIds`.
-  - [ ] `PATCH /api/kotoba/:kotobaId`: Memperbarui data kotoba (Planned).
+  - [x] `PATCH /api/kotoba/:kotobaId`: Memperbarui data kotoba.
   - [ ] `DELETE /api/kotoba/:kotobaId`: Menghapus kotoba (Planned).
 - **User Kanji Progress**:
   - [x] `POST /api/user-kanji/:kanjiId`: Simpan/update progres hafalan (Inisialisasi status progres).
