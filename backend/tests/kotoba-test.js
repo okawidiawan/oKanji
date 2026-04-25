@@ -12,6 +12,7 @@ const prismaMock = {
         findUnique: mock(),
         create: mock(),
         update: mock(),
+        delete: mock(),
         count: mock()
     },
     $transaction: mock()
@@ -29,6 +30,7 @@ describe("Kotoba API", () => {
         prismaMock.kotoba.findUnique.mockReset();
         prismaMock.kotoba.create.mockReset();
         prismaMock.kotoba.update.mockReset();
+        prismaMock.kotoba.delete.mockReset();
         prismaMock.kotoba.count.mockReset();
         prismaMock.kanji.count.mockReset();
         prismaMock.$transaction.mockReset();
@@ -281,6 +283,61 @@ describe("Kotoba API", () => {
             expect(response.status).toBe(400);
             expect(response.body.error).toBe("Validation Error");
             expect(response.body.details[0].message).toBe("Setidaknya satu field harus diisi");
+        });
+    });
+
+    describe("DELETE /api/kotoba/:kotobaId", () => {
+        const kotobaId = "550e8400-e29b-41d4-a716-446655440000";
+
+        it("seharusnya berhasil menghapus kotoba", async () => {
+            mockAuthSuccess();
+
+            prismaMock.kotoba.findUnique.mockResolvedValue({
+                id: kotobaId,
+                word: "食べる"
+            });
+
+            prismaMock.kotoba.delete.mockResolvedValue({ id: kotobaId });
+
+            const response = await request(app)
+                .delete(`/api/kotoba/${kotobaId}`)
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(200);
+            expect(response.body.data).toBe("OK");
+            expect(prismaMock.kotoba.delete).toHaveBeenCalledWith({
+                where: { id: kotobaId }
+            });
+        });
+
+        it("seharusnya gagal (404) jika kotoba tidak ditemukan", async () => {
+            mockAuthSuccess();
+            prismaMock.kotoba.findUnique.mockResolvedValue(null);
+
+            const response = await request(app)
+                .delete(`/api/kotoba/${kotobaId}`)
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Kotoba tidak Ditemukan");
+        });
+
+        it("seharusnya gagal (400) jika format ID bukan UUID", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+                .delete("/api/kotoba/bukan-uuid")
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Validation Error");
+        });
+
+        it("seharusnya gagal (401) jika tidak ada token", async () => {
+            const response = await request(app)
+                .delete(`/api/kotoba/${kotobaId}`);
+
+            expect(response.status).toBe(401);
+            expect(response.body.error).toBe("Unauthorized");
         });
     });
 });

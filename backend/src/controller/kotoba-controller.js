@@ -30,4 +30,19 @@ const update = async (req, res, next) => {
   }
 };
 
-export { create, update };
+/**
+ * Menangani request untuk menghapus data kotoba.
+ */
+const remove = async (req, res, next) => {
+  try {
+    const kotobaId = req.params.kotobaId;
+    const result = await kotobaService.remove(kotobaId);
+    res.status(200).json({
+      data: result
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+export { create, update, remove };

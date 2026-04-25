@@ -1,102 +1,69 @@
-# Feature: Implementasi API Update Kotoba
+# Feature: Implementasi API Delete Kotoba
 
 ## 1. Background & Tujuan
-
-Saat ini aplikasi sudah memiliki endpoint untuk menambahkan data kosakata baru (`POST /api/kotoba`), namun pengguna belum dapat memodifikasi atau memperbaiki data tersebut apabila terjadi kesalahan input atau jika data perlu diperbarui. Oleh karena itu, diperlukan endpoint baru `PATCH /api/kotoba/:kotobaId` untuk memperbarui detail informasi data kotoba secara persial atau keseluruhan (seperti `word`, `reading`, `meaning`, dan `jlptLevel`).
+Saat ini aplikasi sudah memiliki endpoint untuk menambahkan (POST) dan memperbarui (PATCH) data kosakata (kotoba). Namun, belum ada endpoint untuk menghapus data kotoba apabila terdapat kesalahan input atau data tersebut sudah tidak relevan. Fitur ini bertujuan untuk melengkapi fitur pengelolaan (CRUD) kotoba dengan menambahkan fungsionalitas penghapusan data berdasarkan ID kotoba yang diberikan.
 
 ## 2. Spesifikasi Teknis
+- **Endpoint**: `DELETE /api/kotoba/:kotobaId`
+- **Auth**: Perlu token (`Authorization: Bearer <token>`)
+- **Logic**: Menghapus satu data kotoba berdasarkan parameter `kotobaId` yang dikirim melalui URL. Apabila kotoba dihapus, semua relasi kotoba tersebut dengan kanji (`kanji_kotoba`) juga akan otomatis terhapus karena aturan Cascade di level database.
 
-- **Endpoint**: `PATCH /api/kotoba/:kotobaId`
-- **Auth**: Membutuhkan token (`Authorization: Bearer <token>`)
-- **Logic**: Memodifikasi atau mengubah satu kotoba yang sudah diinput berdasarkan `kotobaId` yang dikirimkan lewat params.
-
-**Contoh Request Body (Opsional untuk setiap field):**
-
+### Format Response
+- **Response Success (200 OK)**:
 ```json
 {
-  "word": "食べる",
-  "reading": "たべる",
-  "meaning": "Eat",
-  "jlptLevel": "N5"
+  "data": "OK"
 }
 ```
 
-**Contoh Response Success (200 OK):**
-
+- **Response Error (404 Not Found)** - Jika kotoba tidak ditemukan:
 ```json
 {
-  "data": {
-    "word": "食べる",
-    "reading": "たべる",
-    "meaning": "Eat",
-    "jlptLevel": "N5"
-  }
+  "error": "Kotoba tidak ditemukan"
 }
 ```
 
-**Contoh Response Error - Unauthorized (401 Unauthorized):**
-
+- **Response Error (401 Unauthorized)** - Jika tidak ada token atau token tidak valid:
 ```json
 {
   "error": "Unauthorized"
 }
 ```
 
-**Contoh Response Error - Not Found (404 Not Found):**
+## 3. Step-by-step Implementasi Per File
 
-```json
-{
-  "error": "Kotoba tidak Ditemukan"
-}
-```
+**1. `backend/src/services/kotoba-service.js`**
+- Import atau pastikan `getKotobaValidation` dari file validasi sudah digunakan.
+- Buat fungsi `remove` dengan parameter `kotobaId`.
+- Lakukan validasi `kotobaId` menggunakan `getKotobaValidation.parse(kotobaId)`.
+- Cek keberadaan data kotoba di tabel `kotoba` menggunakan `prisma.kotoba.findUnique`.
+- Jika data tidak ada, lempar error dengan `throw new ResponseError(404, "Kotoba tidak Ditemukan")`.
+- Jika ada, lakukan penghapusan menggunakan `prisma.kotoba.delete` berdasarkan `id`.
+- Kembalikan string `"OK"`.
+- Tambahkan ekspor untuk fungsi `remove`.
 
-**Contoh Response Error - Validation (400 Bad Request):**
+**2. `backend/src/controller/kotoba-controller.js`**
+- Buat fungsi `remove` yang menerima parameter `req`, `res`, dan `next`.
+- Ambil nilai `kotobaId` dari `req.params.kotobaId`.
+- Panggil `kotobaService.remove(kotobaId)` di dalam blok `try`.
+- Kembalikan response JSON dengan HTTP status `200` berisi `{ data: result }` atau `{ data: "OK" }`.
+- Tangkap error di blok `catch (e)` dan teruskan ke middleware penanganan error dengan `next(e)`.
+- Tambahkan ekspor untuk fungsi `remove`.
 
-```json
-{
-  "error": "..." // Pesan error validasi Zod berbahasa Indonesia
-}
-```
+**3. `backend/src/routes/api.js`**
+- Tambahkan rute baru di bagian API Kotoba: `apiRouter.delete('/api/kotoba/:kotobaId', kotobaController.remove);`
 
-## 3. Step-by-step Implementasi per File
-
-1. **`backend/src/validation/kotoba-validation.js`**
-   - Buat skema validasi Zod bernama `updateKotobaValidation`.
-   - Skema ini harus mendefinisikan properti opsional untuk `word`, `reading`, `meaning`, dan `jlptLevel`. Berikan pesan error dengan Bahasa Indonesia untuk setiap properti jika tidak sesuai aturan.
-   - Buat/gunakan skema untuk memvalidasi parameter `kotobaId` yang dikirim.
-
-2. **`backend/src/services/kotoba-service.js`**
-   - Tambahkan method `update(user, kotobaId, request)`.
-   - Validasi `kotobaId` dan input `request` dengan skema dari validation yang telah dibuat.
-   - Lakukan pemeriksaan database via Prisma untuk memastikan kotoba yang ingin diubah benar-benar ada (`findUnique`). Jika tidak ditemukan, lemparkan error menggunakan `new ResponseError(404, "Kotoba tidak Ditemukan")`.
-   - Jalankan `prisma.kotoba.update` untuk memperbarui data kotoba sesuai data yang lolos validasi.
-   - Kembalikan response berupa data kotoba yang telah terupdate.
-
-3. **`backend/src/controller/kotoba-controller.js`**
-   - Buat method controller `update(req, res, next)`.
-   - Tangkap informasi user dari middleware auth (`req.user`), kemudian ekstrak parameter (`req.params.kotobaId`), dan ekstrak payload dari request body (`req.body`).
-   - Panggil `kotobaService.update(req.user, kotobaId, request)`.
-   - Buat balasan respons HTTP status `200` dengan format standar `{ data: result }`.
-   - Bungkus semua proses di dalam `try...catch` dan pastikan jika terjadi error akan dilempar ke fungsi `next(e)` untuk ditangani error handler terpusat.
-
-4. **`backend/src/routes/api.js`**
-   - Daftarkan endpoint routing baru: `apiRouter.patch('/api/kotoba/:kotobaId', kotobaController.update)`.
-   - (Router ini otomatis akan terlindungi oleh `authMiddleware` karena berada pada domain router API).
-
-5. **`backend/tests/kotoba-test.js`**
-   - Buat unit testing baru untuk endpoint `PATCH /api/kotoba/:kotobaId`.
-   - Tambahkan _test case_ skenario sukses dimana data diupdate dengan benar (semua / sebagian field terisi).
-   - Tambahkan _test case_ skenario error:
-     - ID kotoba salah atau tidak ditemukan (memastikan status 404).
-     - Payload yang dikirim salah atau tidak lolos validasi format (memastikan status 400).
-     - Token tidak diikutsertakan atau tidak valid (memastikan status 401).
+**4. `backend/tests/kotoba-test.js`**
+- Tambahkan unit test baru untuk skenario hapus (delete) kotoba:
+  - Skenario berhasil (`should can delete kotoba`).
+  - Skenario gagal karena format `kotobaId` tidak valid/bukan UUID (`should reject delete kotoba if id is invalid`).
+  - Skenario gagal karena kotoba tidak ditemukan (`should reject delete kotoba if kotoba is not found`).
+  - Skenario gagal karena tidak memiliki token atau token tidak valid (`should reject delete kotoba if token is invalid/unauthorized`).
 
 ## 4. Acceptance Criteria
-
-- [ ] Fungsi validasi pada Zod ditambahkan, pesan peringatan yang diberikan menggunakan Bahasa Indonesia yang mudah dimengerti.
-- [ ] Database data kotoba berhasil dimodifikasi lewat layer Service dan ditangani dengan exception yang sesuai bila tidak ada data.
-- [ ] Pemanggilan API Endpoint `PATCH /api/kotoba/:kotobaId` berfungsi dan mematuhi spesifikasi response yang diberikan.
-- [ ] Endpoint merespons dengan standarisasi object `{ data: ... }` saat suskes, dan `{ error: ... }` saat gagal, selaras dengan `CONTEXT.md`.
-- [ ] Unit testing komprehensif selesai ditulis, dijalankan (`bun test`), dan terjamin 100% lulus / pass untuk endpoint PATCH tersebut.
-- [ ] Modifikasi dilarang mengubah hal lain diluar konteks update Kotoba.
-- [ ] Tidak ada dependency / library baru yang ditambahkan.
+- [ ] Endpoint `DELETE /api/kotoba/:kotobaId` berhasil dibuat dan dapat diakses dengan auth token.
+- [ ] Validasi `kotobaId` (format UUID) sudah diimplementasikan dengan benar.
+- [ ] Data kotoba dan seluruh data relasinya (`kanji_kotoba`) berhasil terhapus dari database secara cascade jika ID sesuai.
+- [ ] Mengembalikan pesan error `404` yang sesuai jika data kotoba tidak ada di database.
+- [ ] Response sukses mengikuti format standar proyek: `{ "data": "OK" }`.
+- [ ] Seluruh unit test baru untuk fitur hapus ini berjalan dengan lancar tanpa ada test yang gagal.
