@@ -10,4 +10,6 @@ const getKanjiValidation = z.object({
   size: z.coerce.number().min(1, "Size minimal adalah 1").max(100, "Size maksimal adalah 100").default(20),
 });
 
-export { getKanjiValidation };
+const getKanjiByIdValidation = z.string().uuid("Format Kanji ID tidak valid");
+
+export { getKanjiValidation, getKanjiByIdValidation };

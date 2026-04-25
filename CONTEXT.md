@@ -95,7 +95,7 @@ frontend/
 - **Kanji Data**:
   - [x] `GET /api/kanjis`: Mengambil list kanji.
     - Query Params: `level` (N1-N5), `search` (karakter/makna), `page`, `size`.
-  - [ ] `GET /api/kanjis/:kanjiId`: Mengambil detail satu kanji + list kotoba terkait (Planned).
+  - [x] `GET /api/kanjis/:kanjiId`: Mengambil detail satu kanji + list kotoba terkait.
 - **Kotoba Data (Input Manual)**:
   - [x] `POST /api/kotoba`: Membuat kotoba baru (single/batch) + hubungkan ke kanji via `kanjiIds`.
   - [x] `PATCH /api/kotoba/:kotobaId`: Memperbarui data kotoba.

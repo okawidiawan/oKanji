@@ -22,4 +22,19 @@ const list = async (req, res, next) => {
   }
 };
 
-export { list };
+/**
+ * Mengambil detail satu kanji berdasarkan ID.
+ */
+const get = async (req, res, next) => {
+  try {
+    const kanjiId = req.params.kanjiId;
+    const result = await kanjiService.get(kanjiId);
+    res.status(200).json({
+      data: result
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+export { list, get };
