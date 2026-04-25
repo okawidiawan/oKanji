@@ -189,4 +189,34 @@ const update = async (kotobaId, request) => {
   });
 };
 
-export { create, update };
+/**
+ * Menghapus data kotoba berdasarkan ID.
+ * @param {string} kotobaId
+ * @returns {Promise<string>}
+ */
+const remove = async (kotobaId) => {
+  // Validasi format kotobaId
+  const validatedId = getKotobaValidation.parse(kotobaId);
+
+  // Pastikan kotoba ada di database sebelum dihapus
+  const kotoba = await prisma.kotoba.findUnique({
+    where: {
+      id: validatedId,
+    },
+  });
+
+  if (!kotoba) {
+    throw new ResponseError(404, "Kotoba tidak Ditemukan");
+  }
+
+  // Hapus data kotoba (relasi di kanji_kotoba akan terhapus otomatis via cascade)
+  await prisma.kotoba.delete({
+    where: {
+      id: validatedId,
+    },
+  });
+
+  return "OK";
+};
+
+export { create, update, remove };

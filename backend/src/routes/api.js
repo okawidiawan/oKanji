@@ -30,6 +30,7 @@ apiRouter.get('/api/kanjis', kanjiController.list);
  */
 apiRouter.post('/api/kotoba', kotobaController.create);
 apiRouter.patch('/api/kotoba/:kotobaId', kotobaController.update);
+apiRouter.delete('/api/kotoba/:kotobaId', kotobaController.remove);
 
 /**
  * API User Kanji: Mengelola progres belajar kanji tiap pengguna.
