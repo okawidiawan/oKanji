@@ -24,6 +24,7 @@ apiRouter.patch('/api/users/current', userController.update);
  * API Kanji: Mengambil data referensi kanji.
  */
 apiRouter.get('/api/kanjis', kanjiController.list);
+apiRouter.get('/api/kanjis/:kanjiId', kanjiController.get);
 
 /**
  * API Kotoba: Mengelola data kosakata.

@@ -1,5 +1,6 @@
 import { prisma } from '../application/database.js';
-import { getKanjiValidation } from '../validation/kanji-validation.js';
+import { getKanjiValidation, getKanjiByIdValidation } from '../validation/kanji-validation.js';
+import { ResponseError } from '../error/response-error.js';
 
 /**
  * Mengambil daftar data kanji.
@@ -48,4 +49,41 @@ const list = async (request) => {
   };
 };
 
-export { list };
+/**
+ * Mengambil detail satu kanji berdasarkan ID.
+ * Termasuk daftar kotoba yang terkait.
+ */
+const get = async (kanjiId) => {
+  // Validasi ID kanji
+  const validatedId = getKanjiByIdValidation.parse(kanjiId);
+
+  // Cari kanji di database beserta kotoba terkait melalui junction table
+  const kanji = await prisma.kanji.findUnique({
+    where: { id: validatedId },
+    include: {
+      kanjiKotoba: {
+        include: {
+          kotoba: true
+        }
+      }
+    }
+  });
+
+  // Lempar error jika kanji tidak ditemukan
+  if (!kanji) {
+    throw new ResponseError(404, "Kanji tidak ditemukan");
+  }
+
+  // Transformasi data: meratakan array kotoba dari junction table
+  const kotoba = kanji.kanjiKotoba.map((item) => item.kotoba);
+  
+  // Hapus properti junction table dari object response
+  delete kanji.kanjiKotoba;
+
+  return {
+    ...kanji,
+    kotoba
+  };
+};
+
+export { list, get };
