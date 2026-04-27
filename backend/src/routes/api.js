@@ -4,6 +4,7 @@ import * as userController from '../controller/user-controller.js';
 import * as kanjiController from '../controller/kanji-controller.js';
 import * as userKanjiController from '../controller/user-kanji-controller.js';
 import * as kotobaController from '../controller/kotoba-controller.js';
+import * as userKotobaController from '../controller/user-kotoba-controller.js';
 
 const apiRouter = express.Router();
 
@@ -41,5 +42,10 @@ apiRouter.patch('/api/user-kanji/:kanjiId', userKanjiController.update);
 apiRouter.get('/api/user-kanji', userKanjiController.list);
 apiRouter.get('/api/user-kanji/:kanjiId', userKanjiController.get);
 apiRouter.delete('/api/user-kanji/:kanjiId', userKanjiController.remove);
+
+/**
+ * API User Kotoba: Mengelola progres belajar kosakata tiap pengguna.
+ */
+apiRouter.post('/api/user-kotoba/:kotobaId', userKotobaController.add);
 
 export { apiRouter };
