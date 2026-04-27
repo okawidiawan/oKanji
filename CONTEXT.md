@@ -106,9 +106,9 @@ frontend/
   - [x] `DELETE /api/user-kanji/:kanjiId`: Menghapus progres kanji tertentu.
   - [x] `GET /api/user-kanji`: List progres hafalan pengguna.
     - Query Params: `isMemorized` (boolean), `page`, `size`.
-  - [x] `GET /api/user-kanji/:kanjiId`: Detail progres kanji + kotoba dengan progress user (Planned: include kotoba).
+  - [ ] `GET /api/user-kanji/:kanjiId`: Detail progres kanji + kotoba dengan progress user (Planned: include kotoba).
 - **User Kotoba Progress**:
-  - [ ] `POST /api/user-kotoba/:kotobaId`: Tambah kotoba ke hafalan user (Planned).
+  - [x] `POST /api/user-kotoba/:kotobaId`: Tambah kotoba ke hafalan user.
   - [ ] `PATCH /api/user-kotoba/:kotobaId`: Memperbarui progress hafalan kotoba (Planned).
   - [ ] `DELETE /api/user-kotoba/:kotobaId`: Menghapus progres kotoba (Planned).
 
@@ -159,7 +159,7 @@ frontend/
   - `kanji-test.js`: Mencakup list kanji dan paginasi.
   - `user-kanji-test.js`: Mencakup progres hafalan user (upsert & list).
   - `kotoba-test.js`: Mencakup CRUD kotoba dan batch input.
-  - `user-kotoba-test.js`: Mencakup progres hafalan kotoba user (Planned).
+  - `user-kotoba-test.js`: Mencakup progres hafalan kotoba user.
 - **Cara Menjalankan Test**:
   1. Masuk ke folder backend: `cd backend`
   2. Jalankan perintah: `bun run test` atau `bun test`
