@@ -125,7 +125,7 @@ const remove = async (user, kotobaId) => {
     }
 
     // Menghapus data progres dari database
-    await prisma.userKotoba.delete({
+    return prisma.userKotoba.delete({
         where: {
             userId_kotobaId: {
                 userId: user.id,
@@ -133,8 +133,6 @@ const remove = async (user, kotobaId) => {
             },
         },
     });
-
-    return "OK";
 };
 
 export {
