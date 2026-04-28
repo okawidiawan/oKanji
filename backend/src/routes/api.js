@@ -48,6 +48,7 @@ apiRouter.delete('/api/user-kanji/:kanjiId', userKanjiController.remove);
  */
 apiRouter.post('/api/user-kotoba/:kotobaId', userKotobaController.add);
 apiRouter.patch('/api/user-kotoba/:kotobaId', userKotobaController.update);
+apiRouter.delete('/api/user-kotoba/:kotobaId', userKotobaController.remove);
 
 
 export { apiRouter };

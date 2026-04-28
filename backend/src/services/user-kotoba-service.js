@@ -96,7 +96,47 @@ const update = async (user, request) => {
     });
 };
 
+/**
+ * Menghapus progres belajar kotoba milik user.
+ * Menjamin keamanan data (Data Isolation) melalui pengecekan kepemilikan.
+ */
+const remove = async (user, kotobaId) => {
+    // Validasi format ID kotoba
+    // Jika format tidak valid (bukan UUID), langsung lempar 404 agar seragam dengan data tidak ditemukan
+    const validationResult = getUserKotobaValidation.safeParse(kotobaId);
+    if (!validationResult.success) {
+        throw new ResponseError(404, "Data Progress Kotoba Tidak Ditemukan");
+    }
+    const validatedKotobaId = validationResult.data;
+
+    // Mencari data progres yang ada untuk memastikan kepemilikan (Data Isolation)
+    const existing = await prisma.userKotoba.findUnique({
+        where: {
+            userId_kotobaId: {
+                userId: user.id,
+                kotobaId: validatedKotobaId,
+            },
+        },
+    });
+
+    // Jika data tidak ditemukan, lempar 404
+    if (!existing) {
+        throw new ResponseError(404, "Data Progress Kotoba Tidak Ditemukan");
+    }
+
+    // Menghapus data progres dari database
+    return prisma.userKotoba.delete({
+        where: {
+            userId_kotobaId: {
+                userId: user.id,
+                kotobaId: validatedKotobaId,
+            },
+        },
+    });
+};
+
 export {
     add,
-    update
+    update,
+    remove
 };
