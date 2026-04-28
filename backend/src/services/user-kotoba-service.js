@@ -102,7 +102,12 @@ const update = async (user, request) => {
  */
 const remove = async (user, kotobaId) => {
     // Validasi format ID kotoba
-    const validatedKotobaId = getUserKotobaValidation.parse(kotobaId);
+    // Jika format tidak valid (bukan UUID), langsung lempar 404 agar seragam dengan data tidak ditemukan
+    const validationResult = getUserKotobaValidation.safeParse(kotobaId);
+    if (!validationResult.success) {
+        throw new ResponseError(404, "Data Progress Kotoba Tidak Ditemukan");
+    }
+    const validatedKotobaId = validationResult.data;
 
     // Mencari data progres yang ada untuk memastikan kepemilikan (Data Isolation)
     const existing = await prisma.userKotoba.findUnique({
@@ -120,7 +125,7 @@ const remove = async (user, kotobaId) => {
     }
 
     // Menghapus data progres dari database
-    return prisma.userKotoba.delete({
+    await prisma.userKotoba.delete({
         where: {
             userId_kotobaId: {
                 userId: user.id,
@@ -128,6 +133,8 @@ const remove = async (user, kotobaId) => {
             },
         },
     });
+
+    return "OK";
 };
 
 export {

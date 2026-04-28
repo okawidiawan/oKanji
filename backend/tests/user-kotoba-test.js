@@ -273,16 +273,15 @@ describe("User Kotoba API", () => {
             expect(response.body.error).toBe("Data Progress Kotoba Tidak Ditemukan");
         });
 
-        it("seharusnya gagal (400) jika kotobaId bukan UUID", async () => {
+        it("seharusnya gagal (404) jika kotobaId bukan UUID", async () => {
             mockAuthSuccess();
             
             const response = await request(app)
                 .delete("/api/user-kotoba/invalid-id")
                 .set("Authorization", "Bearer valid-token");
 
-            expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
-            expect(response.body.details[0].message).toBe("Format ID Kotoba tidak valid");
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Data Progress Kotoba Tidak Ditemukan");
         });
 
         it("seharusnya gagal (404) jika mencoba menghapus progres milik user lain (Data Isolation)", async () => {
