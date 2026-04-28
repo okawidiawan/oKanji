@@ -12,7 +12,9 @@ const prismaMock = {
         count: mock()
     },
     userKotoba: {
-        upsert: mock()
+        upsert: mock(),
+        findUnique: mock(),
+        update: mock()
     }
 };
 
@@ -29,6 +31,8 @@ describe("User Kotoba API", () => {
         prismaMock.user.findUnique.mockReset();
         prismaMock.kotoba.count.mockReset();
         prismaMock.userKotoba.upsert.mockReset();
+        prismaMock.userKotoba.findUnique.mockReset();
+        prismaMock.userKotoba.update.mockReset();
     });
 
     /**
@@ -120,6 +124,99 @@ describe("User Kotoba API", () => {
             expect(response.status).toBe(400);
             expect(response.body.error).toBe("Validation Error");
             expect(response.body.details[0].message).toBe("Format ID Kotoba tidak valid");
+        });
+    });
+
+    describe("PATCH /api/user-kotoba/:kotobaId (Update Progress)", () => {
+        it("seharusnya ditolak (401) jika tidak mengirim token", async () => {
+            const response = await request(app).patch("/api/user-kotoba/123e4567-e89b-12d3-a456-426614174001");
+            expect(response.status).toBe(401);
+            expect(response.body.error).toBe("Unauthorized");
+        });
+
+        it("seharusnya berhasil update data progres kotoba", async () => {
+            mockAuthSuccess();
+            const kotobaId = "123e4567-e89b-12d3-a456-426614174001";
+
+            // Mock progres yang ada
+            prismaMock.userKotoba.findUnique.mockResolvedValue({
+                id: "progress-1",
+                userId: 1,
+                kotobaId: kotobaId,
+                isMemorized: false,
+                difficulty: null,
+                note: null,
+                memorizedAt: null
+            });
+
+            // Mock hasil update
+            prismaMock.userKotoba.update.mockResolvedValue({
+                id: "progress-1",
+                userId: 1,
+                kotobaId: kotobaId,
+                isMemorized: true,
+                difficulty: 5,
+                note: "Test note",
+                reviewCount: 2,
+                memorizedAt: new Date()
+            });
+
+            const response = await request(app)
+                .patch(`/api/user-kotoba/${kotobaId}`)
+                .set("Authorization", "Bearer valid-token")
+                .send({
+                    isMemorized: true,
+                    difficulty: 5,
+                    note: "Test note"
+                });
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.isMemorized).toBe(true);
+            expect(response.body.data.difficulty).toBe(5);
+            expect(response.body.data.note).toBe("Test note");
+            expect(prismaMock.userKotoba.update).toHaveBeenCalled();
+        });
+
+        it("seharusnya gagal (404) jika data progres belum ada", async () => {
+            mockAuthSuccess();
+            const kotobaId = "123e4567-e89b-12d3-a456-426614174999";
+
+            prismaMock.userKotoba.findUnique.mockResolvedValue(null);
+
+            const response = await request(app)
+                .patch(`/api/user-kotoba/${kotobaId}`)
+                .set("Authorization", "Bearer valid-token")
+                .send({ isMemorized: true });
+
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Data Progress Kotoba Tidak Ditemukan");
+        });
+
+        it("seharusnya gagal (400) jika body request tidak valid", async () => {
+            mockAuthSuccess();
+            const kotobaId = "123e4567-e89b-12d3-a456-426614174001";
+
+            const response = await request(app)
+                .patch(`/api/user-kotoba/${kotobaId}`)
+                .set("Authorization", "Bearer valid-token")
+                .send({ difficulty: 10 }); // Difficulty max 5
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Validation Error");
+        });
+
+        it("seharusnya gagal (400) jika body request kosong", async () => {
+            mockAuthSuccess();
+            const kotobaId = "123e4567-e89b-12d3-a456-426614174001";
+
+            const response = await request(app)
+                .patch(`/api/user-kotoba/${kotobaId}`)
+                .set("Authorization", "Bearer valid-token")
+                .send({}); // Minimal satu field harus diisi
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Validation Error");
+            expect(response.body.details[0].message).toBe("Minimal satu field harus diisi (isMemorized, difficulty, atau note)");
         });
     });
 });
