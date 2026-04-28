@@ -109,7 +109,7 @@ frontend/
   - [x] `GET /api/user-kanji/:kanjiId`: Detail progres kanji + kotoba dengan progress user.
 - **User Kotoba Progress**:
   - [x] `POST /api/user-kotoba/:kotobaId`: Tambah kotoba ke hafalan user.
-  - [ ] `PATCH /api/user-kotoba/:kotobaId`: Memperbarui progress hafalan kotoba (Planned).
+  - [x] `PATCH /api/user-kotoba/:kotobaId`: Memperbarui progress hafalan kotoba.
   - [ ] `DELETE /api/user-kotoba/:kotobaId`: Menghapus progres kotoba (Planned).
 
 ### Frontend Scaffolding
@@ -209,7 +209,7 @@ frontend/
 ### Pada saat menjalankan task
 
 - Untuk AI Assistant yang melakukan coding :
-  Selalu buat dokumentasinya di baris program, jelaskan kegunaan function/method dengan bahasa Indonesia yang mudah dimengerti.
+  Selalu buat dokumentasinya di baris program, jelaskan kegunaan function/method dengan bahasa Indonesia yang mudah dimengerti, jangan gunakan bahasa yang terlalu teknis.
   Jika ada perubahan logic pada setiap function, lakukan juga perubahan dokumentasinya.
   Selalu buat unit test untuk setiap API atau fitur baru yang ditambahkan atau setelah kode diperbaiki.
   Selalu jalankan unit test yang sudah dibuat, dan harus lolos test dengan benar.

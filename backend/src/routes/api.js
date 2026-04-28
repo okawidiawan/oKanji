@@ -47,5 +47,7 @@ apiRouter.delete('/api/user-kanji/:kanjiId', userKanjiController.remove);
  * API User Kotoba: Mengelola progres belajar kosakata tiap pengguna.
  */
 apiRouter.post('/api/user-kotoba/:kotobaId', userKotobaController.add);
+apiRouter.patch('/api/user-kotoba/:kotobaId', userKotobaController.update);
+
 
 export { apiRouter };

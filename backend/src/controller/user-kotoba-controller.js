@@ -17,6 +17,27 @@ const add = async (req, res, next) => {
     }
 };
 
+/**
+ * Handler untuk memperbarui detail progres hafalan kotoba user.
+ */
+const update = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const request = {
+            ...req.body,
+            kotobaId: req.params.kotobaId
+        };
+
+        const result = await userKotobaService.update(user, request);
+        res.status(200).json({
+            data: result
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
 export {
-    add
+    add,
+    update
 };
