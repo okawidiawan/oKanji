@@ -110,7 +110,7 @@ frontend/
 - **User Kotoba Progress**:
   - [x] `POST /api/user-kotoba/:kotobaId`: Tambah kotoba ke hafalan user.
   - [x] `PATCH /api/user-kotoba/:kotobaId`: Memperbarui progress hafalan kotoba.
-  - [ ] `DELETE /api/user-kotoba/:kotobaId`: Menghapus progres kotoba (Planned).
+  - [x] `DELETE /api/user-kotoba/:kotobaId`: Menghapus progres kotoba.
 
 ### Frontend Scaffolding
 
