@@ -79,7 +79,32 @@ const get = async (user, kanjiId) => {
       },
     },
     include: {
-      kanji: true, // Join dengan tabel kanji
+      kanji: {
+        include: {
+          kanjiKotoba: {
+            where: {
+              kotoba: {
+                userKotoba: {
+                  some: {
+                    userId: user.id,
+                  },
+                },
+              },
+            },
+            include: {
+              kotoba: {
+                include: {
+                  userKotoba: {
+                    where: {
+                      userId: user.id,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -88,7 +113,19 @@ const get = async (user, kanjiId) => {
     throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
   }
 
-  return userKanji;
+  // Transformasi data agar sesuai dengan format yang diinginkan (flatten kanjiKotoba)
+  const result = {
+    ...userKanji,
+    kanji: {
+      ...userKanji.kanji,
+      kotoba: userKanji.kanji.kanjiKotoba.map((jk) => jk.kotoba),
+    },
+  };
+
+  // Hapus properti intermediate
+  delete result.kanji.kanjiKotoba;
+
+  return result;
 };
 
 /**

@@ -64,25 +64,94 @@ describe("User Kanji API", () => {
     });
 
     describe("GET /api/user-kanji/:kanjiId (Get Specific)", () => {
-        it("seharusnya berhasil mengambil data hafalan kanji secara spesifik", async () => {
+        it("seharusnya berhasil mengambil data hafalan kanji secara spesifik beserta progress kotoba", async () => {
             mockAuthSuccess();
-            const mockUserKanji = {
+            const kanjiId = "123e4567-e89b-12d3-a456-426614174001";
+            
+            // Mock data yang dikembalikan oleh Prisma (termasuk junction table)
+            const mockPrismaResult = {
                 userId: "user-1",
-                kanjiId: "123e4567-e89b-12d3-a456-426614174001",
+                kanjiId: kanjiId,
                 isMemorized: true,
-                kanji: { id: "123e4567-e89b-12d3-a456-426614174001", character: "日" }
+                kanji: { 
+                    id: kanjiId, 
+                    character: "日",
+                    kanjiKotoba: [
+                        {
+                            kotoba: {
+                                id: "kotoba-1",
+                                word: "日本",
+                                reading: "にほん",
+                                meaning: "Jepang",
+                                userKotoba: [
+                                    { isMemorized: true, userId: "user-1" }
+                                ]
+                            }
+                        }
+                    ]
+                }
             };
 
-            prismaMock.userKanji.findUnique.mockResolvedValue(mockUserKanji);
+            // Data yang diharapkan setelah transformasi (flattening kanjiKotoba)
+            const expectedResponse = {
+                userId: "user-1",
+                kanjiId: kanjiId,
+                isMemorized: true,
+                kanji: { 
+                    id: kanjiId, 
+                    character: "日",
+                    kotoba: [
+                        {
+                            id: "kotoba-1",
+                            word: "日本",
+                            reading: "にほん",
+                            meaning: "Jepang",
+                            userKotoba: [
+                                { isMemorized: true, userId: "user-1" }
+                            ]
+                        }
+                    ]
+                }
+            };
+
+            prismaMock.userKanji.findUnique.mockResolvedValue(mockPrismaResult);
 
             const response = await request(app)
-                .get("/api/user-kanji/123e4567-e89b-12d3-a456-426614174001")
+                .get(`/api/user-kanji/${kanjiId}`)
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(200);
-            expect(response.body.data).toEqual(mockUserKanji);
+            expect(response.body.data).toEqual(expectedResponse);
             expect(prismaMock.userKanji.findUnique).toHaveBeenCalledWith(expect.objectContaining({
-                where: { userId_kanjiId: { userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174001" } }
+                where: { userId_kanjiId: { userId: "user-1", kanjiId: kanjiId } },
+                include: {
+                    kanji: {
+                        include: {
+                            kanjiKotoba: {
+                                where: {
+                                    kotoba: {
+                                        userKotoba: {
+                                            some: {
+                                                userId: "user-1",
+                                            },
+                                        },
+                                    },
+                                },
+                                include: {
+                                    kotoba: {
+                                        include: {
+                                            userKotoba: {
+                                                where: {
+                                                    userId: "user-1",
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             }));
         });
 
