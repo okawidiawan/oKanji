@@ -37,7 +37,25 @@ const update = async (req, res, next) => {
     }
 };
 
+/**
+ * Handler untuk menghapus kotoba dari daftar hafalan user.
+ */
+const remove = async (req, res, next) => {
+    try {
+        const user = req.user;
+        const kotobaId = req.params.kotobaId;
+
+        await userKotobaService.remove(user, kotobaId);
+        res.status(200).json({
+            data: "OK"
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
 export {
     add,
-    update
+    update,
+    remove
 };

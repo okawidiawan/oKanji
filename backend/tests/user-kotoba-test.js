@@ -14,7 +14,8 @@ const prismaMock = {
     userKotoba: {
         upsert: mock(),
         findUnique: mock(),
-        update: mock()
+        update: mock(),
+        delete: mock()
     }
 };
 
@@ -33,6 +34,7 @@ describe("User Kotoba API", () => {
         prismaMock.userKotoba.upsert.mockReset();
         prismaMock.userKotoba.findUnique.mockReset();
         prismaMock.userKotoba.update.mockReset();
+        prismaMock.userKotoba.delete.mockReset();
     });
 
     /**
@@ -217,6 +219,85 @@ describe("User Kotoba API", () => {
             expect(response.status).toBe(400);
             expect(response.body.error).toBe("Validation Error");
             expect(response.body.details[0].message).toBe("Minimal satu field harus diisi (isMemorized, difficulty, atau note)");
+        });
+    });
+
+    describe("DELETE /api/user-kotoba/:kotobaId (Remove Progress)", () => {
+        it("seharusnya ditolak (401) jika tidak mengirim token", async () => {
+            const response = await request(app).delete("/api/user-kotoba/123e4567-e89b-12d3-a456-426614174001");
+            expect(response.status).toBe(401);
+            expect(response.body.error).toBe("Unauthorized");
+        });
+
+        it("seharusnya berhasil menghapus progres kotoba", async () => {
+            mockAuthSuccess();
+            const kotobaId = "123e4567-e89b-12d3-a456-426614174001";
+
+            // Mock data ada
+            prismaMock.userKotoba.findUnique.mockResolvedValue({
+                id: "progress-1",
+                userId: 1,
+                kotobaId: kotobaId
+            });
+
+            // Mock hasil delete
+            prismaMock.userKotoba.delete.mockResolvedValue({ id: "progress-1" });
+
+            const response = await request(app)
+                .delete(`/api/user-kotoba/${kotobaId}`)
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(200);
+            expect(response.body.data).toBe("OK");
+            expect(prismaMock.userKotoba.delete).toHaveBeenCalledWith({
+                where: {
+                    userId_kotobaId: {
+                        userId: 1,
+                        kotobaId: kotobaId
+                    }
+                }
+            });
+        });
+
+        it("seharusnya gagal (404) jika data progres tidak ditemukan", async () => {
+            mockAuthSuccess();
+            const kotobaId = "123e4567-e89b-12d3-a456-426614174999";
+
+            prismaMock.userKotoba.findUnique.mockResolvedValue(null);
+
+            const response = await request(app)
+                .delete(`/api/user-kotoba/${kotobaId}`)
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Data Progress Kotoba Tidak Ditemukan");
+        });
+
+        it("seharusnya gagal (400) jika kotobaId bukan UUID", async () => {
+            mockAuthSuccess();
+            
+            const response = await request(app)
+                .delete("/api/user-kotoba/invalid-id")
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Validation Error");
+            expect(response.body.details[0].message).toBe("Format ID Kotoba tidak valid");
+        });
+
+        it("seharusnya gagal (404) jika mencoba menghapus progres milik user lain (Data Isolation)", async () => {
+            mockAuthSuccess(); // User 1
+            const kotobaId = "123e4567-e89b-12d3-a456-426614174001";
+
+            // Mock findUnique mengembalikan null karena user id tidak match (Data Isolation logic di service)
+            prismaMock.userKotoba.findUnique.mockResolvedValue(null);
+
+            const response = await request(app)
+                .delete(`/api/user-kotoba/${kotobaId}`)
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Data Progress Kotoba Tidak Ditemukan");
         });
     });
 });
