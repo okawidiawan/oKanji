@@ -106,7 +106,7 @@ frontend/
   - [x] `DELETE /api/user-kanji/:kanjiId`: Menghapus progres kanji tertentu.
   - [x] `GET /api/user-kanji`: List progres hafalan pengguna.
     - Query Params: `isMemorized` (boolean), `page`, `size`.
-  - [ ] `GET /api/user-kanji/:kanjiId`: Detail progres kanji + kotoba dengan progress user (Planned: include kotoba).
+  - [x] `GET /api/user-kanji/:kanjiId`: Detail progres kanji + kotoba dengan progress user.
 - **User Kotoba Progress**:
   - [x] `POST /api/user-kotoba/:kotobaId`: Tambah kotoba ke hafalan user.
   - [ ] `PATCH /api/user-kotoba/:kotobaId`: Memperbarui progress hafalan kotoba (Planned).
