@@ -1,5 +1,6 @@
 import { ResponseError } from './response-error.js';
 import { ZodError } from 'zod';
+import { logger } from '../application/logger.js';
 
 /**
  * Middleware untuk menangani error secara terpusat.
@@ -14,8 +15,13 @@ const errorMiddleware = (err, req, res, next) => {
 
     const isProduction = process.env.NODE_ENV === 'production';
 
-    // Logging error ke sisi server untuk debugging
-    console.error('[SERVER ERROR]:', err);
+    // Logging error ke sisi server untuk debugging menggunakan Winston logger
+    logger.error('Server Error', {
+        message: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method,
+    });
 
     if (err instanceof ResponseError) {
         // Menangani error kustom aplikasi (misal: 400, 404, 401)

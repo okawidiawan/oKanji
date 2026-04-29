@@ -27,6 +27,7 @@
     "fast-xml-parser": "^5.5.12",
     "helmet": "^8.1.0",
     "uuid": "^13.0.0",
+    "winston": "^3.19.0",
     "zod": "^4.3.6"
   },
   "prisma": {
