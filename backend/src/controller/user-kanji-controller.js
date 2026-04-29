@@ -16,6 +16,7 @@ const add = async (req, res, next) => {
         }
 
         const result = await userKanjiService.add(user, request);
+        // Status 200 karena endpoint ini menggunakan upsert (create atau update)
         res.status(200).json({
             data: result
         });

@@ -86,9 +86,9 @@ const update = async (user, request) => {
             },
         },
         data: {
-            isMemorized: validatedRequest.isMemorized ?? existing.isMemorized,
-            difficulty: validatedRequest.difficulty ?? existing.difficulty,
-            note: validatedRequest.note ?? existing.note,
+            isMemorized: validatedRequest.isMemorized !== undefined ? validatedRequest.isMemorized : existing.isMemorized,
+            difficulty: validatedRequest.difficulty !== undefined ? validatedRequest.difficulty : existing.difficulty,
+            note: validatedRequest.note !== undefined ? validatedRequest.note : existing.note,
             reviewCount: { increment: 1 }, // Setiap interaksi dihitung sebagai review
             lastReviewed: now,
             memorizedAt: memorizedAt,

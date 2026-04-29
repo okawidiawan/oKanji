@@ -38,7 +38,7 @@ describe("User Kanji API", () => {
 
     const mockAuthSuccess = () => {
         prismaMock.user.findUnique.mockResolvedValue({
-            id: "user-1",
+            id: 1,
             username: "TestUser",
             email: "test@example.com",
             token: "valid-token"
@@ -70,7 +70,7 @@ describe("User Kanji API", () => {
             
             // Mock data yang dikembalikan oleh Prisma (termasuk junction table)
             const mockPrismaResult = {
-                userId: "user-1",
+                userId: 1,
                 kanjiId: kanjiId,
                 isMemorized: true,
                 kanji: { 
@@ -84,7 +84,7 @@ describe("User Kanji API", () => {
                                 reading: "にほん",
                                 meaning: "Jepang",
                                 userKotoba: [
-                                    { isMemorized: true, userId: "user-1" }
+                                    { isMemorized: true, userId: 1 }
                                 ]
                             }
                         }
@@ -94,7 +94,7 @@ describe("User Kanji API", () => {
 
             // Data yang diharapkan setelah transformasi (flattening kanjiKotoba)
             const expectedResponse = {
-                userId: "user-1",
+                userId: 1,
                 kanjiId: kanjiId,
                 isMemorized: true,
                 kanji: { 
@@ -107,7 +107,7 @@ describe("User Kanji API", () => {
                             reading: "にほん",
                             meaning: "Jepang",
                             userKotoba: [
-                                { isMemorized: true, userId: "user-1" }
+                                { isMemorized: true, userId: 1 }
                             ]
                         }
                     ]
@@ -123,7 +123,7 @@ describe("User Kanji API", () => {
             expect(response.status).toBe(200);
             expect(response.body.data).toEqual(expectedResponse);
             expect(prismaMock.userKanji.findUnique).toHaveBeenCalledWith(expect.objectContaining({
-                where: { userId_kanjiId: { userId: "user-1", kanjiId: kanjiId } },
+                where: { userId_kanjiId: { userId: 1, kanjiId: kanjiId } },
                 include: {
                     kanji: {
                         include: {
@@ -132,7 +132,7 @@ describe("User Kanji API", () => {
                                     kotoba: {
                                         userKotoba: {
                                             some: {
-                                                userId: "user-1",
+                                                userId: 1,
                                             },
                                         },
                                     },
@@ -142,7 +142,7 @@ describe("User Kanji API", () => {
                                         include: {
                                             userKotoba: {
                                                 where: {
-                                                    userId: "user-1",
+                                                    userId: 1,
                                                 },
                                             },
                                         },
@@ -175,7 +175,7 @@ describe("User Kanji API", () => {
             prismaMock.kanji.count.mockResolvedValue(1);
             prismaMock.userKanji.findUnique.mockResolvedValue(null);
             prismaMock.userKanji.upsert.mockResolvedValue({
-                userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174003", isMemorized: false
+                userId: 1, kanjiId: "123e4567-e89b-12d3-a456-426614174003", isMemorized: false
             });
 
             const response = await request(app)
@@ -186,7 +186,7 @@ describe("User Kanji API", () => {
             expect(response.status).toBe(200);
             expect(response.body.data.isMemorized).toBe(false);
             expect(prismaMock.userKanji.upsert).toHaveBeenCalledWith(expect.objectContaining({
-                 where: { userId_kanjiId: { userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174003" } },
+                 where: { userId_kanjiId: { userId: 1, kanjiId: "123e4567-e89b-12d3-a456-426614174003" } },
                  create: expect.objectContaining({ isMemorized: false })
             }));
         });
@@ -196,7 +196,7 @@ describe("User Kanji API", () => {
             prismaMock.kanji.count.mockResolvedValue(1);
             prismaMock.userKanji.findUnique.mockResolvedValue({ isMemorized: false }); 
             prismaMock.userKanji.upsert.mockResolvedValue({
-                userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174004", isMemorized: false
+                userId: 1, kanjiId: "123e4567-e89b-12d3-a456-426614174004", isMemorized: false
             });
 
             const response = await request(app)
@@ -219,9 +219,38 @@ describe("User Kanji API", () => {
             expect(response.status).toBe(404);
             expect(prismaMock.userKanji.upsert).not.toHaveBeenCalled();
         });
+
+        it("seharusnya gagal (400) jika kanjiId format invalid (non-UUID)", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+                .post("/api/user-kanji/invalid-id")
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe("Validation Error");
+        });
     });
 
     describe("GET /api/user-kanji (List)", () => {
+        it("seharusnya berhasil mengambil list dengan default pagination", async () => {
+            mockAuthSuccess();
+            prismaMock.userKanji.findMany.mockResolvedValue([]);
+            prismaMock.userKanji.count.mockResolvedValue(0);
+
+            const response = await request(app)
+                .get("/api/user-kanji")
+                .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(200);
+            expect(response.body.data).toEqual([]);
+            expect(response.body.paging.page).toBe(1);
+            expect(response.body.paging.total_item).toBe(0);
+            expect(prismaMock.userKanji.findMany).toHaveBeenCalledWith(expect.objectContaining({
+                take: 10,
+                skip: 0
+            }));
+        });
+
         it("seharusnya berhasil melihat list dengan filter isMemorized=true dan mengambil size tertentu", async () => {
             mockAuthSuccess();
             const mockListResult = [
@@ -241,11 +270,11 @@ describe("User Kanji API", () => {
 
             expect(prismaMock.userKanji.findMany).toHaveBeenCalledWith(expect.objectContaining({
                 take: 10,
-                where: { userId: "user-1", isMemorized: true }
+                where: { userId: 1, isMemorized: true }
             }));
             
             expect(prismaMock.userKanji.count).toHaveBeenCalledWith(expect.objectContaining({
-                where: { userId: "user-1", isMemorized: true }
+                where: { userId: 1, isMemorized: true }
             }));
         });
     });
@@ -254,7 +283,7 @@ describe("User Kanji API", () => {
         it("seharusnya berhasil menghapus data hafalan kanji", async () => {
             mockAuthSuccess();
             const mockUserKanji = {
-                userId: "user-1",
+                userId: 1,
                 kanjiId: "123e4567-e89b-12d3-a456-426614174001"
             };
 
@@ -268,7 +297,7 @@ describe("User Kanji API", () => {
             expect(response.status).toBe(200);
             expect(response.body.data).toBe("OK");
             expect(prismaMock.userKanji.delete).toHaveBeenCalledWith(expect.objectContaining({
-                where: { userId_kanjiId: { userId: "user-1", kanjiId: "123e4567-e89b-12d3-a456-426614174001" } }
+                where: { userId_kanjiId: { userId: 1, kanjiId: "123e4567-e89b-12d3-a456-426614174001" } }
             }));
         });
 
@@ -291,7 +320,7 @@ describe("User Kanji API", () => {
             mockAuthSuccess();
             const kanjiId = "123e4567-e89b-12d3-a456-426614174001";
             const existingData = {
-                userId: "user-1",
+                userId: 1,
                 kanjiId: kanjiId,
                 isMemorized: false,
                 difficulty: 1,
@@ -321,7 +350,7 @@ describe("User Kanji API", () => {
             expect(response.body.data.difficulty).toBe(3);
             expect(response.body.data.note).toBe("Baru");
             expect(prismaMock.userKanji.update).toHaveBeenCalledWith(expect.objectContaining({
-                where: { userId_kanjiId: { userId: "user-1", kanjiId: kanjiId } },
+                where: { userId_kanjiId: { userId: 1, kanjiId: kanjiId } },
                 data: expect.objectContaining({ isMemorized: true, difficulty: 3, note: "Baru" })
             }));
         });

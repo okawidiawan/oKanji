@@ -8,6 +8,7 @@ const add = async (req, res, next) => {
         const user = req.user;
         const kotobaId = req.params.kotobaId;
         const result = await userKotobaService.add(user, kotobaId);
+        // Status 200 karena endpoint ini menggunakan upsert (create atau update)
         res.status(200).json({
             data: result
         });

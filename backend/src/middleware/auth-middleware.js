@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { prisma } from "../application/database.js";
 
 /**
@@ -20,10 +21,13 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    // FIX-9: Hash token sebelum dicari di database
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
     // Mencari user berdasarkan token di database
     const user = await prisma.user.findUnique({
       where: {
-        token: token,
+        token: hashedToken,
       },
       select: {
         id: true,
