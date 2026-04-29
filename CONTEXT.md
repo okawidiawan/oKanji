@@ -15,6 +15,7 @@ Dokumen ini berfungsi sebagai ringkasan teknis dan arsitektur proyek oKanji untu
   - `cors`: Cross-Origin Resource Sharing.
   - `express-rate-limit`: Pembatasan jumlah request.
   - `bcrypt`: Hashing password.
+  - `crypto`: SHA-256 hashing untuk session token.
 - **Module System**: ES Modules (`import`/`export`).
 
 ### Frontend
@@ -146,6 +147,8 @@ frontend/
 8. **Kotoba sebagai Sub-resource Kanji**: Kotoba (kosakata) tidak memiliki endpoint list/detail mandiri. Kotoba selalu ditampilkan dalam konteks kanji melalui `GET /api/kanjis/:kanjiId` (data kotoba) dan `GET /api/user-kanji/:kanjiId` (data kotoba + progress user). Relasi Kanji ↔ Kotoba bersifat many-to-many melalui junction table `KanjiKotoba`.
 9. **Batch Input Kotoba**: Endpoint `POST /api/kotoba` mendukung input single (object) maupun batch (array) untuk mempermudah penambahan data kosakata secara manual. Relasi ke kanji dikirim langsung via field `kanjiIds` dalam body request.
 10. **Single Session Login**: Setiap login menimpa token sebelumnya. User hanya bisa memiliki satu sesi aktif.
+11. **Shared Kotoba Reference**: Model `Kotoba` berfungsi sebagai data referensi bersama. Endpoint `POST /api/kotoba` (dan rute terkait) bersifat shared oleh semua user yang login. Aturan *Data Isolation* (filter `user.id`) tidak berlaku untuk model ini, karena data kotoba tidak bersifat personal.
+12. **Token Hashing**: Session token (UUID) disimpan dalam bentuk hash SHA-256 di database untuk memitigasi risiko jika database bocor. Client tetap menerima token asli yang belum di-hash.
 
 ---
 
@@ -153,13 +156,13 @@ frontend/
 
 - **Runner & Framework**: Menggunakan **Bun Test** sebagai _test runner_ utama karena kecepatan eksekusinya.
 - **Mocking**: Menggunakan `prisma-mock` (atau manual mocking pada Prisma Client) untuk database agar pengujian bersifat independen dan cepat.
-- **Lokasi Test**: Semua file pengujian terletak di `backend/tests/` dengan format penamaan `*-test.js`.
+- **Lokasi Test**: Semua file pengujian terletak di `backend/tests/` dengan format penamaan `*.test.js`. (Mengikuti konvensi Bun Test).
 - **Daftar Test Utama**:
-  - `users-test.js`: Mencakup registrasi, login, update profil, dan logout.
-  - `kanji-test.js`: Mencakup list kanji dan paginasi.
-  - `user-kanji-test.js`: Mencakup progres hafalan user (upsert & list).
-  - `kotoba-test.js`: Mencakup CRUD kotoba dan batch input.
-  - `user-kotoba-test.js`: Mencakup progres hafalan kotoba user.
+  - `users.test.js`: Mencakup registrasi, login, update profil, dan logout.
+  - `kanji.test.js`: Mencakup list kanji dan paginasi.
+  - `user-kanji.test.js`: Mencakup progres hafalan user (upsert & list).
+  - `kotoba.test.js`: Mencakup CRUD kotoba dan batch input.
+  - `user-kotoba.test.js`: Mencakup progres hafalan kotoba user.
 - **Cara Menjalankan Test**:
   1. Masuk ke folder backend: `cd backend`
   2. Jalankan perintah: `bun run test` atau `bun test`
