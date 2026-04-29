@@ -16,6 +16,7 @@ Dokumen ini berfungsi sebagai ringkasan teknis dan arsitektur proyek oKanji untu
   - `express-rate-limit`: Pembatasan jumlah request.
   - `bcrypt`: Hashing password.
   - `crypto`: SHA-256 hashing untuk session token.
+- **Logging**: [Winston](https://github.com/winstonjs/winston) sebagai logging library terpusat.
 - **Module System**: ES Modules (`import`/`export`).
 
 ### Frontend
@@ -33,9 +34,10 @@ Dokumen ini berfungsi sebagai ringkasan teknis dan arsitektur proyek oKanji untu
 
 ```text
 backend/
+├── logs/                 # Output log file (hanya production, di-.gitignore)
 ├── prisma/               # Skema database & seeder
 ├── src/
-│   ├── application/      # Konfigurasi inti (Web & Database)
+│   ├── application/      # Konfigurasi inti (Web, Database, Logger)
 │   ├── controller/       # Handler request HTTP
 │   ├── services/         # Logika bisnis & interaksi database
 │   ├── routes/           # Definisi API Router
@@ -76,6 +78,7 @@ frontend/
 - **Paginasi**: Gunakan parameter `page` dan `size`. Query data dan count secara paralel dengan `Promise.all`.
 - **Security by Default**: Menggunakan pemisahan Router (`public-api.js` vs `api.js`) untuk memastikan endpoint terproteksi secara eksplisit.
 - **Data Isolation**: Setiap query data milik user **wajib** menyertakan `user.id` dalam klausa `where`.
+- **Logging**: Gunakan `logger` dari `src/application/logger.js` untuk semua logging. **Dilarang** menggunakan `console.log`, `console.error`, atau `console.warn` secara langsung di folder `src/`. Gunakan level yang tepat: `logger.error()` untuk error, `logger.warn()` untuk peringatan, `logger.info()` untuk informasi operasional, `logger.debug()` untuk data debugging.
 
 ---
 
@@ -132,6 +135,7 @@ frontend/
 - `backend/src/application/web.js`: Konfigurasi Express dan registrasi rute.
 - `backend/src/middleware/auth-middleware.js`: Menangani validasi token Bearer dan menyediakan data user di `req.user`.
 - `backend/src/error/error-middleware.js`: Menstandarisasi format error JSON (Zod, 404, 500, dll).
+- `backend/src/application/logger.js`: Konfigurasi Winston logger terpusat. Mendukung format berbeda untuk development (readable + warna) dan production (JSON + file output). Level dikontrol via env `LOG_LEVEL`.
 
 ---
 
@@ -149,6 +153,7 @@ frontend/
 10. **Single Session Login**: Setiap login menimpa token sebelumnya. User hanya bisa memiliki satu sesi aktif.
 11. **Shared Kotoba Reference**: Model `Kotoba` berfungsi sebagai data referensi bersama. Endpoint `POST /api/kotoba` (dan rute terkait) bersifat shared oleh semua user yang login. Aturan *Data Isolation* (filter `user.id`) tidak berlaku untuk model ini, karena data kotoba tidak bersifat personal.
 12. **Token Hashing**: Session token (UUID) disimpan dalam bentuk hash SHA-256 di database untuk memitigasi risiko jika database bocor. Client tetap menerima token asli yang belum di-hash.
+13. **Centralized Logging**: Semua logging menggunakan Winston melalui modul `src/application/logger.js`. Format log otomatis menyesuaikan environment: development menggunakan format readable berwarna di console, production menggunakan format JSON terstruktur dan menulis ke file (`logs/error.log` untuk error, `logs/combined.log` untuk semua level). Level logging dikontrol via environment variable `LOG_LEVEL` (default: `debug` di development, `info` di production).
 
 ---
 
@@ -175,7 +180,9 @@ frontend/
 
 1. Masuk ke folder backend: `cd backend`.
 2. Install dependensi: `npm install` atau `bun install`.
-3. Duplikat `.env.example` menjadi `.env` dan sesuaikan `DATABASE_URL` (MySQL).
+3. Duplikat `.env.example` menjadi `.env` dan sesuaikan:
+   - `DATABASE_URL` (MySQL)
+   - `LOG_LEVEL` (opsional, default: `debug` untuk development)
 4. Generate Prisma Client: `npx prisma generate`.
 5. Sinkronisasi database: `npx prisma db push`.
 6. Jalankan server dev: `bun run dev`.
