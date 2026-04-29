@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "bun test ./tests/users-test.js ./tests/kanji-test.js ./tests/user-kanji-test.js"
+    "test": "bun test ./tests/"
   },
   "private": true,
   "devDependencies": {

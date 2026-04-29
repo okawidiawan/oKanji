@@ -16,6 +16,10 @@ mock.module("../src/application/database.js", () => {
   return { prisma: prismaMock };
 });
 
+mock.module("uuid", () => {
+  return { v4: () => "dummy-token" };
+});
+
 import { app } from "../src/application/web.js";
 
 describe("User API", () => {
@@ -215,7 +219,7 @@ describe("User API", () => {
   describe("DELETE /api/users/logout", () => {
     it("seharusnya berhasil logout jika memberikan token yang valid", async () => {
       prismaMock.user.findUnique.mockResolvedValue({
-        id: "user-1",
+        id: 1,
         email: "test@example.com",
         token: "dummy-token",
       });
@@ -240,7 +244,7 @@ describe("User API", () => {
   describe("GET /api/users/current", () => {
     it("seharusnya berhasil mengambil data user yang sedang login", async () => {
       prismaMock.user.findUnique.mockResolvedValue({
-        id: "user-1",
+        id: 1,
         username: "okawidiawan",
         name: "Oka Widiawan",
         email: "oka@gmail.com",

@@ -18,20 +18,10 @@ const add = async (user, request) => {
     throw new ResponseError(404, "Kanji tidak ditemukan");
   }
 
-  // Mencari apakah sudah ada progres sebelumnya untuk pasangan user dan kanji ini
-  const existing = await prisma.userKanji.findUnique({
-    where: {
-      userId_kanjiId: {
-        userId: user.id,
-        kanjiId: validatedRequest.kanjiId,
-      },
-    },
-  });
-
   const now = new Date();
-
+  
   // Melakukan operasi upsert (update if exists, create if not)
-  // FIX-5: isMemorized di-hardcode ke false saat create dan tidak diubah saat update di endpoint add
+  // FIX-10: Hapus findUnique redundan, Prisma otomatis skip undefined
   return prisma.userKanji.upsert({
     where: {
       userId_kanjiId: {
@@ -40,8 +30,8 @@ const add = async (user, request) => {
       },
     },
     update: {
-      difficulty: validatedRequest.difficulty ?? existing?.difficulty,
-      note: validatedRequest.note ?? existing?.note,
+      difficulty: validatedRequest.difficulty,
+      note: validatedRequest.note,
       reviewCount: { increment: 1 },
       lastReviewed: now,
     },
@@ -114,18 +104,17 @@ const get = async (user, kanjiId) => {
   }
 
   // Transformasi data agar sesuai dengan format yang diinginkan (flatten kanjiKotoba)
-  const result = {
+  // FIX-4: Gunakan destructuring
+  const { kanjiKotoba, ...kanjiData } = userKanji.kanji;
+  const kotoba = kanjiKotoba.map((jk) => jk.kotoba);
+
+  return {
     ...userKanji,
     kanji: {
-      ...userKanji.kanji,
-      kotoba: userKanji.kanji.kanjiKotoba.map((jk) => jk.kotoba),
+      ...kanjiData,
+      kotoba,
     },
   };
-
-  // Hapus properti intermediate
-  delete result.kanji.kanjiKotoba;
-
-  return result;
 };
 
 /**
@@ -255,9 +244,9 @@ const update = async (user, request) => {
       },
     },
     data: {
-      isMemorized: validatedRequest.isMemorized ?? existing.isMemorized,
-      difficulty: validatedRequest.difficulty ?? existing.difficulty,
-      note: validatedRequest.note ?? existing.note,
+      isMemorized: validatedRequest.isMemorized !== undefined ? validatedRequest.isMemorized : existing.isMemorized,
+      difficulty: validatedRequest.difficulty !== undefined ? validatedRequest.difficulty : existing.difficulty,
+      note: validatedRequest.note !== undefined ? validatedRequest.note : existing.note,
       reviewCount: { increment: 1 }, // Setiap interaksi dihitung sebagai review
       lastReviewed: now,
       memorizedAt: memorizedAt,

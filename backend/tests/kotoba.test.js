@@ -105,6 +105,30 @@ describe("Kotoba API", () => {
             expect(prismaMock.kotoba.create).toHaveBeenCalledTimes(2);
         });
 
+        it("seharusnya gagal (400) jika ada item duplikat dalam satu batch", async () => {
+            mockAuthSuccess();
+            const payload = [
+                { word: "食べる", reading: "たべる", meaning: "makan", kanjiIds: ["550e8400-e29b-41d4-a716-446655440000"] },
+                { word: "食べる", reading: "たべる", meaning: "makan lagi", kanjiIds: ["550e8400-e29b-41d4-a716-446655440000"] }
+            ];
+
+            prismaMock.kanji.count.mockResolvedValue(1);
+            prismaMock.$transaction.mockImplementation(async (callback) => {
+                return await callback(prismaMock);
+            });
+            
+            // Mock findFirst/count to return 1 for the second item
+            prismaMock.kotoba.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
+
+            const response = await request(app)
+                .post("/api/kotoba")
+                .set("Authorization", "Bearer valid-token")
+                .send(payload);
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toContain("sudah terdaftar");
+        });
+
         it("seharusnya gagal (400) jika validasi input salah", async () => {
             mockAuthSuccess();
             const payload = {
@@ -226,7 +250,7 @@ describe("Kotoba API", () => {
                 .send({ word: "Test" });
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Kotoba tidak Ditemukan");
+            expect(response.body.error).toBe("Kotoba tidak ditemukan");
         });
 
         it("seharusnya gagal (400) jika format ID bukan UUID", async () => {
@@ -319,7 +343,7 @@ describe("Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Kotoba tidak Ditemukan");
+            expect(response.body.error).toBe("Kotoba tidak ditemukan");
         });
 
         it("seharusnya gagal (400) jika format ID bukan UUID", async () => {

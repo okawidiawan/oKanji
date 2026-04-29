@@ -28,7 +28,7 @@ describe("Kanji API", () => {
 
     const mockAuthSuccess = () => {
         prismaMock.user.findUnique.mockResolvedValue({
-            id: "user-1",
+            id: 1,
             username: "TestUser",
             email: "test@example.com",
             token: "valid-token"
@@ -240,9 +240,8 @@ describe("Kanji API", () => {
                 .get("/api/kanjis/invalid-id")
                 .set("Authorization", "Bearer valid-token");
 
-            expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
-            expect(response.body.details[0].message).toBe("Format Kanji ID tidak valid");
+            expect(response.status).toBe(404);
+            expect(response.body.error).toBe("Kanji tidak ditemukan");
         });
 
         it("seharusnya gagal (401) jika tidak menyertakan token", async () => {

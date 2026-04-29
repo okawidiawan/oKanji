@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { prisma } from "../application/database.js";
 import { ResponseError } from "../error/response-error.js";
@@ -88,16 +89,21 @@ const login = async (request) => {
 
   // Membuat token akses baru (UUID) untuk sesi user
   const token = uuid();
+  // FIX-9: Hash token sebelum disimpan ke database
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
   return prisma.user.update({
     where: {
       id: user.id,
     },
     data: {
-      token: token,
+      token: hashedToken,
     },
     select: {
-      token: true,
+      id: true, // we need id to return token correctly if we use select
     },
+  }).then(() => {
+    return { token }; // Kembalikan token ASLI (bukan hash) ke client
   });
 };
 
@@ -161,10 +167,10 @@ const update = async (email, request) => {
 
   // Menyiapkan data yang akan di-update (jika disediakan)
   const data = {};
-  if (userRequest.name) {
+  if (userRequest.name !== undefined) {
     data.name = userRequest.name;
   }
-  if (userRequest.email) {
+  if (userRequest.email !== undefined) {
     // Pastikan email baru belum digunakan oleh user lain
     const emailCount = await prisma.user.count({
       where: {
@@ -177,7 +183,7 @@ const update = async (email, request) => {
     }
     data.email = userRequest.email;
   }
-  if (userRequest.password) {
+  if (userRequest.password !== undefined) {
     data.password = await bcrypt.hash(userRequest.password, 10);
   }
 

@@ -55,7 +55,11 @@ const list = async (request) => {
  */
 const get = async (kanjiId) => {
   // Validasi ID kanji
-  const validatedId = getKanjiByIdValidation.parse(kanjiId);
+  const validationResult = getKanjiByIdValidation.safeParse(kanjiId);
+  if (!validationResult.success) {
+    throw new ResponseError(404, "Kanji tidak ditemukan");
+  }
+  const validatedId = validationResult.data;
 
   // Cari kanji di database beserta kotoba terkait melalui junction table
   const kanji = await prisma.kanji.findUnique({
@@ -74,14 +78,12 @@ const get = async (kanjiId) => {
     throw new ResponseError(404, "Kanji tidak ditemukan");
   }
 
-  // Transformasi data: meratakan array kotoba dari junction table
-  const kotoba = kanji.kanjiKotoba.map((item) => item.kotoba);
-  
-  // Hapus properti junction table dari object response
-  delete kanji.kanjiKotoba;
+  // Transformasi data: meratakan array kotoba dari junction table (FIX-4: gunakan destructuring)
+  const { kanjiKotoba, ...kanjiData } = kanji;
+  const kotoba = kanjiKotoba.map((item) => item.kotoba);
 
   return {
-    ...kanji,
+    ...kanjiData,
     kotoba
   };
 };

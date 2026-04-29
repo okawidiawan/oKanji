@@ -125,10 +125,11 @@ const create = async (request) => {
   });
 
   // Transform output agar sesuai dengan spesifikasi (kanjiIds sebagai array of strings)
+  // FIX-4: Gunakan destructuring
+  const { kanjiKotoba, ...kotobaData } = result;
   return {
-    ...result,
-    kanjiIds: result.kanjiKotoba.map((k) => k.kanjiId),
-    kanjiKotoba: undefined, // Hapus internal structure prisma
+    ...kotobaData,
+    kanjiIds: kanjiKotoba.map((k) => k.kanjiId),
   };
 };
 
@@ -152,7 +153,7 @@ const update = async (kotobaId, request) => {
   });
 
   if (!kotoba) {
-    throw new ResponseError(404, "Kotoba tidak Ditemukan");
+    throw new ResponseError(404, "Kotoba tidak ditemukan");
   }
 
   // Jika word atau reading diubah, pastikan tidak duplikat dengan data lain
@@ -206,7 +207,7 @@ const remove = async (kotobaId) => {
   });
 
   if (!kotoba) {
-    throw new ResponseError(404, "Kotoba tidak Ditemukan");
+    throw new ResponseError(404, "Kotoba tidak ditemukan");
   }
 
   // Hapus data kotoba (relasi di kanji_kotoba akan terhapus otomatis via cascade)
