@@ -53,11 +53,12 @@ frontend/
 │   ├── layouts/          # Page layouts (MainLayout, AuthLayout)
 │   ├── pages/            # Page components (auth/, kanji/, user/)
 │   ├── stores/           # Zustand stores (use-auth-store, dll)
+│   ├── services/         # API call functions per domain
 │   ├── router/           # React Router config
 │   ├── lib/              # Library config (api instance)
 │   ├── hooks/            # Custom React hooks
 │   └── main.jsx          # Entry point frontend
-└── tailwind.config.js    # Konfigurasi styling
+└── index.css             # Tailwind v4 config & global styles
 ```
 
 ---
@@ -69,6 +70,7 @@ frontend/
 - **Naming Convention**:
   - Variabel/Fungsi: `camelCase`
   - File/Folder: `kebab-case.js`
+  - Komponen React (Frontend): `PascalCase.jsx` (misal: `LoginPage.jsx`, `MainLayout.jsx`)
   - Skema Zod: `[aksi][Domain]Validation` (misal: `registerUserValidation`)
   - Komitmen Git: _Conventional Commits_ (`Feature:`, `Fix:`, `Refactor:`, `chore:`).
 - **Arsitektur Layer**: `Router → Controller → Service → Prisma`. Validasi hanya di Service, query database hanya di Service.
