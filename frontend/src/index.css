@@ -1,9 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #38bdf8;
+  --color-primary-dark: #0ea5e9;
+  --color-secondary: #818cf8;
+  --color-secondary-dark: #6366f1;
+  --color-background: #0f172a;
+  --color-background-lighter: #1e293b;
+}
 
 :root {
-  background-color: #0f172a;
+  background-color: var(--color-background);
   color: white;
 }
 
