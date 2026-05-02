@@ -10,14 +10,18 @@ import RegisterPage from "../pages/auth/RegisterPage";
 import KanjiListPage from "../pages/kanji/KanjiListPage";
 import KanjiDetailPage from "../pages/kanji/KanjiDetailPage";
 import ProfilePage from "../pages/user/ProfilePage";
+import LandingPage from "../pages/LandingPage";
 
 const router = createBrowserRouter([
   //  Contoh struktur routing:
   {
     path: "/",
+    element: <LandingPage />,
+  },
+  {
     element: <MainLayout />,
     children: [
-      { index: true, element: <KanjiListPage /> },
+      { path: "kanji", element: <KanjiListPage /> },
       { path: "kanji/:id", element: <KanjiDetailPage /> },
       { path: "profile", element: <ProfilePage /> },
     ],

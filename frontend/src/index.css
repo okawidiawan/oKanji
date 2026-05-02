@@ -1,21 +1,30 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary: #38bdf8;
-  --color-primary-dark: #0ea5e9;
-  --color-secondary: #818cf8;
-  --color-secondary-dark: #6366f1;
-  --color-background: #0f172a;
-  --color-background-lighter: #1e293b;
+:root {
+  /* Definisikan warna di sini agar IDE memunculkan palet warna */
+  --color-primary: #f34e4e;
+  --color-primary-dark: #882c2c;
+  --color-secondary: #ffffff;
+  --color-secondary-dark: #ffffff9f;
+  --color-background: #171717;
+  --color-background-lighter: #252424;
+
+  background-color: var(--color-background);
+  color: #ffffff;
 }
 
-:root {
-  background-color: var(--color-background);
-  color: white;
+@theme {
+  /* Mapping warna dari :root agar Tailwind tetap bisa membuat utility class-nya */
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-dark: var(--color-secondary-dark);
+  --color-background: var(--color-background);
+  --color-background-lighter: var(--color-background-lighter);
+  --font-sans: "Poppins", sans-serif;
 }
 
 body {
-  @apply bg-background text-white antialiased;
   margin: 0;
 }
 
