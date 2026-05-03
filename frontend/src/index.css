@@ -8,6 +8,7 @@
   --color-secondary-dark: #ffffff9f;
   --color-background: #171717;
   --color-background-lighter: #252424;
+  --color-my-border: #585858;
 
   background-color: var(--color-background);
   color: #ffffff;
@@ -21,6 +22,7 @@
   --color-secondary-dark: var(--color-secondary-dark);
   --color-background: var(--color-background);
   --color-background-lighter: var(--color-background-lighter);
+  --color-my-border: var(--color-my-border);
   --font-sans: "Poppins", sans-serif;
 }
 
