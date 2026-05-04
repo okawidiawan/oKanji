@@ -1,4 +1,5 @@
 import Cards from "../components/landing/Cards";
+import Features from "../components/landing/Features";
 import Hero from "../components/landing/Hero";
 import Navbar from "../components/landing/Navbar";
 
@@ -8,6 +9,7 @@ export default function LandingPage() {
       <Navbar />
       <Hero />
       <Cards />
+      <Features />
     </div>
   );
 }
