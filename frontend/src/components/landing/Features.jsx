@@ -2,6 +2,7 @@ import Feature from "./Feature";
 import searchPict from "../../assets/search.png";
 import trackPict from "../../assets/trackPict.png";
 import kotoba from "../../assets/kotoba.png";
+import SectionHeading from "../ui/SectionHeading";
 
 export default function Features() {
   const features = [
@@ -30,11 +31,9 @@ export default function Features() {
 
   return (
     <section className="flex flex-col justify-center items-center max-w-7xl mx-auto py-20" id="features">
-      <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-center">
-        Everything you need to actually <br />
-        <span className="text-primary">remember</span> kanji.
-      </h2>
-      {/* <div className="feature-cards flex flex-wrap gap-8 justify-center"> */}
+      <SectionHeading>
+        Everything you need to actually <br /> <span className="text-primary">remember</span> kanji.
+      </SectionHeading>
       {features.map((feature) => (
         <Feature key={feature.id} title={feature.title} description={feature.description} isReversed={feature.isReversed} image={feature.image} />
       ))}

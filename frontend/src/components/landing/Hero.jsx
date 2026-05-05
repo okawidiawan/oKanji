@@ -12,11 +12,11 @@ export default function Hero() {
             <span className="text-primary">.</span>
           </span>
         </h1>
-        <h2 className="text-lg tracking-normal text-secondary-dark mb-8 w-2xl animate-fade-up [animation-delay:1200ms] opacity-0 z-10 relative">
+        <h3 className="text-lg tracking-normal text-secondary-dark mb-8 w-2xl animate-fade-up [animation-delay:1200ms] opacity-0 z-10 relative">
           oKanji is your personal kanji companion, browse by JLPT level, track what you've memorized, and learn vocabulary in context.
           <br />
           No overwhelm, just progress, keep sticks.
-        </h2>
+        </h3>
         <NavLink className="text-lg font-semibold tracking-widest border border-primary text-primary hover:bg-primary hover:text-secondary px-6 py-3 rounded-full transition-all duration-500 hover:shadow-[0_0_20px_rgba(243,78,78,0.4)] animate-fade-up [animation-delay:1400ms] opacity-0 z-10 relative">
           Let's Begin
         </NavLink>

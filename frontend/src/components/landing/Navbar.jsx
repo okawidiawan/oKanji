@@ -17,7 +17,7 @@ export default function Navbar() {
               </ScrollLink>
             </li>
             <li className="">
-              <ScrollLink to="cards" className="text-secondary-dark cursor-pointer" activeClass="!text-secondary font-bold" spy={true} smooth={true} offset={-240} duration={500}>
+              <ScrollLink to="cards" className="text-secondary-dark cursor-pointer" activeClass="!text-secondary font-bold" spy={true} smooth={true} offset={-200} duration={500}>
                 Services
               </ScrollLink>
             </li>

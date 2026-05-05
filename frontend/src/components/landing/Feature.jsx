@@ -10,7 +10,7 @@ export default function Feature({ title, description, image, isReversed }) {
         <img
           src={image}
           alt={title}
-          className={`rounded-2xl w-full h-auto border border-my-border shadow-2xl transition-all duration-700 hover:shadow-primary/20 opacity-50 hover:opacity-100 
+          className={`rounded-2xl p-2 w-full h-auto border border-my-border shadow-2xl transition-all duration-700 hover:shadow-primary/20 opacity-50 hover:opacity-100
   ${
     isReversed
       ? "[transform:perspective(1000px)_rotateY(15deg)_rotateX(5deg)] hover:[transform:perspective(1000px)_rotateY(0deg)_rotateX(0deg)]"
