@@ -5,11 +5,11 @@ import Navbar from "../components/landing/Navbar";
 
 export default function LandingPage() {
   return (
-    <div className="h-[2000px]">
+    <main className="min-h-screen bg-background text-white">
       <Navbar />
       <Hero />
       <Cards />
       <Features />
-    </div>
+    </main>
   );
 }

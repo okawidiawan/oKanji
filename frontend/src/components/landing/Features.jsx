@@ -29,7 +29,7 @@ export default function Features() {
   ];
 
   return (
-    <div className="flex flex-col justify-center items-center max-w-7xl mx-auto py-20">
+    <section className="flex flex-col justify-center items-center max-w-7xl mx-auto py-20" id="features">
       <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-center">
         Everything you need to actually <br />
         <span className="text-primary">remember</span> kanji.
@@ -39,6 +39,6 @@ export default function Features() {
         <Feature key={feature.id} title={feature.title} description={feature.description} isReversed={feature.isReversed} image={feature.image} />
       ))}
       {/* </div> */}
-    </div>
+    </section>
   );
 }

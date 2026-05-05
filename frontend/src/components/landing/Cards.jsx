@@ -26,13 +26,13 @@ export default function Cards() {
     },
   ];
   return (
-    <div className="flex justify-center max-w-7xl mx-auto px-4 py-20 relative z-10 mb-80">
+    <section className="flex justify-center max-w-7xl mx-auto px-4 py-20 relative z-10 mb-80" id="cards">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-up [animation-delay:1400ms] opacity-0 relative z-10">
         {cards.map((card) => (
           <Card key={card.id} title={card.title} description={card.description} icon={card.icon} />
         ))}
       </div>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] bg-primary/30 rounded-full z-0 blur-[120px]"></div>
-    </div>
+    </section>
   );
 }

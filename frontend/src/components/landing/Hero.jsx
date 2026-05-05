@@ -2,7 +2,7 @@ import { NavLink } from "react-router";
 
 export default function Hero() {
   return (
-    <div className="hero flex justify-center items-center min-h-[70vh] relative">
+    <section className="flex justify-center items-center min-h-[70vh] relative" id="hero">
       <div className="w-7xl text-center flex flex-col items-center">
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-4 z-10 relative">
           <span className="text-primary animate-fade-up [animation-delay:600ms] opacity-0 inline-block">Finally</span>
@@ -21,6 +21,6 @@ export default function Hero() {
           Let's Begin
         </NavLink>
       </div>
-    </div>
+    </section>
   );
 }
