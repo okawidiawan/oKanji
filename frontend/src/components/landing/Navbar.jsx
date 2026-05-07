@@ -5,11 +5,11 @@ import logoImg from "../../assets/logo.png";
 export default function Navbar() {
   return (
     <header className="flex justify-center my-7 sticky top-7 z-50">
-      <nav className="navbar flex flex-row justify-around w-7xl h-16 items-center rounded-full border border-my-border bg-transparent backdrop-blur-md top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)]">
+      <nav className="navbar flex flex-row justify-around w-[95%] max-w-7xl px-4 md:px-8 h-16 items-center rounded-full border border-my-border bg-transparent backdrop-blur-md top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)]">
         <RouterLink to="/" className="logo">
           <img src={logoImg} alt="okanji Logo" className="h-10 w-auto" />
         </RouterLink>
-        <div className="nav">
+        <div className="nav hidden md:block">
           <ul className="flex gap-6">
             <li className="">
               <ScrollLink to="hero" className="text-secondary-dark cursor-pointer" activeClass="!text-secondary font-bold" spy={true} smooth={true} offset={-200} duration={500}>

@@ -2,9 +2,9 @@ import SectionHeading from "../ui/SectionHeading";
 
 export default function About() {
   return (
-    <section id="about" className="flex justify-center relative w-full h-[800px]">
+    <section id="about" className="flex justify-center relative w-full h-auto min-h-[800px] md:h-[800px] py-20">
       <div className="red-circle absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/4 w-[500px] h-[500px] bg-gradient-to-tr from-primary via-primary-dark to-background rounded-full">
-        <div className="glass flex flex-col justify-center items-center absolute left-1/2 -translate-x-1/2 translate-y-1/3 w-[1000px] h-[500px] bg-background/40 backdrop-blur-2xl gap-8">
+        <div className="glass flex flex-col justify-center items-center absolute left-1/2 -translate-x-1/2 translate-y-1/3 w-[700px] md:w-[1000px] h-[500px] bg-background/40 backdrop-blur-2xl gap-8 px-4">
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-secondary-dark/50 to-transparent"></div>
 
           <SectionHeading
