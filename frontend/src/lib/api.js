@@ -9,12 +9,15 @@ const api = axios.create({
 
 // Request interceptor untuk menambahkan token
 api.interceptors.request.use(
-  (config) => {
-    // TODO: Ambil token dari Zustand store atau localStorage
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+  async (config) => {
+    // Ambil token dari Zustand store
+    // Import di dalam untuk menghindari circular dependency
+    const { default: useAuthStore } = await import('../stores/use-auth-store');
+    const token = useAuthStore.getState().token;
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -25,8 +28,20 @@ api.interceptors.request.use(
 // Response interceptor untuk menangani error global
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // TODO: Tangani error 401 (logout otomatis) dll
+  async (error) => {
+    // Tangani error 401 (Unauthorized)
+    if (error.response?.status === 401) {
+      const { default: useAuthStore } = await import('../stores/use-auth-store');
+      
+      // Reset state auth
+      useAuthStore.getState().logout();
+      
+      // Redirect ke login jika bukan di halaman login/register
+      const isAuthPage = window.location.pathname.startsWith('/auth');
+      if (!isAuthPage) {
+        window.location.href = '/auth/login';
+      }
+    }
     return Promise.reject(error);
   }
 );

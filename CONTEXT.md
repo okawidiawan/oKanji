@@ -126,8 +126,8 @@ frontend/
 - [x] Konfigurasi Axios & Base API.
 - [x] Setup Tailwind CSS v4.
 - [x] Domain-driven Folder Structure.
-- [ ] Implementasi UI Komponen (Planned).
-- [ ] Integrasi Login/Register (Planned).
+- [/] Implementasi UI Komponen (In Progress).
+- [x] Integrasi Login/Register (Done).
 
 ---
 

@@ -1,10 +1,13 @@
 import { createBrowserRouter } from "react-router-dom";
 
-// Placeholder layouts
+// Layouts
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 
-// Placeholder pages
+// Components
+import ProtectedRoute from "../components/common/ProtectedRoute";
+
+// Pages
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import KanjiListPage from "../pages/kanji/KanjiListPage";
@@ -13,18 +16,9 @@ import ProfilePage from "../pages/user/ProfilePage";
 import LandingPage from "../pages/LandingPage";
 
 const router = createBrowserRouter([
-  //  Contoh struktur routing:
   {
     path: "/",
     element: <LandingPage />,
-  },
-  {
-    element: <MainLayout />,
-    children: [
-      { path: "kanji", element: <KanjiListPage /> },
-      { path: "kanji/:id", element: <KanjiDetailPage /> },
-      { path: "profile", element: <ProfilePage /> },
-    ],
   },
   {
     path: "/auth",
@@ -32,6 +26,20 @@ const router = createBrowserRouter([
     children: [
       { path: "login", element: <LoginPage /> },
       { path: "register", element: <RegisterPage /> },
+    ],
+  },
+  {
+    // Rute yang membutuhkan login
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <MainLayout />,
+        children: [
+          { path: "kanji", element: <KanjiListPage /> },
+          { path: "kanji/:id", element: <KanjiDetailPage /> },
+          { path: "profile", element: <ProfilePage /> },
+        ],
+      },
     ],
   },
 ]);
