@@ -54,7 +54,7 @@ export default function LoginPage() {
             required
             autoComplete="username"
             className="w-full bg-background-lighter border border-my-border rounded-lg px-4 py-2.5 text-white placeholder-secondary-dark/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-            placeholder="Masukkan username"
+            placeholder="Input Username"
             value={formData.username}
             onChange={handleChange}
           />
