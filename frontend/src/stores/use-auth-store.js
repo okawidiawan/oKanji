@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import authService from '../services/auth-service';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import authService from "../services/auth-service";
 
 const useAuthStore = create(
   persist(
@@ -30,7 +30,7 @@ const useAuthStore = create(
             isAuthenticated: true,
           });
         } catch (error) {
-          const message = error.response?.data?.error || 'Gagal masuk. Periksa kembali username dan password Anda.';
+          const message = error.response?.data?.error || "Failed to Login. Please Check Your Username and Password.";
           set({ error: message });
           throw error;
         } finally {
@@ -44,7 +44,7 @@ const useAuthStore = create(
           await authService.register(userData);
           // Jangan auto-login sesuai catatan arsitektur
         } catch (error) {
-          const message = error.response?.data?.error || 'Gagal mendaftar. Silakan coba lagi.';
+          const message = error.response?.data?.error || "Gagal mendaftar. Silakan coba lagi.";
           set({ error: message });
           throw error;
         } finally {
@@ -58,7 +58,7 @@ const useAuthStore = create(
           // Panggil API logout (opsional handle failure jika token sudah invalid)
           await authService.logout();
         } catch (error) {
-          console.error('Logout error:', error);
+          console.error("Logout error:", error);
         } finally {
           // Selalu reset state lokal
           set({
@@ -73,26 +73,26 @@ const useAuthStore = create(
 
       fetchCurrentUser: async () => {
         if (!get().token) return;
-        
+
         try {
           const result = await authService.getCurrentUser();
           set({ user: result.data, isAuthenticated: true });
         } catch (error) {
           // Jika token tidak valid (401), interceptor akan menangani logout
-          console.error('Fetch user error:', error);
+          console.error("Fetch user error:", error);
         }
       },
     }),
     {
-      name: 'okanji-auth-storage',
+      name: "okanji-auth-storage",
       // Hanya simpan data esensial di localStorage
       partialize: (state) => ({
         token: state.token,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );
 
 export default useAuthStore;
