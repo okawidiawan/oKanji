@@ -1,4 +1,4 @@
-import { NavLink } from "react-router";
+import { Link as RouterLink } from "react-router";
 
 export default function Hero() {
   return (
@@ -17,9 +17,12 @@ export default function Hero() {
           <br />
           No overwhelm, just progress, keep sticks.
         </h3>
-        <NavLink className="text-lg font-semibold tracking-widest border border-primary text-primary hover:bg-primary hover:text-secondary px-6 py-3 rounded-full transition-all duration-500 hover:shadow-[0_0_20px_rgba(243,78,78,0.4)] animate-fade-up [animation-delay:1400ms] opacity-0 z-10 relative">
+        <RouterLink
+          to="/auth/login"
+          className="text-lg font-semibold tracking-widest border border-primary text-primary hover:bg-primary hover:text-secondary px-6 py-3 rounded-full transition-all duration-500 hover:shadow-[0_0_20px_rgba(243,78,78,0.4)] animate-fade-up [animation-delay:1400ms] opacity-0 z-10 relative"
+        >
           Let's Begin
-        </NavLink>
+        </RouterLink>
       </div>
     </section>
   );

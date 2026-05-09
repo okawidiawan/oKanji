@@ -35,7 +35,7 @@ export default function Navbar() {
         </div>
         <div className="btn-cta flex items-center">
           <div className="red-dot bg-primary w-2 h-2 mx-5 rounded-full"></div>
-          <RouterLink>Get Started</RouterLink>
+          <RouterLink to="/auth/login">Get Started</RouterLink>
         </div>
       </nav>
     </header>

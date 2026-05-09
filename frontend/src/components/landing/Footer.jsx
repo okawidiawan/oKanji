@@ -35,7 +35,9 @@ export default function Footer() {
             <li className="border-l-2 border-primary pl-4 text-secondary hover:text-primary cursor-pointer transition-colors">Register</li>
           </ul>
           <div className="flex items-center justify-end">
-            <RouterLink className="text-lg bg-primary text-center px-6 py-3 rounded-md font-semibold transition-all duration-500 hover:bg-primary-dark ">Let's Begin</RouterLink>
+            <RouterLink to="/auth/login" className="text-lg bg-primary text-center px-6 py-3 rounded-md font-semibold transition-all duration-500 hover:bg-primary-dark ">
+              Let's Begin
+            </RouterLink>
           </div>
         </div>
         <hr className="border-t border-my-border w-full" />
