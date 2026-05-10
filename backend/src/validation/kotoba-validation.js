@@ -3,19 +3,19 @@ import { z } from 'zod';
 /**
  * Skema validasi untuk ID Kanji.
  */
-const kanjiIdValidation = z.string().uuid("Format ID Kanji tidak valid");
+const kanjiIdValidation = z.string().uuid("Invalid Kanji ID format");
 
 /**
  * Skema validasi untuk membuat kotoba tunggal.
  */
 const createKotobaValidation = z.object({
-  word: z.string().min(1, "Word tidak boleh kosong").max(100, "Word maksimal 100 karakter"),
-  reading: z.string().min(1, "Reading tidak boleh kosong").max(100, "Reading maksimal 100 karakter"),
-  meaning: z.string().min(1, "Meaning tidak boleh kosong").max(500, "Meaning maksimal 500 karakter"),
+  word: z.string().min(1, "Word cannot be empty").max(100, "Word must not exceed 100 characters"),
+  reading: z.string().min(1, "Reading cannot be empty").max(100, "Reading must not exceed 100 characters"),
+  meaning: z.string().min(1, "Meaning cannot be empty").max(500, "Meaning must not exceed 500 characters"),
   jlptLevel: z.enum(["N5", "N4", "N3", "N2", "N1"], {
-    errorMap: () => ({ message: "Level JLPT harus N1, N2, N3, N4, atau N5" }),
+    errorMap: () => ({ message: "JLPT Level must be N1, N2, N3, N4, or N5" }),
   }).optional(),
-  kanjiIds: z.array(kanjiIdValidation).min(1, "Minimal harus terhubung ke satu kanji")
+  kanjiIds: z.array(kanjiIdValidation).min(1, "At least one kanji reference is required")
 });
 
 /**
@@ -23,26 +23,26 @@ const createKotobaValidation = z.object({
  */
 const postKotobaValidation = z.union([
   createKotobaValidation,
-  z.array(createKotobaValidation).min(1, "Batch input minimal harus berisi satu data")
+  z.array(createKotobaValidation).min(1, "Batch input must contain at least one item")
 ]);
 
 /**
  * Skema validasi untuk mengambil satu kotoba (menggunakan kotobaId).
  */
-const getKotobaValidation = z.string().uuid("Format ID Kotoba tidak valid");
+const getKotobaValidation = z.string().uuid("Invalid Kotoba ID format");
 
 /**
  * Skema validasi untuk memperbarui data kotoba.
  */
 const updateKotobaValidation = z.object({
-  word: z.string().min(1, "Word tidak boleh kosong").max(100, "Word maksimal 100 karakter").optional(),
-  reading: z.string().min(1, "Reading tidak boleh kosong").max(100, "Reading maksimal 100 karakter").optional(),
-  meaning: z.string().min(1, "Meaning tidak boleh kosong").max(500, "Meaning maksimal 500 karakter").optional(),
+  word: z.string().min(1, "Word cannot be empty").max(100, "Word must not exceed 100 characters").optional(),
+  reading: z.string().min(1, "Reading cannot be empty").max(100, "Reading must not exceed 100 characters").optional(),
+  meaning: z.string().min(1, "Meaning cannot be empty").max(500, "Meaning must not exceed 500 characters").optional(),
   jlptLevel: z.enum(["N5", "N4", "N3", "N2", "N1"], {
-    errorMap: () => ({ message: "Level JLPT harus N1, N2, N3, N4, atau N5" }),
+    errorMap: () => ({ message: "JLPT Level must be N1, N2, N3, N4, or N5" }),
   }).optional(),
 }).refine((data) => Object.keys(data).length > 0, {
-  message: "Setidaknya satu field harus diisi",
+  message: "At least one field must be provided",
 });
 
 export { createKotobaValidation, postKotobaValidation, kanjiIdValidation, updateKotobaValidation, getKotobaValidation };

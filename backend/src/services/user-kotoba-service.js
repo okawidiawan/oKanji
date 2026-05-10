@@ -16,7 +16,7 @@ const add = async (user, kotobaId) => {
     });
 
     if (kotobaCount === 0) {
-        throw new ResponseError(404, "Kotoba tidak ditemukan");
+        throw new ResponseError(404, "Kotoba not found");
     }
 
     const now = new Date();
@@ -64,7 +64,7 @@ const update = async (user, request) => {
 
     // Jika data tidak ditemukan, lempar 404
     if (!existing) {
-        throw new ResponseError(404, "Data Progress Kotoba Tidak Ditemukan");
+        throw new ResponseError(404, "Kotoba Progress Data Not Found");
     }
 
     const now = new Date();
@@ -105,7 +105,7 @@ const remove = async (user, kotobaId) => {
     // Jika format tidak valid (bukan UUID), langsung lempar 404 agar seragam dengan data tidak ditemukan
     const validationResult = getUserKotobaValidation.safeParse(kotobaId);
     if (!validationResult.success) {
-        throw new ResponseError(404, "Data Progress Kotoba Tidak Ditemukan");
+        throw new ResponseError(404, "Kotoba Progress Data Not Found");
     }
     const validatedKotobaId = validationResult.data;
 
@@ -121,7 +121,7 @@ const remove = async (user, kotobaId) => {
 
     // Jika data tidak ditemukan, lempar 404
     if (!existing) {
-        throw new ResponseError(404, "Data Progress Kotoba Tidak Ditemukan");
+        throw new ResponseError(404, "Kotoba Progress Data Not Found");
     }
 
     // Menghapus data progres dari database

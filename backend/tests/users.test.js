@@ -65,7 +65,7 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Email sudah terdaftar");
+      expect(response.body.error).toBe("Email is already registered");
     });
 
     it("seharusnya menolak registrasi jika username sudah terdaftar", async () => {
@@ -83,7 +83,7 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Username sudah digunakan");
+      expect(response.body.error).toBe("Username is already taken");
     });
 
     it("seharusnya menolak registrasi jika username mengandung karakter spesial", async () => {
@@ -95,7 +95,7 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Validation Error");
+      expect(response.body.error).toBe("Username can only contain letters, numbers, and underscores");
     });
 
     it("seharusnya menolak registrasi jika field tidak valid", async () => {
@@ -190,7 +190,7 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(401);
-      expect(response.body.error).toBe("Email/Username atau password salah");
+      expect(response.body.error).toBe("Incorrect Email/Username or password");
     });
 
     it("seharusnya gagal login jika user tidak ditemukan", async () => {
@@ -202,7 +202,7 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(401);
-      expect(response.body.error).toBe("Email/Username atau password salah");
+      expect(response.body.error).toBe("Incorrect Email/Username or password");
     });
 
     it("seharusnya gagal jika tidak mengirimkan email maupun username", async () => {
@@ -211,8 +211,8 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Validation Error");
-      expect(response.body.details[0].message).toBe("Minimal salah satu dari username atau email harus diisi");
+      expect(response.body.error).toBe("At least one of username or email must be provided");
+      expect(response.body.details[0].message).toBe("At least one of username or email must be provided");
     });
   });
 
@@ -326,7 +326,7 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Email sudah digunakan");
+      expect(response.body.error).toBe("Email is already in use");
     });
 
     it("seharusnya berhasil memperbarui password", async () => {

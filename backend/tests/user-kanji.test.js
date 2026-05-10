@@ -164,7 +164,7 @@ describe("User Kanji API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBeDefined();
+            expect(response.body.error).toBe("Kanji Progress Data Not Found");
         });
     });
 
@@ -227,7 +227,7 @@ describe("User Kanji API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
+            expect(response.body.error).toBe("Invalid Kanji ID format");
         });
     });
 
@@ -310,7 +310,7 @@ describe("User Kanji API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Data Progress Kanji Tidak Ditemukan");
+            expect(response.body.error).toBe("Kanji Progress Data Not Found");
             expect(prismaMock.userKanji.delete).not.toHaveBeenCalled();
         });
     });
@@ -368,7 +368,7 @@ describe("User Kanji API", () => {
                 .send({ difficulty: 5 });
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Data Progress Kanji Tidak Ditemukan");
+            expect(response.body.error).toBe("Kanji Progress Data Not Found");
         });
 
         it("seharusnya gagal (400) jika body kosong (minimal satu field diperlukan)", async () => {
@@ -379,7 +379,7 @@ describe("User Kanji API", () => {
                 .send({});
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBeDefined();
+            expect(response.body.error).toBe("At least one field must be provided (isMemorized, difficulty, or note)");
         });
 
         it("seharusnya gagal (400) jika tingkat kesulitan tidak valid (misal: 6)", async () => {
@@ -390,7 +390,7 @@ describe("User Kanji API", () => {
                 .send({ difficulty: 6 });
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
+            expect(response.body.error).toBe("Difficulty must not exceed 5");
         });
 
         it("seharusnya gagal (404) jika mengambil data dengan kanjiId format invalid (non-UUID)", async () => {
@@ -400,7 +400,7 @@ describe("User Kanji API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Data Progress Kanji Tidak Ditemukan");
+            expect(response.body.error).toBe("Kanji Progress Data Not Found");
         });
 
         it("seharusnya reset memorizedAt menjadi null jika isMemorized berubah dari true ke false", async () => {

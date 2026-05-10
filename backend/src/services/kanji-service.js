@@ -57,7 +57,7 @@ const get = async (kanjiId) => {
   // Validasi ID kanji
   const validationResult = getKanjiByIdValidation.safeParse(kanjiId);
   if (!validationResult.success) {
-    throw new ResponseError(404, "Kanji tidak ditemukan");
+    throw new ResponseError(404, "Kanji not found");
   }
   const validatedId = validationResult.data;
 
@@ -75,7 +75,7 @@ const get = async (kanjiId) => {
 
   // Lempar error jika kanji tidak ditemukan
   if (!kanji) {
-    throw new ResponseError(404, "Kanji tidak ditemukan");
+    throw new ResponseError(404, "Kanji not found");
   }
 
   // Transformasi data: meratakan array kotoba dari junction table (FIX-4: gunakan destructuring)

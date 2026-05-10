@@ -231,7 +231,7 @@ describe("Kanji API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Kanji tidak ditemukan");
+            expect(response.body.error).toBe("Kanji not found");
         });
 
         it("seharusnya gagal (400) jika format kanjiId bukan UUID", async () => {
@@ -241,7 +241,7 @@ describe("Kanji API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Kanji tidak ditemukan");
+            expect(response.body.error).toBe("Kanji not found");
         });
 
         it("seharusnya gagal (401) jika tidak menyertakan token", async () => {

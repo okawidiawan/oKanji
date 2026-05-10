@@ -6,12 +6,12 @@ import { z } from "zod";
 const registerUserValidation = z.object({
   username: z
     .string()
-    .min(3, "Username minimal 3 karakter")
-    .max(50, "Username maksimal 50 karakter")
-    .regex(/^[a-zA-Z0-9_]+$/, "Username hanya boleh mengandung huruf, angka, dan underscore"),
-  name: z.string().min(1, "Nama tidak boleh kosong").max(255, "Nama maksimal 255 karakter"),
-  email: z.string().email("Format email tidak valid").max(255, "Email maksimal 255 karakter"),
-  password: z.string().min(8, "Password minimal 8 karakter").max(255, "Password maksimal 255 karakter"),
+    .min(3, "Username must be at least 3 characters")
+    .max(50, "Username must not exceed 50 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
+  name: z.string().min(1, "Name cannot be empty").max(255, "Name must not exceed 255 characters"),
+  email: z.string().email("Invalid email format").max(255, "Email must not exceed 255 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(255, "Password must not exceed 255 characters"),
 });
 
 /**
@@ -19,12 +19,12 @@ const registerUserValidation = z.object({
  */
 const loginUserValidation = z
   .object({
-    username: z.string().min(1, "Username tidak boleh kosong").max(255, "Username maksimal 255 karakter").optional(),
-    email: z.string().email("Format email tidak valid").max(255, "Email maksimal 255 karakter").optional(),
-    password: z.string().min(1, "Password tidak boleh kosong").max(255, "Password maksimal 255 karakter"),
+    username: z.string().min(1, "Username cannot be empty").max(255, "Username must not exceed 255 characters").optional(),
+    email: z.string().email("Invalid email format").max(255, "Email must not exceed 255 characters").optional(),
+    password: z.string().min(1, "Password cannot be empty").max(255, "Password must not exceed 255 characters"),
   })
   .refine((data) => data.username || data.email, {
-    message: "Minimal salah satu dari username atau email harus diisi",
+    message: "At least one of username or email must be provided",
   });
 
 /**
@@ -32,12 +32,12 @@ const loginUserValidation = z
  */
 const updateUserValidation = z
   .object({
-    name: z.string().min(1, "Nama tidak boleh kosong").max(255, "Nama maksimal 255 karakter").optional(),
-    email: z.string().email("Format email tidak valid").max(255, "Email maksimal 255 karakter").optional(),
-    password: z.string().min(8, "Password minimal 8 karakter").max(255, "Password maksimal 255 karakter").optional(),
+    name: z.string().min(1, "Name cannot be empty").max(255, "Name must not exceed 255 characters").optional(),
+    email: z.string().email("Invalid email format").max(255, "Email must not exceed 255 characters").optional(),
+    password: z.string().min(8, "Password must be at least 8 characters").max(255, "Password must not exceed 255 characters").optional(),
   })
   .refine((data) => data.name !== undefined || data.email !== undefined || data.password !== undefined, {
-    message: "Minimal satu field harus diisi (name, email, atau password)",
+    message: "At least one field must be provided (name, email, or password)",
   });
 
 export { registerUserValidation, loginUserValidation, updateUserValidation };
