@@ -15,7 +15,7 @@ const add = async (user, request) => {
     where: { id: validatedRequest.kanjiId },
   });
   if (kanjiCount === 0) {
-    throw new ResponseError(404, "Kanji tidak ditemukan");
+    throw new ResponseError(404, "Kanji not found");
   }
 
   const now = new Date();
@@ -57,7 +57,7 @@ const get = async (user, kanjiId) => {
   // Jika format tidak valid (bukan UUID), langsung lempar 404 agar seragam dengan data tidak ditemukan
   const validationResult = getUserKanjiValidation.safeParse(kanjiId);
   if (!validationResult.success) {
-    throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
+    throw new ResponseError(404, "Kanji Progress Data Not Found");
   }
   const validatedKanjiId = validationResult.data;
 
@@ -100,7 +100,7 @@ const get = async (user, kanjiId) => {
 
   // Jika data progres belum ada, kembalikan 404
   if (!userKanji) {
-    throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
+    throw new ResponseError(404, "Kanji Progress Data Not Found");
   }
 
   // Transformasi data agar sesuai dengan format yang diinginkan (flatten kanjiKotoba)
@@ -172,7 +172,7 @@ const remove = async (user, kanjiId) => {
   // Jika format tidak valid (bukan UUID), langsung lempar 404 agar seragam dengan data tidak ditemukan
   const validationResult = getUserKanjiValidation.safeParse(kanjiId);
   if (!validationResult.success) {
-    throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
+    throw new ResponseError(404, "Kanji Progress Data Not Found");
   }
   const validatedKanjiId = validationResult.data;
 
@@ -188,7 +188,7 @@ const remove = async (user, kanjiId) => {
 
   // Jika data tidak ditemukan, lempar error 404
   if (!userKanji) {
-    throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
+    throw new ResponseError(404, "Kanji Progress Data Not Found");
   }
 
   // Menghapus data progres dari database
@@ -222,7 +222,7 @@ const update = async (user, request) => {
 
   // Jika data tidak ditemukan, lempar 404
   if (!existing) {
-    throw new ResponseError(404, "Data Progress Kanji Tidak Ditemukan");
+    throw new ResponseError(404, "Kanji Progress Data Not Found");
   }
 
   const now = new Date();

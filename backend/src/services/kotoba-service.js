@@ -13,7 +13,7 @@ const validateKanjiExistence = async (kanjiIds) => {
   for (const id of uniqueKanjiIds) {
     const validationResult = kanjiIdValidation.safeParse(id);
     if (!validationResult.success) {
-      throw new ResponseError(400, "Format ID Kanji tidak valid");
+      throw new ResponseError(400, "Invalid Kanji ID format");
     }
   }
 
@@ -24,7 +24,7 @@ const validateKanjiExistence = async (kanjiIds) => {
   });
 
   if (count !== uniqueKanjiIds.length) {
-    throw new ResponseError(404, "Kanji tidak ditemukan");
+    throw new ResponseError(404, "Kanji not found");
   }
 };
 
@@ -42,7 +42,7 @@ const validateDuplicateKotoba = async (word, reading) => {
   });
 
   if (count > 0) {
-    throw new ResponseError(400, "Kosakata sudah terdaftar");
+    throw new ResponseError(400, "Vocabulary already registered");
   }
 };
 
@@ -71,7 +71,7 @@ const create = async (request) => {
         });
 
         if (existing > 0) {
-          throw new ResponseError(400, `Kosakata '${item.word}' sudah terdaftar`);
+          throw new ResponseError(400, `Vocabulary '${item.word}' already registered`);
         }
 
         await tx.kotoba.create({
@@ -153,7 +153,7 @@ const update = async (kotobaId, request) => {
   });
 
   if (!kotoba) {
-    throw new ResponseError(404, "Kotoba tidak ditemukan");
+    throw new ResponseError(404, "Kotoba not found");
   }
 
   // Jika word atau reading diubah, pastikan tidak duplikat dengan data lain
@@ -170,7 +170,7 @@ const update = async (kotobaId, request) => {
     });
 
     if (duplicateCount > 0) {
-      throw new ResponseError(400, "Kosakata sudah terdaftar");
+      throw new ResponseError(400, "Vocabulary already registered");
     }
   }
 
@@ -207,7 +207,7 @@ const remove = async (kotobaId) => {
   });
 
   if (!kotoba) {
-    throw new ResponseError(404, "Kotoba tidak ditemukan");
+    throw new ResponseError(404, "Kotoba not found");
   }
 
   // Hapus data kotoba (relasi di kanji_kotoba akan terhapus otomatis via cascade)

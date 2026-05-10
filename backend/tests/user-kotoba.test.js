@@ -113,7 +113,7 @@ describe("User Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Kotoba tidak ditemukan");
+            expect(response.body.error).toBe("Kotoba not found");
         });
 
         it("seharusnya gagal (400) jika kotobaId bukan UUID", async () => {
@@ -124,8 +124,8 @@ describe("User Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
-            expect(response.body.details[0].message).toBe("Format ID Kotoba tidak valid");
+            expect(response.body.error).toBe("Invalid Kotoba ID format");
+            expect(response.body.details[0].message).toBe("Invalid Kotoba ID format");
         });
     });
 
@@ -191,7 +191,7 @@ describe("User Kotoba API", () => {
                 .send({ isMemorized: true });
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Data Progress Kotoba Tidak Ditemukan");
+            expect(response.body.error).toBe("Kotoba Progress Data Not Found");
         });
 
         it("seharusnya gagal (400) jika body request tidak valid", async () => {
@@ -204,7 +204,7 @@ describe("User Kotoba API", () => {
                 .send({ difficulty: 10 }); // Difficulty max 5
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
+            expect(response.body.error).toBe("Difficulty must not exceed 5");
         });
 
         it("seharusnya gagal (400) jika body request kosong", async () => {
@@ -217,8 +217,8 @@ describe("User Kotoba API", () => {
                 .send({}); // Minimal satu field harus diisi
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
-            expect(response.body.details[0].message).toBe("Minimal satu field harus diisi (isMemorized, difficulty, atau note)");
+            expect(response.body.error).toBe("At least one field must be provided (isMemorized, difficulty, or note)");
+            expect(response.body.details[0].message).toBe("At least one field must be provided (isMemorized, difficulty, or note)");
         });
     });
 
@@ -270,7 +270,7 @@ describe("User Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Data Progress Kotoba Tidak Ditemukan");
+            expect(response.body.error).toBe("Kotoba Progress Data Not Found");
         });
 
         it("seharusnya gagal (404) jika kotobaId bukan UUID", async () => {
@@ -281,7 +281,7 @@ describe("User Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Data Progress Kotoba Tidak Ditemukan");
+            expect(response.body.error).toBe("Kotoba Progress Data Not Found");
         });
 
         it("seharusnya gagal (404) jika mencoba menghapus progres milik user lain (Data Isolation)", async () => {
@@ -296,7 +296,7 @@ describe("User Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Data Progress Kotoba Tidak Ditemukan");
+            expect(response.body.error).toBe("Kotoba Progress Data Not Found");
         });
     });
 });

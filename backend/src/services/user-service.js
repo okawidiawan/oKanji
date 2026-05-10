@@ -21,7 +21,7 @@ const register = async (request) => {
   });
 
   if (countUser > 0) {
-    throw new ResponseError(400, "Email sudah terdaftar");
+    throw new ResponseError(400, "Email is already registered");
   }
 
   // Memastikan username belum pernah digunakan
@@ -32,7 +32,7 @@ const register = async (request) => {
   });
 
   if (usernameCount > 0) {
-    throw new ResponseError(400, "Username sudah digunakan");
+    throw new ResponseError(400, "Username is already taken");
   }
 
   // Hashing password demi keamanan sebelum disimpan
@@ -66,7 +66,7 @@ const login = async (request) => {
   if (request.email) filters.push({ email: request.email });
   if (request.username) filters.push({ username: request.username });
   if (filters.length === 0) {
-    throw new ResponseError(401, "Email/Username atau password salah");
+    throw new ResponseError(401, "Incorrect Email/Username or password");
   }
 
   // Mencari user berdasarkan identifier yang disediakan
@@ -78,13 +78,13 @@ const login = async (request) => {
 
   // Validasi kredensial (user harus ada dan password harus cocok)
   if (!user) {
-    throw new ResponseError(401, "Email/Username atau password salah");
+    throw new ResponseError(401, "Incorrect Email/Username or password");
   }
 
   // Memverifikasi kecocokan password dengan hash di database
   const isPasswordValid = await bcrypt.compare(request.password, user.password);
   if (!isPasswordValid) {
-    throw new ResponseError(401, "Email/Username atau password salah");
+    throw new ResponseError(401, "Incorrect Email/Username or password");
   }
 
   // Membuat token akses baru (UUID) untuk sesi user
@@ -140,7 +140,7 @@ const get = async (email) => {
   });
 
   if (!user) {
-    throw new ResponseError(404, "User tidak ditemukan");
+    throw new ResponseError(404, "User not found");
   }
 
   return user;
@@ -162,7 +162,7 @@ const update = async (email, request) => {
   });
 
   if (!user) {
-    throw new ResponseError(404, "User tidak ditemukan");
+    throw new ResponseError(404, "User not found");
   }
 
   // Menyiapkan data yang akan di-update (jika disediakan)
@@ -179,7 +179,7 @@ const update = async (email, request) => {
       },
     });
     if (emailCount > 0) {
-      throw new ResponseError(400, "Email sudah digunakan");
+      throw new ResponseError(400, "Email is already in use");
     }
     data.email = userRequest.email;
   }

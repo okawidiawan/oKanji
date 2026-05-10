@@ -126,7 +126,7 @@ describe("Kotoba API", () => {
                 .send(payload);
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toContain("sudah terdaftar");
+            expect(response.body.error).toContain("already registered");
         });
 
         it("seharusnya gagal (400) jika validasi input salah", async () => {
@@ -179,7 +179,7 @@ describe("Kotoba API", () => {
                 .send(payload);
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Kanji tidak ditemukan");
+            expect(response.body.error).toBe("Kanji not found");
         });
 
         it("seharusnya gagal (400) jika format kanjiId bukan UUID", async () => {
@@ -197,7 +197,7 @@ describe("Kotoba API", () => {
                 .send(payload);
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
+            expect(response.body.error).toBe("Invalid Kanji ID format");
         });
     });
 
@@ -250,7 +250,7 @@ describe("Kotoba API", () => {
                 .send({ word: "Test" });
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Kotoba tidak ditemukan");
+            expect(response.body.error).toBe("Kotoba not found");
         });
 
         it("seharusnya gagal (400) jika format ID bukan UUID", async () => {
@@ -261,7 +261,7 @@ describe("Kotoba API", () => {
                 .send({ word: "Test" });
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
+            expect(response.body.error).toBe("Invalid Kotoba ID format");
         });
 
         it("seharusnya gagal (400) jika terjadi duplikat word dan reading", async () => {
@@ -285,7 +285,7 @@ describe("Kotoba API", () => {
                 .send(payload);
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Kosakata sudah terdaftar");
+            expect(response.body.error).toBe("Vocabulary already registered");
         });
 
         it("seharusnya gagal (401) jika tidak ada token", async () => {
@@ -305,8 +305,8 @@ describe("Kotoba API", () => {
                 .send({});
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
-            expect(response.body.details[0].message).toBe("Setidaknya satu field harus diisi");
+            expect(response.body.error).toBe("At least one field must be provided");
+            expect(response.body.details[0].message).toBe("At least one field must be provided");
         });
     });
 
@@ -343,7 +343,7 @@ describe("Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(404);
-            expect(response.body.error).toBe("Kotoba tidak ditemukan");
+            expect(response.body.error).toBe("Kotoba not found");
         });
 
         it("seharusnya gagal (400) jika format ID bukan UUID", async () => {
@@ -353,7 +353,7 @@ describe("Kotoba API", () => {
                 .set("Authorization", "Bearer valid-token");
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("Validation Error");
+            expect(response.body.error).toBe("Invalid Kotoba ID format");
         });
 
         it("seharusnya gagal (401) jika tidak ada token", async () => {

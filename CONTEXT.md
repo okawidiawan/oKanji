@@ -75,7 +75,7 @@ frontend/
   - Komitmen Git: _Conventional Commits_ (`Feature:`, `Fix:`, `Refactor:`, `chore:`).
 - **Arsitektur Layer**: `Router → Controller → Service → Prisma`. Validasi hanya di Service, query database hanya di Service.
 - **Error Handling**: Terpusat pada `error-middleware.js` menggunakan class `ResponseError`. Selalu gunakan `try...catch` di Controller dan teruskan ke `next(e)`.
-- **Validation**: Validasi input dilakukan di layer **Service** menggunakan Zod sebelum menjalankan logika database. Pesan error Zod wajib **Bahasa Indonesia**.
+- **Validation**: Validasi input dilakukan di layer **Service** menggunakan Zod sebelum menjalankan logika database. Pesan error Zod wajib **Bahasa Inggris**.
 - **Response Format**: Sukses → `{ data: ... }`, Error → `{ error: "..." }`, List → `{ data: [...], paging: { page, total_item, total_page } }`.
 - **Paginasi**: Gunakan parameter `page` dan `size`. Query data dan count secara paralel dengan `Promise.all`.
 - **Security by Default**: Menggunakan pemisahan Router (`public-api.js` vs `api.js`) untuk memastikan endpoint terproteksi secara eksplisit.
@@ -146,14 +146,14 @@ frontend/
 1. **Pemisahan Router**: Router dibagi menjadi `publicRouter` dan `apiRouter`. `apiRouter` menggunakan `authMiddleware` secara global di level router (`apiRouter.use(authMiddleware)`), sehingga setiap rute baru di dalamnya otomatis terproteksi.
 2. **Stateless Authentication**: Database menyimpan `token` pada tabel `User`. Validasi dilakukan dengan mencocokkan token di header `Authorization` dengan database.
 3. **Data Isolation**: Logika pengambilan/pembaruan data pribadi selalu menggunakan `req.user.email` untuk memastikan pengguna hanya bisa mengakses data mereka sendiri.
-4. **Validation Messaging**: Pesan error Zod dikustomisasi menggunakan Bahasa Indonesia untuk kemudahan integrasi dengan Frontend.
+4. **Validation Messaging**: Pesan error Zod dikustomisasi menggunakan Bahasa Inggris untuk kemudahan integrasi dengan Frontend.
 5. **Multi-field Search Logic**: Pencarian kanji mendukung parameter `search` yang akan difilter menggunakan operator `OR` pada kolom `character` dan `meaning` dengan metode `contains` (substring search) untuk fleksibilitas hasil.
 6. **Simplified Progress Tracking**: Penambahan progres kanji menggunakan endpoint `POST /api/user-kanji/:kanjiId` dapat dilakukan tanpa request body. Hal ini menyederhanakan interaksi Frontend (Quick Add). Status hafalan (`isMemorized`) kini dikelola secara manual oleh pengguna melalui endpoint `PATCH`.
 7. **Username Immutability**: Field `username` bersifat permanen dan di-set saat registrasi. Hanya `name`, `email`, dan `password` yang dapat diperbarui melalui `PATCH /api/users/current`. Registrasi memerlukan field `username` terpisah dari `name`.
 8. **Kotoba sebagai Sub-resource Kanji**: Kotoba (kosakata) tidak memiliki endpoint list/detail mandiri. Kotoba selalu ditampilkan dalam konteks kanji melalui `GET /api/kanjis/:kanjiId` (data kotoba) dan `GET /api/user-kanji/:kanjiId` (data kotoba + progress user). Relasi Kanji ↔ Kotoba bersifat many-to-many melalui junction table `KanjiKotoba`.
 9. **Batch Input Kotoba**: Endpoint `POST /api/kotoba` mendukung input single (object) maupun batch (array) untuk mempermudah penambahan data kosakata secara manual. Relasi ke kanji dikirim langsung via field `kanjiIds` dalam body request.
 10. **Single Session Login**: Setiap login menimpa token sebelumnya. User hanya bisa memiliki satu sesi aktif.
-11. **Shared Kotoba Reference**: Model `Kotoba` berfungsi sebagai data referensi bersama. Endpoint `POST /api/kotoba` (dan rute terkait) bersifat shared oleh semua user yang login. Aturan *Data Isolation* (filter `user.id`) tidak berlaku untuk model ini, karena data kotoba tidak bersifat personal.
+11. **Shared Kotoba Reference**: Model `Kotoba` berfungsi sebagai data referensi bersama. Endpoint `POST /api/kotoba` (dan rute terkait) bersifat shared oleh semua user yang login. Aturan _Data Isolation_ (filter `user.id`) tidak berlaku untuk model ini, karena data kotoba tidak bersifat personal.
 12. **Token Hashing**: Session token (UUID) disimpan dalam bentuk hash SHA-256 di database untuk memitigasi risiko jika database bocor. Client tetap menerima token asli yang belum di-hash.
 13. **Centralized Logging**: Semua logging menggunakan Winston melalui modul `src/application/logger.js`. Format log otomatis menyesuaikan environment: development menggunakan format readable berwarna di console, production menggunakan format JSON terstruktur dan menulis ke file (`logs/error.log` untuk error, `logs/combined.log` untuk semua level). Level logging dikontrol via environment variable `LOG_LEVEL` (default: `debug` di development, `info` di production).
 
