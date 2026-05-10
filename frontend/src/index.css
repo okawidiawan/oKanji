@@ -45,3 +45,9 @@ body {
 #root {
   width: 100%;
 }
+
+/* Menghilangkan ikon mata bawaan di Edge/Chrome */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}

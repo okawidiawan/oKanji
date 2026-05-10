@@ -44,7 +44,7 @@ const useAuthStore = create(
           await authService.register(userData);
           // Jangan auto-login sesuai catatan arsitektur
         } catch (error) {
-          const message = error.response?.data?.error || "Gagal mendaftar. Silakan coba lagi.";
+          const message = error.response?.data?.error || "An error occurred. Please try again.";
           set({ error: message });
           throw error;
         } finally {

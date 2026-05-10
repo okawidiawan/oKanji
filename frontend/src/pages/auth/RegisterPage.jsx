@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/use-auth-store";
+import { HiOutlineEye, HiOutlineEyeOff } from "react-icons/hi";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register, isLoading, error, clearError } = useAuthStore();
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -12,6 +15,14 @@ export default function RegisterPage() {
     email: "",
     password: "",
   });
+
+  const validateEmail = (email) => {
+    return String(email)
+      .toLowerCase()
+      .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  };
+
+  const isFormValid = formData.username.trim().length >= 3 && validateEmail(formData.email) && formData.password.length >= 8;
 
   useEffect(() => {
     // Bersihkan error saat pertama kali masuk halaman
@@ -26,11 +37,12 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isFormValid) return;
     try {
       await register(formData);
       // Sukses -> diredirect ke login (sesuai catatan arsitektur)
       navigate("/auth/login", {
-        state: { message: "Akun berhasil dibuat! Silakan masuk." },
+        state: { message: "Account created successfully! Please login." },
       });
     } catch (err) {
       // Error ditangani oleh store
@@ -65,7 +77,7 @@ export default function RegisterPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1.5" htmlFor="name">
-            Nama Lengkap
+            Full Name
           </label>
           <input
             id="name"
@@ -99,26 +111,31 @@ export default function RegisterPage() {
           <label className="block text-sm font-medium text-gray-300 mb-1.5" htmlFor="password">
             Password
           </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            className="w-full bg-background-lighter border border-my-border rounded-lg px-4 py-2.5 text-white placeholder-secondary-dark/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-            placeholder="Minimal 8 karakter"
-            value={formData.password}
-            onChange={handleChange}
-          />
+          <div className="relative">
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              required
+              className="w-full bg-background-lighter border border-my-border rounded-lg px-4 py-2.5 text-white placeholder-secondary-dark/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              placeholder="Minimal 8 karakter"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white" onClick={() => setShowPassword(!showPassword)} tabIndex="-1">
+              {showPassword ? <HiOutlineEyeOff size={20} /> : <HiOutlineEye size={20} />}
+            </button>
+          </div>
         </div>
 
-        <button type="submit" disabled={isLoading} className="w-full bg-primary hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors mt-2">
+        <button type="submit" disabled={isLoading || !isFormValid} className="w-full bg-primary hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors mt-2">
           {isLoading ? (
             <span className="flex items-center justify-center">
               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Register...
+              Registering...
             </span>
           ) : (
             "Create Account"
