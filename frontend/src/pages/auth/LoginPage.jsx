@@ -31,8 +31,19 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid) return;
+
     try {
-      await login(formData);
+      const identifier = formData.username.trim();
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const isEmail = emailRegex.test(identifier);
+
+      const loginPayload = {
+        password: formData.password,
+        [isEmail ? "email" : "username"]: identifier,
+      };
+
+      await login(loginPayload);
       navigate("/kanji");
     } catch (err) {
       // Error ditangani oleh store
@@ -60,7 +71,7 @@ export default function LoginPage() {
             required
             autoComplete="username"
             className="w-full bg-background-lighter border border-my-border rounded-lg px-4 py-2.5 text-white placeholder-secondary-dark/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-            placeholder="Input Username"
+            placeholder="Input Username or Email"
             value={formData.username}
             onChange={handleChange}
           />
