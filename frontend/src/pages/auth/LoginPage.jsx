@@ -44,7 +44,7 @@ export default function LoginPage() {
       };
 
       await login(loginPayload);
-      navigate("/kanji");
+      navigate("/profile");
     } catch (err) {
       // Error ditangani oleh store
     }
