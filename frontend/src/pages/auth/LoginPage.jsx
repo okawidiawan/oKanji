@@ -51,7 +51,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-up">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
         <p className="text-gray-400 text-sm mt-1">Please Login to Continue Your Kanji Journey.</p>

@@ -8,14 +8,14 @@ export default function AuthLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useEffect(() => {
-    // Jika sudah login, diredirect ke dashboard/kanji list
+    // Jika sudah login, diredirect ke dashboard/profile
     if (isAuthenticated) {
-      navigate("/kanji", { replace: true });
+      navigate("/profile", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-white p-4 font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-background text-white p-4 font-sans ">
       <div className="w-full max-w-md">
         <div className="rounded-2xl p-8 border border-my-border bg-transparent backdrop-blur-md top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)]">
           <div className="mb-8 flex flex-col items-center">
