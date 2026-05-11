@@ -92,19 +92,26 @@ const login = async (request) => {
   // FIX-9: Hash token sebelum disimpan ke database
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-  return prisma.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      token: hashedToken,
-    },
-    select: {
-      id: true, // we need id to return token correctly if we use select
-    },
-  }).then(() => {
-    return { token }; // Kembalikan token ASLI (bukan hash) ke client
-  });
+  return prisma.user
+    .update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        token: hashedToken,
+      },
+      select: {
+        id: true, // we need id to return token correctly if we use select
+      },
+    })
+    .then(() => {
+      return {
+        token,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+      }; // Kembalikan token ASLI (bukan hash) ke client
+    });
 };
 
 /**
