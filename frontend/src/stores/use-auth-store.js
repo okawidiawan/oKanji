@@ -24,6 +24,7 @@ const useAuthStore = create(
           const result = await authService.login(credentials);
           // Backend response structure: { data: { token, username, name, email } }
           const { token, ...userData } = result.data;
+          await new Promise((resolve) => setTimeout(resolve, 1000));
           set({
             user: userData,
             token,
@@ -43,6 +44,7 @@ const useAuthStore = create(
         try {
           await authService.register(userData);
           // Jangan auto-login sesuai catatan arsitektur
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         } catch (error) {
           const message = error.response?.data?.error || "An error occurred. Please try again.";
           set({ error: message });
