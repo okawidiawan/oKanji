@@ -1,7 +1,9 @@
 import useAuthStore from "../../stores/use-auth-store";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfilePage() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
