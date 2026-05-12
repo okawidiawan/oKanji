@@ -84,6 +84,24 @@ const useAuthStore = create(
           console.error("Fetch user error:", error);
         }
       },
+
+      updateProfile: async (profileData) => {
+        set({ isLoading: true, error: null });
+        try {
+          const result = await authService.updateProfile(profileData);
+          // result.data berisi { username, name, email }
+          set((state) => ({
+            user: { ...state.user, ...result.data },
+          }));
+          return result.data;
+        } catch (error) {
+          const message = error.response?.data?.error || "Gagal memperbarui profil.";
+          set({ error: message });
+          throw error;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
     }),
     {
       name: "okanji-auth-storage",
