@@ -38,6 +38,16 @@ const authService = {
     const response = await api.delete('/users/logout');
     return response.data;
   },
+
+  /**
+   * Memperbarui data profil user yang sedang login
+   * @param {Object} data - Objek parsial { name, email, password }
+   * @returns {Promise<Object>}
+   */
+  updateProfile: async (data) => {
+    const response = await api.patch('/users/current', data);
+    return response.data;
+  },
 };
 
 export default authService;
