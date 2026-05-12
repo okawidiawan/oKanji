@@ -112,9 +112,11 @@ describe("User API", () => {
   });
 
   describe("POST /api/users/login", () => {
-    it("seharusnya berhasil login menggunakan email dan mendapatkan token", async () => {
+    it("seharusnya berhasil login menggunakan email dan mendapatkan token beserta detail user", async () => {
       prismaMock.user.findFirst.mockResolvedValue({
         id: 1,
+        username: "testuser",
+        name: "Test User",
         email: "test@example.com",
         password: "hashedpassword",
       });
@@ -129,14 +131,21 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toBe("dummy-token");
+      expect(response.body.data).toEqual({
+        token: "dummy-token",
+        username: "testuser",
+        name: "Test User",
+        email: "test@example.com",
+      });
       expect(prismaMock.user.findFirst).toHaveBeenCalled();
     });
 
-    it("seharusnya berhasil login menggunakan username dan mendapatkan token", async () => {
+    it("seharusnya berhasil login menggunakan username dan mendapatkan token beserta detail user", async () => {
       prismaMock.user.findFirst.mockResolvedValue({
         id: 1,
         username: "testuser",
+        name: "Test User",
+        email: "test@example.com",
         password: "hashedpassword",
       });
       spyOn(bcrypt, "compare").mockResolvedValue(true);
@@ -150,15 +159,21 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toBe("dummy-token");
+      expect(response.body.data).toEqual({
+        token: "dummy-token",
+        username: "testuser",
+        name: "Test User",
+        email: "test@example.com",
+      });
       expect(prismaMock.user.findFirst).toHaveBeenCalled();
     });
 
     it("seharusnya berhasil login jika mengirimkan keduanya (email & username)", async () => {
       prismaMock.user.findFirst.mockResolvedValue({
         id: 1,
-        email: "test@example.com",
         username: "testuser",
+        name: "Test User",
+        email: "test@example.com",
         password: "hashedpassword",
       });
       spyOn(bcrypt, "compare").mockResolvedValue(true);
@@ -173,7 +188,12 @@ describe("User API", () => {
       });
 
       expect(response.status).toBe(200);
-      expect(response.body.data).toBe("dummy-token");
+      expect(response.body.data).toEqual({
+        token: "dummy-token",
+        username: "testuser",
+        name: "Test User",
+        email: "test@example.com",
+      });
     });
 
     it("seharusnya gagal login jika password salah", async () => {
