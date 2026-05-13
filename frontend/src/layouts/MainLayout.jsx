@@ -8,7 +8,6 @@ export default function MainLayout() {
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <Outlet />
-        <div className="p-8 border-2 border-dashed border-gray-700 rounded-xl text-center mt-40">Main Layout Placeholder</div>
       </main>
     </div>
   );

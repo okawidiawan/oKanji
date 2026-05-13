@@ -46,6 +46,9 @@ export default function Navbar() {
             <Link to="/kanji" className="hover:text-primary transition-colors">
               Kanji List
             </Link>
+            <Link to="/" className="hover:text-primary transition-colors">
+              My Kanji
+            </Link>
 
             {/* Info User & Tombol Logout */}
             <div className="flex items-center gap-4 ml-4 border-l border-my-border pl-6">

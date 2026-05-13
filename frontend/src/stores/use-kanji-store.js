@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import kanjiService from '../services/kanji-service';
+import { create } from "zustand";
+import kanjiService from "../services/kanji-service";
 
 const useKanjiStore = create((set, get) => ({
   // State
@@ -13,8 +13,8 @@ const useKanjiStore = create((set, get) => ({
     total_page: 0,
   },
   filters: {
-    level: '',
-    search: '',
+    level: "",
+    search: "",
   },
 
   // Actions
@@ -34,7 +34,12 @@ const useKanjiStore = create((set, get) => ({
         size: 20, // Default size
         ...filters,
       };
-      
+
+      Object.keys(params).forEach((key) => {
+        if (params[key] === "") {
+          delete params[key];
+        }
+      });
       const result = await kanjiService.getKanjis(params);
       // Backend returns { data, paging: { page, total_item, total_page } }
       set({
@@ -62,7 +67,7 @@ const useKanjiStore = create((set, get) => ({
       set({ isLoading: false });
     }
   },
-  
+
   clearError: () => set({ error: null }),
 }));
 
