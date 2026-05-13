@@ -97,6 +97,102 @@ const useUserProgressStore = create((set, get) => ({
     }
   },
 
+  /**
+   * Menghapus seluruh progress belajar kanji (Batal Pelajari)
+   * @param {string} kanjiId - UUID Kanji
+   */
+  removeKanjiProgress: async (kanjiId) => {
+    set({ isLoading: true });
+    try {
+      await userKanjiService.remove(kanjiId);
+      
+      // Reset detail jika sedang ditampilkan
+      const current = get().currentProgressDetail;
+      if (current && current.kanjiId === kanjiId) {
+        set({ currentProgressDetail: null });
+      }
+      
+      // Update daftar kanji user
+      set((state) => ({
+        userKanjis: state.userKanjis.filter((item) => item.kanjiId !== kanjiId)
+      }));
+    } catch (error) {
+      const message = error.response?.data?.error || "Gagal menghapus progress kanji.";
+      set({ error: message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  /**
+   * Menambahkan kosakata ke daftar hafalan user
+   * @param {string} kotobaId - UUID Kotoba
+   */
+  addKotobaProgress: async (kotobaId) => {
+    set({ isLoading: true });
+    try {
+      const result = await userKotobaService.add(kotobaId);
+      
+      // Update state nested di currentProgressDetail
+      const current = get().currentProgressDetail;
+      if (current && current.kanji && current.kanji.kotoba) {
+        const updatedKotoba = current.kanji.kotoba.map((k) => {
+          if (k.id === kotobaId) {
+            return { ...k, userKotoba: [result.data] };
+          }
+          return k;
+        });
+        set({
+          currentProgressDetail: {
+            ...current,
+            kanji: { ...current.kanji, kotoba: updatedKotoba }
+          }
+        });
+      }
+    } catch (error) {
+      const message = error.response?.data?.error || "Gagal menambahkan kosakata ke hafalan.";
+      set({ error: message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  /**
+   * Menghapus kosakata dari daftar hafalan user
+   * @param {string} kotobaId - UUID Kotoba
+   */
+  removeKotobaProgress: async (kotobaId) => {
+    set({ isLoading: true });
+    try {
+      await userKotobaService.remove(kotobaId);
+      
+      // Update state nested di currentProgressDetail
+      const current = get().currentProgressDetail;
+      if (current && current.kanji && current.kanji.kotoba) {
+        const updatedKotoba = current.kanji.kotoba.map((k) => {
+          if (k.id === kotobaId) {
+            return { ...k, userKotoba: [] };
+          }
+          return k;
+        });
+        set({
+          currentProgressDetail: {
+            ...current,
+            kanji: { ...current.kanji, kotoba: updatedKotoba }
+          }
+        });
+      }
+    } catch (error) {
+      const message = error.response?.data?.error || "Gagal menghapus kosakata dari hafalan.";
+      set({ error: message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
   toggleKotobaMemorized: async (kotobaId, isMemorized) => {
     try {
       const result = await userKotobaService.update(kotobaId, { isMemorized });

@@ -3,17 +3,31 @@ import { useParams } from "react-router-dom";
 import useKanjiStore from "../../stores/use-kanji-store";
 import useUserProgressStore from "../../stores/use-user-progress-store";
 import useAuthStore from "../../stores/use-auth-store";
-import { IoMdAddCircleOutline } from "react-icons/io";
+import { IoMdAddCircleOutline, IoMdRemoveCircleOutline, IoMdTrash, IoMdCloseCircleOutline } from "react-icons/io";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 import { BsBookmarkPlusFill } from "react-icons/bs";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 export default function KanjiDetailPage() {
   const { id } = useParams();
   const { isAuthenticated } = useAuthStore();
   const { currentKanji, fetchKanjiDetail, isLoading: isKanjiLoading } = useKanjiStore();
-  const { currentProgressDetail, fetchProgressDetail, quickAddKanji, memorizeKanji, toggleKotobaMemorized, isLoading: isProgressLoading } = useUserProgressStore();
+  const { 
+    currentProgressDetail, 
+    fetchProgressDetail, 
+    quickAddKanji, 
+    memorizeKanji, 
+    removeKanjiProgress,
+    addKotobaProgress,
+    removeKotobaProgress,
+    toggleKotobaMemorized, 
+    isLoading: isProgressLoading 
+  } = useUserProgressStore();
 
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [showKanjiConfirm, setShowKanjiConfirm] = useState(false);
+  const [showKotobaConfirm, setShowKotobaConfirm] = useState(false);
+  const [targetKotobaId, setTargetKotobaId] = useState(null);
 
   useEffect(() => {
     if (id) {
@@ -45,8 +59,36 @@ export default function KanjiDetailPage() {
     }
   };
 
+  const handleRemoveKanji = () => {
+    setShowKanjiConfirm(true);
+  };
+
+  const handleActualRemoveKanji = async () => {
+    setIsActionLoading(true);
+    try {
+      await removeKanjiProgress(id);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   const handleToggleKotoba = async (kotobaId, currentIsMemorized) => {
     await toggleKotobaMemorized(kotobaId, !currentIsMemorized);
+  };
+
+  const handleAddKotoba = async (kotobaId) => {
+    await addKotobaProgress(kotobaId);
+  };
+
+  const handleRemoveKotoba = (kotobaId) => {
+    setTargetKotobaId(kotobaId);
+    setShowKotobaConfirm(true);
+  };
+
+  const handleActualRemoveKotoba = async () => {
+    if (!targetKotobaId) return;
+    await removeKotobaProgress(targetKotobaId);
+    setTargetKotobaId(null);
   };
 
   if (isKanjiLoading) {
@@ -78,25 +120,42 @@ export default function KanjiDetailPage() {
                 {currentKanji.radical && <span className="text-gray-500 text-sm">Radikal: {currentKanji.radical}</span>}
               </div>
 
-              {/* Add Kanji */}
+              {/* Add Kanji Actions */}
               {isAuthenticated && (
-                <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                <div className="flex items-center gap-4">
                   {!currentProgressDetail ? (
-                    <button onClick={handleQuickAdd} disabled={isActionLoading} className="text-primary font-bold rounded-xl hover:bg-primary-hover transition-all text-5xl cursor-pointer">
-                      {isActionLoading ? "Menambahkan..." : <BsBookmarkPlusFill />}
+                    <button 
+                      onClick={handleQuickAdd} 
+                      disabled={isActionLoading} 
+                      className="flex items-center gap-2 px-6 py-3 bg-primary text-background font-black rounded-2xl hover:bg-primary-hover hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <BsBookmarkPlusFill className="text-xl" />
+                      <span>{isActionLoading ? "Menambahkan..." : "Mulai Belajar"}</span>
                     </button>
                   ) : (
-                    <button
-                      onClick={handleToggleMemorized}
-                      disabled={isActionLoading}
-                      className={`inline-flex items-center justify-center cursor-pointer transition-all duration-300 transform ${
-                        isActionLoading
-                          ? "scale-0 opacity-0 rotate-45" // Efek mengecil, memudar, dan memutar saat loading
-                          : "scale-100 opacity-100 rotate-0 hover:scale-110" // Muncul penuh dan membesar saat di-hover
-                      } ${currentProgressDetail.isMemorized ? "text-green-500 text-5xl" : "text-primary text-5xl"}`}
-                    >
-                      {currentProgressDetail.isMemorized ? <IoIosCheckmarkCircleOutline /> : <IoMdAddCircleOutline />}
-                    </button>
+                    <div className="flex items-center gap-2 bg-background-lighter p-1.5 rounded-2xl border border-my-border animate-fade-in">
+                      <button
+                        onClick={handleToggleMemorized}
+                        disabled={isActionLoading}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all cursor-pointer ${
+                          currentProgressDetail.isMemorized 
+                            ? "bg-green-500 text-background shadow-lg shadow-green-500/20" 
+                            : "bg-primary text-background shadow-lg shadow-primary/20"
+                        } hover:opacity-90 active:scale-95 disabled:opacity-50`}
+                      >
+                        {currentProgressDetail.isMemorized ? <IoIosCheckmarkCircleOutline className="text-xl" /> : <IoMdAddCircleOutline className="text-xl" />}
+                        <span className="text-sm">{currentProgressDetail.isMemorized ? "Sudah Hafal" : "Belum Hafal"}</span>
+                      </button>
+
+                      <button
+                        onClick={handleRemoveKanji}
+                        disabled={isActionLoading}
+                        title="Batal Pelajari"
+                        className="p-2.5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <IoMdTrash className="text-xl" />
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -152,16 +211,38 @@ export default function KanjiDetailPage() {
                   </div>
 
                   {isAuthenticated && (
-                    <button
-                      onClick={() => handleToggleKotoba(word.id, isMemorized)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                        isMemorized ? "bg-green-500 text-background" : "bg-background border border-my-border text-gray-500 hover:text-primary hover:border-primary"
-                      }`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {userKotoba ? (
+                        <>
+                          <button
+                            onClick={() => handleToggleKotoba(word.id, isMemorized)}
+                            title={isMemorized ? "Tandai Belum Hafal" : "Tandai Sudah Hafal"}
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                              isMemorized 
+                                ? "bg-green-500 text-background shadow-md shadow-green-500/20" 
+                                : "bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary"
+                            } hover:scale-105 active:scale-95`}
+                          >
+                            <IoIosCheckmarkCircleOutline className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveKotoba(word.id)}
+                            title="Hapus Progress"
+                            className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+                          >
+                            <IoMdTrash className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleAddKotoba(word.id)}
+                          title="Tambah ke Hafalan"
+                          className="w-9 h-9 rounded-xl flex items-center justify-center bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary transition-all cursor-pointer hover:scale-105 active:scale-95"
+                        >
+                          <IoMdAddCircleOutline className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -191,6 +272,31 @@ export default function KanjiDetailPage() {
           </div>
         </section>
       )}
+
+      {/* Confirmation Modals */}
+      <ConfirmModal
+        isOpen={showKanjiConfirm}
+        onClose={() => setShowKanjiConfirm(false)}
+        onConfirm={handleActualRemoveKanji}
+        title="Batal Pelajari Kanji?"
+        message="Seluruh progres belajar, status hafalan, dan catatan untuk kanji ini akan dihapus secara permanen."
+        confirmText="Ya, Hapus Semua"
+        type="danger"
+        icon={<IoMdTrash />}
+      />
+
+      <ConfirmModal
+        isOpen={showKotobaConfirm}
+        onClose={() => {
+          setShowKotobaConfirm(false);
+          setTargetKotobaId(null);
+        }}
+        onConfirm={handleActualRemoveKotoba}
+        title="Hapus Progres Kosakata?"
+        message="Data progres belajar untuk kosakata ini akan dihapus dari daftar hafalan Anda."
+        confirmText="Ya, Hapus"
+        type="danger"
+      />
     </div>
   );
 }
