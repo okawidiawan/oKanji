@@ -144,7 +144,7 @@ export default function RegisterPage() {
               value={formData.confirmPassword}
               onChange={handleChange}
             />
-            {formData.confirmPassword && formData.password !== formData.confirmPassword && <p className="text-primary text-xs mt-1">Password is Not Match</p>}
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && <p className="text-primary text-xs mt-1">Passwords do not match!</p>}
             <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white" onClick={() => setShowPassword(!showPassword)} tabIndex="-1">
               {showPassword ? <HiOutlineEyeOff size={20} /> : <HiOutlineEye size={20} />}
             </button>

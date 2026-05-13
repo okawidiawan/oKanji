@@ -88,6 +88,8 @@ const useAuthStore = create(
       updateProfile: async (profileData) => {
         set({ isLoading: true, error: null });
         try {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
           const result = await authService.updateProfile(profileData);
           // result.data berisi { username, name, email }
           set((state) => ({

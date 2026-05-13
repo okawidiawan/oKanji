@@ -3,15 +3,7 @@ import { Link } from "react-router-dom";
 import useKanjiStore from "../../stores/use-kanji-store";
 
 export default function KanjiListPage() {
-  const { 
-    kanjis, 
-    isLoading, 
-    error, 
-    paging, 
-    filters, 
-    fetchKanjis, 
-    setFilters 
-  } = useKanjiStore();
+  const { kanjis, isLoading, error, paging, filters, fetchKanjis, setFilters } = useKanjiStore();
 
   useEffect(() => {
     fetchKanjis(paging.page);
@@ -22,7 +14,7 @@ export default function KanjiListPage() {
   };
 
   const handleLevelChange = (level) => {
-    setFilters({ level: level === filters.level ? '' : level });
+    setFilters({ level: level === filters.level ? "" : level });
   };
 
   const handlePageChange = (newPage) => {
@@ -32,23 +24,19 @@ export default function KanjiListPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-fade-up">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">Daftar Kanji</h1>
-          <p className="text-gray-400 mt-1">Eksplorasi ribuan karakter kanji berdasarkan level JLPT.</p>
+          <h1 className="text-3xl font-bold text-white">Kanji List</h1>
+          <p className="text-gray-400 mt-1">Explore thousands of Kanji characters categorized by JLPT levels.</p>
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
-          {['N5', 'N4', 'N3', 'N2', 'N1'].map((lv) => (
+          {["N5", "N4", "N3", "N2", "N1"].map((lv) => (
             <button
               key={lv}
               onClick={() => handleLevelChange(lv)}
-              className={`px-4 py-2 rounded-lg font-bold transition-all ${
-                filters.level === lv 
-                  ? 'bg-primary text-background' 
-                  : 'bg-background-lighter text-gray-400 border border-my-border hover:border-primary/50'
-              }`}
+              className={`cursor-pointer px-4 py-2 rounded-lg font-bold transition-all ${filters.level === lv ? "bg-primary text-background" : "bg-background-lighter text-gray-400 border border-my-border hover:border-primary/50"}`}
             >
               {lv}
             </button>
@@ -60,7 +48,7 @@ export default function KanjiListPage() {
       <div className="relative group">
         <input
           type="text"
-          placeholder="Cari kanji atau arti (misal: 日 atau Sun)..."
+          placeholder="Search kanji or meaning (e.g., 日 or Sun)..."
           value={filters.search}
           onChange={handleSearchChange}
           className="w-full bg-background-lighter border border-my-border rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-lg"
@@ -72,59 +60,41 @@ export default function KanjiListPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl">
-          {error}
-        </div>
-      )}
+      {error && <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl">{error}</div>}
 
       {/* Kanji Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {isLoading ? (
           // Skeletons
-          Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="aspect-square bg-background-lighter border border-my-border rounded-2xl animate-pulse" />
-          ))
+          Array.from({ length: 12 }).map((_, i) => <div key={i} className="aspect-square bg-background-lighter border border-my-border rounded-2xl animate-pulse" />)
         ) : kanjis.length > 0 ? (
           kanjis.map((kanji) => (
             <Link
               key={kanji.id}
               to={`/kanji/${kanji.id}`}
-              className="group aspect-square bg-background-lighter border border-my-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 transition-all duration-300"
+              className="relative overflow-hidden group aspect-square bg-background-lighter border border-my-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 transition-all duration-300"
             >
-              <span className="text-4xl font-bold text-white group-hover:scale-110 transition-transform duration-300">
-                {kanji.character}
-              </span>
-              <span className="text-xs text-gray-400 group-hover:text-primary transition-colors text-center line-clamp-1 px-2">
-                {kanji.meaning}
-              </span>
-              <span className="absolute top-2 right-2 text-[10px] font-bold text-primary/60 bg-primary/10 px-1.5 py-0.5 rounded uppercase">
-                {kanji.jlptLevel}
-              </span>
+              <span className="text-4xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{kanji.character}</span>
+              <span className="text-xs text-gray-400 group-hover:text-primary transition-colors text-center line-clamp-1 px-2">{kanji.meaning}</span>
+              <span className="absolute top-0 right-0 text-sm font-bold text-primary/60 bg-primary/10 px-2.5 py-1.5 rounded uppercase">{kanji.jlptLevel}</span>
             </Link>
           ))
         ) : (
-          <div className="col-span-full py-20 text-center text-gray-500">
-            Tidak ada kanji yang ditemukan dengan kriteria tersebut.
-          </div>
+          <div className="col-span-full py-20 text-center text-gray-500">No kanji found matching the specified criteria.</div>
         )}
       </div>
 
       {/* Pagination */}
       {paging.total_page > 1 && (
         <footer className="flex justify-center items-center gap-4 pt-8">
-          <button
-            onClick={() => handlePageChange(paging.page - 1)}
-            disabled={paging.page === 1}
-            className="p-3 bg-background-lighter border border-my-border rounded-xl disabled:opacity-30 hover:border-primary transition-all"
-          >
+          <button onClick={() => handlePageChange(paging.page - 1)} disabled={paging.page === 1} className="p-3 bg-background-lighter border border-my-border rounded-xl disabled:opacity-30 hover:border-primary transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          
+
           <div className="text-gray-400 font-medium">
-            Halaman <span className="text-primary">{paging.page}</span> dari {paging.total_page}
+            Page <span className="text-primary">{paging.page}</span> from {paging.total_page}
           </div>
 
           <button

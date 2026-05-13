@@ -3,19 +3,15 @@ import { useParams } from "react-router-dom";
 import useKanjiStore from "../../stores/use-kanji-store";
 import useUserProgressStore from "../../stores/use-user-progress-store";
 import useAuthStore from "../../stores/use-auth-store";
+import { IoMdAddCircleOutline } from "react-icons/io";
+import { IoIosCheckmarkCircleOutline } from "react-icons/io";
+import { BsBookmarkPlusFill } from "react-icons/bs";
 
 export default function KanjiDetailPage() {
   const { id } = useParams();
   const { isAuthenticated } = useAuthStore();
   const { currentKanji, fetchKanjiDetail, isLoading: isKanjiLoading } = useKanjiStore();
-  const { 
-    currentProgressDetail, 
-    fetchProgressDetail, 
-    quickAddKanji, 
-    memorizeKanji,
-    toggleKotobaMemorized,
-    isLoading: isProgressLoading 
-  } = useUserProgressStore();
+  const { currentProgressDetail, fetchProgressDetail, quickAddKanji, memorizeKanji, toggleKotobaMemorized, isLoading: isProgressLoading } = useUserProgressStore();
 
   const [isActionLoading, setIsActionLoading] = useState(false);
 
@@ -31,6 +27,7 @@ export default function KanjiDetailPage() {
   const handleQuickAdd = async () => {
     setIsActionLoading(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
       await quickAddKanji(id);
     } finally {
       setIsActionLoading(false);
@@ -41,6 +38,7 @@ export default function KanjiDetailPage() {
     if (!currentProgressDetail) return;
     setIsActionLoading(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
       await memorizeKanji(id, !currentProgressDetail.isMemorized);
     } finally {
       setIsActionLoading(false);
@@ -60,25 +58,47 @@ export default function KanjiDetailPage() {
   }
 
   if (!currentKanji) {
-    return <div className="text-center py-20 text-gray-500">Kanji tidak ditemukan.</div>;
+    return <div className="text-center py-20 text-gray-500">Kanji Not Found</div>;
   }
 
   return (
-    <div className="space-y-10 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-10 max-w-5xl mx-auto animate-fade-up">
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row gap-10 items-center md:items-stretch">
-        <div className="flex-shrink-0 w-64 h-64 bg-white text-background rounded-3xl flex items-center justify-center text-[10rem] font-bold shadow-2xl shadow-primary/20">
-          {currentKanji.character}
-        </div>
-        
-        <div className="flex-grow flex flex-col justify-center space-y-6 text-center md:text-left">
+        <div className="shrink-0 w-64 h-64 rounded-3xl flex items-center justify-center text-[10rem] font-bold shadow-2xl text-secondary border border-my-border">{currentKanji.character}</div>
+
+        <div className="grow flex flex-col justify-center space-y-6 text-center md:text-left">
           <div className="space-y-2">
-            <div className="flex items-center justify-center md:justify-start gap-3">
-              <span className="px-3 py-1 bg-primary text-background font-black rounded-lg text-sm uppercase">
-                {currentKanji.jlptLevel}
-              </span>
-              {currentKanji.radical && (
-                <span className="text-gray-500 text-sm">Radikal: {currentKanji.radical}</span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-4">
+                {/* JLPT Level */}
+                <span className="px-3 py-1 bg-primary text-background font-black rounded-lg text-sm uppercase">{currentKanji.jlptLevel}</span>
+
+                {/* Radikal */}
+                {currentKanji.radical && <span className="text-gray-500 text-sm">Radikal: {currentKanji.radical}</span>}
+              </div>
+
+              {/* Add Kanji */}
+              {isAuthenticated && (
+                <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                  {!currentProgressDetail ? (
+                    <button onClick={handleQuickAdd} disabled={isActionLoading} className="text-primary font-bold rounded-xl hover:bg-primary-hover transition-all text-5xl cursor-pointer">
+                      {isActionLoading ? "Menambahkan..." : <BsBookmarkPlusFill />}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleToggleMemorized}
+                      disabled={isActionLoading}
+                      className={`inline-flex items-center justify-center cursor-pointer transition-all duration-300 transform ${
+                        isActionLoading
+                          ? "scale-0 opacity-0 rotate-45" // Efek mengecil, memudar, dan memutar saat loading
+                          : "scale-100 opacity-100 rotate-0 hover:scale-110" // Muncul penuh dan membesar saat di-hover
+                      } ${currentProgressDetail.isMemorized ? "text-green-500 text-5xl" : "text-primary text-5xl"}`}
+                    >
+                      {currentProgressDetail.isMemorized ? <IoIosCheckmarkCircleOutline /> : <IoMdAddCircleOutline />}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
             <h1 className="text-5xl font-extrabold text-white">{currentKanji.meaning}</h1>
@@ -94,32 +114,6 @@ export default function KanjiDetailPage() {
               <div className="text-xl text-white font-medium">{currentKanji.kunyomi}</div>
             </div>
           </div>
-
-          {isAuthenticated && (
-            <div className="pt-4 flex flex-wrap justify-center md:justify-start gap-4">
-              {!currentProgressDetail ? (
-                <button
-                  onClick={handleQuickAdd}
-                  disabled={isActionLoading}
-                  className="px-6 py-3 bg-primary text-background font-bold rounded-xl hover:bg-primary-hover transition-all shadow-lg shadow-primary/20"
-                >
-                  {isActionLoading ? "Menambahkan..." : "Mulai Pelajari"}
-                </button>
-              ) : (
-                <button
-                  onClick={handleToggleMemorized}
-                  disabled={isActionLoading}
-                  className={`px-6 py-3 font-bold rounded-xl transition-all border-2 ${
-                    currentProgressDetail.isMemorized
-                      ? 'bg-green-500/10 border-green-500 text-green-500'
-                      : 'border-primary text-primary hover:bg-primary/5'
-                  }`}
-                >
-                  {currentProgressDetail.isMemorized ? '✓ Sudah Hafal' : 'Tandai Sudah Hafal'}
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -145,11 +139,9 @@ export default function KanjiDetailPage() {
               const isMemorized = userKotoba?.isMemorized || false;
 
               return (
-                <div 
-                  key={word.id} 
-                  className={`group p-5 bg-background-lighter border border-my-border rounded-2xl flex items-center justify-between transition-all hover:border-primary/50 ${
-                    isMemorized ? 'border-green-500/30 bg-green-500/5' : ''
-                  }`}
+                <div
+                  key={word.id}
+                  className={`group p-5 bg-background-lighter border border-my-border rounded-2xl flex items-center justify-between transition-all hover:border-primary/50 ${isMemorized ? "border-green-500/30 bg-green-500/5" : ""}`}
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
@@ -163,9 +155,7 @@ export default function KanjiDetailPage() {
                     <button
                       onClick={() => handleToggleKotoba(word.id, isMemorized)}
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                        isMemorized 
-                          ? 'bg-green-500 text-background' 
-                          : 'bg-background border border-my-border text-gray-500 hover:text-primary hover:border-primary'
+                        isMemorized ? "bg-green-500 text-background" : "bg-background border border-my-border text-gray-500 hover:text-primary hover:border-primary"
                       }`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -177,9 +167,7 @@ export default function KanjiDetailPage() {
               );
             })
           ) : (
-            <div className="col-span-full py-10 text-center text-gray-500 bg-background-lighter rounded-2xl border border-dashed border-my-border">
-              Belum ada kosakata yang ditambahkan untuk kanji ini.
-            </div>
+            <div className="col-span-full py-10 text-center text-gray-500 bg-background-lighter rounded-2xl border border-dashed border-my-border">Belum ada kosakata yang ditambahkan untuk kanji ini.</div>
           )}
         </div>
       </section>
@@ -193,14 +181,12 @@ export default function KanjiDetailPage() {
           </div>
           <div className="text-center space-y-1">
             <div className="text-gray-500 text-xs font-bold uppercase tracking-widest">Tingkat Kesulitan</div>
-            <div className="text-3xl font-black text-primary">{currentProgressDetail.difficulty || '-'}</div>
+            <div className="text-3xl font-black text-primary">{currentProgressDetail.difficulty || "-"}</div>
           </div>
           <div className="text-center space-y-1">
             <div className="text-gray-500 text-xs font-bold uppercase tracking-widest">Terakhir Dipelajari</div>
             <div className="text-sm font-medium text-white">
-              {currentProgressDetail.lastReviewed 
-                ? new Date(currentProgressDetail.lastReviewed).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-                : 'Belum pernah'}
+              {currentProgressDetail.lastReviewed ? new Date(currentProgressDetail.lastReviewed).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Belum pernah"}
             </div>
           </div>
         </section>
