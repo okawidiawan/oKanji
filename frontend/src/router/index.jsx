@@ -13,6 +13,7 @@ import RegisterPage from "../pages/auth/RegisterPage";
 import KanjiListPage from "../pages/kanji/KanjiListPage";
 import KanjiDetailPage from "../pages/kanji/KanjiDetailPage";
 import ProfilePage from "../pages/user/ProfilePage";
+import UserKanjiListPage from "../pages/user/UserKanjiListPage";
 import LandingPage from "../pages/LandingPage";
 
 const router = createBrowserRouter([
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
         children: [
           { path: "kanji", element: <KanjiListPage /> },
           { path: "kanji/:id", element: <KanjiDetailPage /> },
+          { path: "my-kanji", element: <UserKanjiListPage /> },
           { path: "profile", element: <ProfilePage /> },
         ],
       },

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import userKanjiService from '../services/user-kanji-service';
 import userKotobaService from '../services/user-kotoba-service';
+import useKanjiStore from './use-kanji-store';
 
 /**
  * Store untuk mengelola progres belajar pengguna (Kanji & Kotoba)
@@ -92,6 +93,10 @@ const useUserProgressStore = create((set, get) => ({
       // Ambil data detail langsung dari service, tanpa memanggil action store lain
       const detailResult = await userKanjiService.getDetail(kanjiId);
       set({ currentProgressDetail: detailResult.data });
+
+      // Refresh data kanji list secara silent agar indikator tracking terupdate
+      useKanjiStore.getState().fetchKanjis();
+
       return result.data;
     } catch (error) {
       const message = error.response?.data?.error || "Failed to add to learning list.";
@@ -121,6 +126,9 @@ const useUserProgressStore = create((set, get) => ({
       set((state) => ({
         userKanjis: state.userKanjis.filter((item) => item.kanjiId !== kanjiId)
       }));
+
+      // Refresh data kanji list secara silent agar indikator tracking terupdate
+      useKanjiStore.getState().fetchKanjis();
     } catch (error) {
       const message = error.response?.data?.error || "Failed to remove kanji progress.";
       set({ error: message });
