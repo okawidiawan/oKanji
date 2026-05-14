@@ -59,6 +59,7 @@ describe("Kanji API", () => {
             expect(prismaMock.kanji.findMany).toHaveBeenCalledWith(expect.objectContaining({
                 take: 20,
                 skip: 0,
+                orderBy: { jlptLevel: "asc" },
                 include: {
                     userKanjis: {
                         where: { userId: 1 },
@@ -180,6 +181,32 @@ describe("Kanji API", () => {
                     ]
                 }
             }));
+        });
+
+        it("seharusnya berhasil mengurutkan secara descending berdasarkan level JLPT", async () => {
+            mockAuthSuccess();
+            const mockData = [{ id: "1", character: "日", jlptLevel: "N5" }];
+            prismaMock.kanji.findMany.mockResolvedValue(mockData);
+            prismaMock.kanji.count.mockResolvedValue(1);
+
+            const response = await request(app)
+               .get("/api/kanjis?sort_order=desc")
+               .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(200);
+            expect(prismaMock.kanji.findMany).toHaveBeenCalledWith(expect.objectContaining({
+                orderBy: { jlptLevel: "desc" }
+            }));
+        });
+
+        it("seharusnya gagal (400) jika arah pengurutan (sort_order) tidak valid", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+               .get("/api/kanjis?sort_order=invalid")
+               .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBeDefined();
         });
     });
 

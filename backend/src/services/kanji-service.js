@@ -4,7 +4,7 @@ import { ResponseError } from '../error/response-error.js';
 
 /**
  * Mengambil daftar data kanji.
- * Mendukung filter level JLPT, pencarian teks (pada karakter atau arti), dan paginasi.
+ * Mendukung filter level JLPT, pencarian teks (pada karakter atau arti), pengurutan, dan paginasi.
  */
 const list = async (user, request) => {
   // Validasi input request menggunakan Zod
@@ -32,6 +32,9 @@ const list = async (user, request) => {
       where: filters,
       take: validatedRequest.size,
       skip: skip,
+      orderBy: {
+        [validatedRequest.sort_by]: validatedRequest.sort_order,
+      },
       include: {
         userKanjis: {
           where: {

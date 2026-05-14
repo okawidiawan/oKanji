@@ -27,6 +27,10 @@ export default function KanjiListPage() {
     setFilters({ level: level === filters.level ? "" : level });
   };
 
+  const handleSortChange = (order) => {
+    setFilters({ sort_order: order });
+  };
+
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= paging.total_page) {
       fetchKanjis(newPage);
@@ -41,16 +45,27 @@ export default function KanjiListPage() {
           <p className="text-gray-400 mt-1">Explore thousands of Kanji characters categorized by JLPT levels.</p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {["N5", "N4", "N3", "N2", "N1"].map((lv) => (
-            <button
-              key={lv}
-              onClick={() => handleLevelChange(lv)}
-              className={`cursor-pointer px-4 py-2 rounded-lg font-bold transition-all ${filters.level === lv ? "bg-primary text-background" : "bg-background-lighter text-gray-400 border border-my-border hover:border-primary/50"}`}
-            >
-              {lv}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-8">
+          <div className="flex flex-wrap gap-2">
+            {["N5", "N4", "N3", "N2", "N1"].map((lv) => (
+              <button
+                key={lv}
+                onClick={() => handleLevelChange(lv)}
+                className={`cursor-pointer px-4 py-2 rounded-lg font-bold transition-all ${filters.level === lv ? "bg-primary text-background" : "bg-background-lighter text-gray-400 border border-my-border hover:border-primary/50"}`}
+              >
+                {lv}
+              </button>
+            ))}
+          </div>
+
+          <select
+            value={filters.sort_order || "asc"}
+            onChange={(e) => handleSortChange(e.target.value)}
+            className="cursor-pointer bg-background-lighter text-gray-400 border border-my-border hover:border-primary/50 rounded-lg px-4 py-2 font-bold focus:outline-none transition-all"
+          >
+            <option value="asc">N5 → N1</option>
+            <option value="desc">N1 → N5</option>
+          </select>
         </div>
       </header>
 
