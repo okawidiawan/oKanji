@@ -19,7 +19,7 @@ const add = async (user, request) => {
   }
 
   const now = new Date();
-  
+
   // Melakukan operasi upsert (update if exists, create if not)
   // FIX-10: Hapus findUnique redundan, Prisma otomatis skip undefined
   return prisma.userKanji.upsert({
@@ -32,7 +32,7 @@ const add = async (user, request) => {
     update: {
       difficulty: validatedRequest.difficulty,
       note: validatedRequest.note,
-      reviewCount: { increment: 1 },
+      reviewCount: validatedRequest.reviewCount !== undefined ? validatedRequest.reviewCount : { increment: 1 },
       lastReviewed: now,
     },
     create: {
@@ -41,7 +41,7 @@ const add = async (user, request) => {
       isMemorized: false,
       difficulty: validatedRequest.difficulty,
       note: validatedRequest.note,
-      reviewCount: 1,
+      reviewCount: validatedRequest.reviewCount !== undefined ? validatedRequest.reviewCount : 1,
       lastReviewed: now,
       memorizedAt: null,
     },
@@ -247,7 +247,7 @@ const update = async (user, request) => {
       isMemorized: validatedRequest.isMemorized !== undefined ? validatedRequest.isMemorized : existing.isMemorized,
       difficulty: validatedRequest.difficulty !== undefined ? validatedRequest.difficulty : existing.difficulty,
       note: validatedRequest.note !== undefined ? validatedRequest.note : existing.note,
-      reviewCount: { increment: 1 }, // Setiap interaksi dihitung sebagai review
+      reviewCount: validatedRequest.reviewCount !== undefined ? validatedRequest.reviewCount : existing.reviewCount,
       lastReviewed: now,
       memorizedAt: memorizedAt,
     },

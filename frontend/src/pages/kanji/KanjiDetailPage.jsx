@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import useKanjiStore from "../../stores/use-kanji-store";
 import useUserProgressStore from "../../stores/use-user-progress-store";
 import useAuthStore from "../../stores/use-auth-store";
-import { IoMdAddCircleOutline, IoMdRemoveCircleOutline, IoMdTrash, IoMdCloseCircleOutline } from "react-icons/io";
+import { IoMdAddCircleOutline, IoMdTrash } from "react-icons/io";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 import { BsBookmarkPlusFill } from "react-icons/bs";
 import ConfirmModal from "../../components/ui/ConfirmModal";
@@ -12,22 +12,18 @@ export default function KanjiDetailPage() {
   const { id } = useParams();
   const { isAuthenticated } = useAuthStore();
   const { currentKanji, fetchKanjiDetail, isLoading: isKanjiLoading } = useKanjiStore();
-  const { 
-    currentProgressDetail, 
-    fetchProgressDetail, 
-    quickAddKanji, 
-    memorizeKanji, 
-    removeKanjiProgress,
-    addKotobaProgress,
-    removeKotobaProgress,
-    toggleKotobaMemorized, 
-    isLoading: isProgressLoading 
-  } = useUserProgressStore();
+  const { currentProgressDetail, fetchProgressDetail, quickAddKanji, memorizeKanji, removeKanjiProgress, addKotobaProgress, removeKotobaProgress, toggleKotobaMemorized, isLoading: isProgressLoading } = useUserProgressStore();
 
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [showKanjiConfirm, setShowKanjiConfirm] = useState(false);
-  const [showKotobaConfirm, setShowKotobaConfirm] = useState(false);
-  const [targetKotobaId, setTargetKotobaId] = useState(null);
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "",
+    type: "danger",
+    icon: null,
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     if (id) {
@@ -53,27 +49,56 @@ export default function KanjiDetailPage() {
     setIsActionLoading(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      await memorizeKanji(id, !currentProgressDetail.isMemorized);
+      await memorizeKanji(id, { isMemorized: !currentProgressDetail.isMemorized });
     } finally {
       setIsActionLoading(false);
     }
+  };
+
+  const handleHafalkan = () => {
+    if (!currentProgressDetail || !currentProgressDetail.isMemorized) return;
+    setModalConfig({
+      isOpen: true,
+      title: "Finished Reviewing?",
+      message: "This kanji's review count will increase. Make sure you have thoroughly reviewed it today!",
+      confirmText: "Yes, Finished",
+      type: "primary",
+      icon: <BsBookmarkPlusFill />,
+      onConfirm: async () => {
+        setIsActionLoading(true);
+        try {
+          // Delay sengaja untuk feel interaksi yang lebih baik
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          const newReviewCount = (currentProgressDetail.reviewCount || 0) + 1;
+          await memorizeKanji(id, { reviewCount: newReviewCount });
+        } finally {
+          setIsActionLoading(false);
+        }
+      },
+    });
   };
 
   const handleRemoveKanji = () => {
-    setShowKanjiConfirm(true);
-  };
-
-  const handleActualRemoveKanji = async () => {
-    setIsActionLoading(true);
-    try {
-      await removeKanjiProgress(id);
-    } finally {
-      setIsActionLoading(false);
-    }
+    setModalConfig({
+      isOpen: true,
+      title: "Stop Learning Kanji?",
+      message: "All learning progress, memorization status, and notes for this kanji will be permanently deleted.",
+      confirmText: "Yes, Delete All",
+      type: "danger",
+      icon: <IoMdTrash />,
+      onConfirm: async () => {
+        setIsActionLoading(true);
+        try {
+          await removeKanjiProgress(id);
+        } finally {
+          setIsActionLoading(false);
+        }
+      },
+    });
   };
 
   const handleToggleKotoba = async (kotobaId, currentIsMemorized) => {
-    await toggleKotobaMemorized(kotobaId, !currentIsMemorized);
+    await toggleKotobaMemorized(kotobaId, { isMemorized: !currentIsMemorized });
   };
 
   const handleAddKotoba = async (kotobaId) => {
@@ -81,14 +106,17 @@ export default function KanjiDetailPage() {
   };
 
   const handleRemoveKotoba = (kotobaId) => {
-    setTargetKotobaId(kotobaId);
-    setShowKotobaConfirm(true);
-  };
-
-  const handleActualRemoveKotoba = async () => {
-    if (!targetKotobaId) return;
-    await removeKotobaProgress(targetKotobaId);
-    setTargetKotobaId(null);
+    setModalConfig({
+      isOpen: true,
+      title: "Remove Vocabulary Progress?",
+      message: "Learning progress for this vocabulary will be removed from your list.",
+      confirmText: "Yes, Remove",
+      type: "danger",
+      icon: null,
+      onConfirm: async () => {
+        await removeKotobaProgress(kotobaId);
+      },
+    });
   };
 
   if (isKanjiLoading) {
@@ -106,7 +134,7 @@ export default function KanjiDetailPage() {
   return (
     <div className="space-y-10 max-w-5xl mx-auto animate-fade-up">
       {/* Hero Section */}
-      <div className="flex flex-col md:flex-row gap-10 items-center md:items-stretch">
+      <div className="flex flex-col md:flex-row gap-8 items-center md:items-stretch mb-4">
         <div className="shrink-0 w-64 h-64 rounded-3xl flex items-center justify-center text-[10rem] font-bold shadow-2xl text-secondary border border-my-border">{currentKanji.character}</div>
 
         <div className="grow flex flex-col justify-center space-y-6 text-center md:text-left">
@@ -119,46 +147,6 @@ export default function KanjiDetailPage() {
                 {/* Radikal */}
                 {currentKanji.radical && <span className="text-gray-500 text-sm">Radikal: {currentKanji.radical}</span>}
               </div>
-
-              {/* Add Kanji Actions */}
-              {isAuthenticated && (
-                <div className="flex items-center gap-4">
-                  {!currentProgressDetail ? (
-                    <button 
-                      onClick={handleQuickAdd} 
-                      disabled={isActionLoading} 
-                      className="flex items-center gap-2 px-6 py-3 bg-primary text-background font-black rounded-2xl hover:bg-primary-hover hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <BsBookmarkPlusFill className="text-xl" />
-                      <span>{isActionLoading ? "Menambahkan..." : "Mulai Belajar"}</span>
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2 bg-background-lighter p-1.5 rounded-2xl border border-my-border animate-fade-in">
-                      <button
-                        onClick={handleToggleMemorized}
-                        disabled={isActionLoading}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all cursor-pointer ${
-                          currentProgressDetail.isMemorized 
-                            ? "bg-green-500 text-background shadow-lg shadow-green-500/20" 
-                            : "bg-primary text-background shadow-lg shadow-primary/20"
-                        } hover:opacity-90 active:scale-95 disabled:opacity-50`}
-                      >
-                        {currentProgressDetail.isMemorized ? <IoIosCheckmarkCircleOutline className="text-xl" /> : <IoMdAddCircleOutline className="text-xl" />}
-                        <span className="text-sm">{currentProgressDetail.isMemorized ? "Sudah Hafal" : "Belum Hafal"}</span>
-                      </button>
-
-                      <button
-                        onClick={handleRemoveKanji}
-                        disabled={isActionLoading}
-                        title="Batal Pelajari"
-                        className="p-2.5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        <IoMdTrash className="text-xl" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
             <h1 className="text-5xl font-extrabold text-white">{currentKanji.meaning}</h1>
           </div>
@@ -175,6 +163,59 @@ export default function KanjiDetailPage() {
           </div>
         </div>
       </div>
+      {/* Add Kanji Actions */}
+      <div className="w-64 flex justify-center">
+        {isAuthenticated && (
+          <div className="flex items-center gap-4">
+            {!currentProgressDetail ? (
+              <button
+                onClick={handleQuickAdd}
+                disabled={isActionLoading}
+                className="flex items-center gap-2 px-6 py-3 bg-primary text-background font-black rounded-2xl hover:bg-primary-hover hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <BsBookmarkPlusFill className="text-xl" />
+                <span>{isActionLoading ? "Adding..." : "Start Learning"}</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md p-1.5 rounded-2xl border border-my-border animate-fade-in">
+                {/* Tombol Utama: Hafalkan */}
+                <button
+                  onClick={handleHafalkan}
+                  disabled={isActionLoading || !currentProgressDetail.isMemorized}
+                  title={!currentProgressDetail.isMemorized ? "Memorize this kanji first to increase review count" : "Add Review Count"}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black bg-secondary text-background transition-all shadow-lg shadow-white/10 ${
+                    isActionLoading || !currentProgressDetail.isMemorized ? "opacity-30 cursor-not-allowed" : "hover:opacity-90 hover:scale-105 active:scale-95 cursor-pointer"
+                  }`}
+                >
+                  <span className="text-sm uppercase tracking-wider">{isActionLoading ? "..." : "Review"}</span>
+                </button>
+
+                {/* Tombol Status Hafalan (Toggle Terpisah) */}
+                <button
+                  onClick={handleToggleMemorized}
+                  disabled={isActionLoading}
+                  title={currentProgressDetail.isMemorized ? "Mark as Not Memorized" : "Mark as Memorized"}
+                  className={`p-2.5 rounded-xl transition-all cursor-pointer border ${
+                    currentProgressDetail.isMemorized ? "bg-green-500 text-background border-green-500 shadow-lg shadow-green-500/20" : "bg-background-lighter text-gray-500 border-my-border hover:text-primary hover:border-primary"
+                  } active:scale-95 disabled:opacity-50`}
+                >
+                  {currentProgressDetail.isMemorized ? <IoIosCheckmarkCircleOutline className="text-xl" /> : <IoMdAddCircleOutline className="text-xl" />}
+                </button>
+
+                {/* Tombol Batal Pelajari */}
+                <button
+                  onClick={handleRemoveKanji}
+                  disabled={isActionLoading}
+                  title="Stop Learning"
+                  className="p-2.5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                >
+                  <IoMdTrash className="text-xl" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <hr className="border-my-border" />
 
@@ -187,7 +228,7 @@ export default function KanjiDetailPage() {
                 <path d="M9 4.804A7.993 7.993 0 002 12a7.998 7.998 0 007 7.917V4.804zm2 0v15.113A7.998 7.998 0 0018 12a7.993 7.993 0 00-7-7.196z" />
               </svg>
             </span>
-            Kosakata Terkait
+            Related Vocabulary
           </h2>
         </div>
 
@@ -216,18 +257,16 @@ export default function KanjiDetailPage() {
                         <>
                           <button
                             onClick={() => handleToggleKotoba(word.id, isMemorized)}
-                            title={isMemorized ? "Tandai Belum Hafal" : "Tandai Sudah Hafal"}
+                            title={isMemorized ? "Mark as Not Memorized" : "Mark as Memorized"}
                             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                              isMemorized 
-                                ? "bg-green-500 text-background shadow-md shadow-green-500/20" 
-                                : "bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary"
+                              isMemorized ? "bg-green-500 text-background shadow-md shadow-green-500/20" : "bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary"
                             } hover:scale-105 active:scale-95`}
                           >
                             <IoIosCheckmarkCircleOutline className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleRemoveKotoba(word.id)}
-                            title="Hapus Progress"
+                            title="Remove Progress"
                             className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
                           >
                             <IoMdTrash className="w-4 h-4" />
@@ -236,7 +275,7 @@ export default function KanjiDetailPage() {
                       ) : (
                         <button
                           onClick={() => handleAddKotoba(word.id)}
-                          title="Tambah ke Hafalan"
+                          title="Add to Memorization List"
                           className="w-9 h-9 rounded-xl flex items-center justify-center bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary transition-all cursor-pointer hover:scale-105 active:scale-95"
                         >
                           <IoMdAddCircleOutline className="w-5 h-5" />
@@ -248,7 +287,7 @@ export default function KanjiDetailPage() {
               );
             })
           ) : (
-            <div className="col-span-full py-10 text-center text-gray-500 bg-background-lighter rounded-2xl border border-dashed border-my-border">Belum ada kosakata yang ditambahkan untuk kanji ini.</div>
+            <div className="col-span-full py-10 text-center text-gray-500 bg-background-lighter rounded-2xl border border-dashed border-my-border">No vocabulary added for this kanji yet.</div>
           )}
         </div>
       </section>
@@ -261,41 +300,26 @@ export default function KanjiDetailPage() {
             <div className="text-3xl font-black text-white">{currentProgressDetail.reviewCount || 0}</div>
           </div>
           <div className="text-center space-y-1">
-            <div className="text-gray-500 text-xs font-bold uppercase tracking-widest">Tingkat Kesulitan</div>
+            <div className="text-gray-500 text-xs font-bold uppercase tracking-widest">Difficulty Level</div>
             <div className="text-3xl font-black text-primary">{currentProgressDetail.difficulty || "-"}</div>
           </div>
           <div className="text-center space-y-1">
-            <div className="text-gray-500 text-xs font-bold uppercase tracking-widest">Terakhir Dipelajari</div>
-            <div className="text-sm font-medium text-white">
-              {currentProgressDetail.lastReviewed ? new Date(currentProgressDetail.lastReviewed).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Belum pernah"}
-            </div>
+            <div className="text-gray-500 text-xs font-bold uppercase tracking-widest">Last Reviewed</div>
+            <div className="text-sm font-medium text-white">{currentProgressDetail.lastReviewed ? new Date(currentProgressDetail.lastReviewed).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Never"}</div>
           </div>
         </section>
       )}
 
-      {/* Confirmation Modals */}
+      {/* Dynamic Reusable Confirmation Modal */}
       <ConfirmModal
-        isOpen={showKanjiConfirm}
-        onClose={() => setShowKanjiConfirm(false)}
-        onConfirm={handleActualRemoveKanji}
-        title="Batal Pelajari Kanji?"
-        message="Seluruh progres belajar, status hafalan, dan catatan untuk kanji ini akan dihapus secara permanen."
-        confirmText="Ya, Hapus Semua"
-        type="danger"
-        icon={<IoMdTrash />}
-      />
-
-      <ConfirmModal
-        isOpen={showKotobaConfirm}
-        onClose={() => {
-          setShowKotobaConfirm(false);
-          setTargetKotobaId(null);
-        }}
-        onConfirm={handleActualRemoveKotoba}
-        title="Hapus Progres Kosakata?"
-        message="Data progres belajar untuk kosakata ini akan dihapus dari daftar hafalan Anda."
-        confirmText="Ya, Hapus"
-        type="danger"
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={modalConfig.onConfirm}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        type={modalConfig.type}
+        icon={modalConfig.icon}
       />
     </div>
   );

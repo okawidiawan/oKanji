@@ -7,6 +7,7 @@ const addUserKanjiValidation = z.object({
     kanjiId: z.string().uuid("Invalid Kanji ID format"),
     difficulty: z.number().min(1, "Difficulty must be at least 1").max(5, "Difficulty must not exceed 5").optional(),
     note: z.string().max(2000, "Note must not exceed 2000 characters").optional(),
+    reviewCount: z.number().min(0).optional(),
 });
 
 /**
@@ -32,8 +33,9 @@ const updateUserKanjiValidation = z.object({
     isMemorized: z.boolean().optional(),
     difficulty: z.number().min(1, "Difficulty must be at least 1").max(5, "Difficulty must not exceed 5").optional(),
     note: z.string().max(2000, "Note must not exceed 2000 characters").optional(),
-}).refine(data => data.isMemorized !== undefined || data.difficulty !== undefined || data.note !== undefined, {
-    message: "At least one field must be provided (isMemorized, difficulty, or note)"
+    reviewCount: z.number().min(0).optional(),
+}).refine(data => data.isMemorized !== undefined || data.difficulty !== undefined || data.note !== undefined || data.reviewCount !== undefined, {
+    message: "At least one field must be provided (isMemorized, difficulty, note, or reviewCount)"
 });
 
 export {
