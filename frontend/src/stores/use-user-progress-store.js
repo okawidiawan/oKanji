@@ -14,12 +14,15 @@ const useUserProgressStore = create((set, get) => ({
     total_item: 0,
     total_page: 0,
   },
-  isLoading: false,
+  loadingCount: 0,
+  get isLoading() {
+    return get().loadingCount > 0;
+  },
   error: null,
 
   // Actions
   fetchUserKanjis: async (params = {}) => {
-    set({ isLoading: true, error: null });
+    set((state) => ({ loadingCount: state.loadingCount + 1, error: null }));
     try {
       const result = await userKanjiService.getList(params);
       set({
@@ -27,15 +30,15 @@ const useUserProgressStore = create((set, get) => ({
         paging: result.paging,
       });
     } catch (error) {
-      const message = error.response?.data?.error || "Gagal mengambil daftar progres belajar.";
+      const message = error.response?.data?.error || "Failed to fetch learning progress list.";
       set({ error: message });
     } finally {
-      set({ isLoading: false });
+      set((state) => ({ loadingCount: state.loadingCount - 1 }));
     }
   },
 
   fetchProgressDetail: async (kanjiId) => {
-    set({ isLoading: true, error: null });
+    set((state) => ({ loadingCount: state.loadingCount + 1, error: null }));
     try {
       const result = await userKanjiService.getDetail(kanjiId);
       // result.data contains progress + kanji + kotoba (with user progress)
@@ -45,16 +48,16 @@ const useUserProgressStore = create((set, get) => ({
       if (error.response?.status === 404) {
         set({ currentProgressDetail: null });
       } else {
-        const message = error.response?.data?.error || "Gagal mengambil detail progres.";
+        const message = error.response?.data?.error || "Failed to fetch progress detail.";
         set({ error: message });
       }
     } finally {
-      set({ isLoading: false });
+      set((state) => ({ loadingCount: state.loadingCount - 1 }));
     }
   },
 
   memorizeKanji: async (kanjiId, data) => {
-    set({ isLoading: true });
+    set((state) => ({ loadingCount: state.loadingCount + 1 }));
     try {
       // data can contain { isMemorized, reviewCount, difficulty, note }
       const result = await userKanjiService.update(kanjiId, data);
@@ -74,27 +77,28 @@ const useUserProgressStore = create((set, get) => ({
         )
       }));
     } catch (error) {
-      const message = error.response?.data?.error || "Gagal memperbarui status hafalan.";
+      const message = error.response?.data?.error || "Failed to update memorization status.";
       set({ error: message });
       throw error;
     } finally {
-      set({ isLoading: false });
+      set((state) => ({ loadingCount: state.loadingCount - 1 }));
     }
   },
 
   quickAddKanji: async (kanjiId) => {
-    set({ isLoading: true });
+    set((state) => ({ loadingCount: state.loadingCount + 1 }));
     try {
       const result = await userKanjiService.add(kanjiId);
-      // Refresh detail after add
-      await get().fetchProgressDetail(kanjiId);
+      // Ambil data detail langsung dari service, tanpa memanggil action store lain
+      const detailResult = await userKanjiService.getDetail(kanjiId);
+      set({ currentProgressDetail: detailResult.data });
       return result.data;
     } catch (error) {
-      const message = error.response?.data?.error || "Gagal menambahkan ke daftar belajar.";
+      const message = error.response?.data?.error || "Failed to add to learning list.";
       set({ error: message });
       throw error;
     } finally {
-      set({ isLoading: false });
+      set((state) => ({ loadingCount: state.loadingCount - 1 }));
     }
   },
 
@@ -103,7 +107,7 @@ const useUserProgressStore = create((set, get) => ({
    * @param {string} kanjiId - UUID Kanji
    */
   removeKanjiProgress: async (kanjiId) => {
-    set({ isLoading: true });
+    set((state) => ({ loadingCount: state.loadingCount + 1 }));
     try {
       await userKanjiService.remove(kanjiId);
       
@@ -118,11 +122,11 @@ const useUserProgressStore = create((set, get) => ({
         userKanjis: state.userKanjis.filter((item) => item.kanjiId !== kanjiId)
       }));
     } catch (error) {
-      const message = error.response?.data?.error || "Gagal menghapus progress kanji.";
+      const message = error.response?.data?.error || "Failed to remove kanji progress.";
       set({ error: message });
       throw error;
     } finally {
-      set({ isLoading: false });
+      set((state) => ({ loadingCount: state.loadingCount - 1 }));
     }
   },
 
@@ -131,7 +135,7 @@ const useUserProgressStore = create((set, get) => ({
    * @param {string} kotobaId - UUID Kotoba
    */
   addKotobaProgress: async (kotobaId) => {
-    set({ isLoading: true });
+    set((state) => ({ loadingCount: state.loadingCount + 1 }));
     try {
       const result = await userKotobaService.add(kotobaId);
       
@@ -152,11 +156,11 @@ const useUserProgressStore = create((set, get) => ({
         });
       }
     } catch (error) {
-      const message = error.response?.data?.error || "Gagal menambahkan kosakata ke hafalan.";
+      const message = error.response?.data?.error || "Failed to add vocabulary to memorization list.";
       set({ error: message });
       throw error;
     } finally {
-      set({ isLoading: false });
+      set((state) => ({ loadingCount: state.loadingCount - 1 }));
     }
   },
 
@@ -165,7 +169,7 @@ const useUserProgressStore = create((set, get) => ({
    * @param {string} kotobaId - UUID Kotoba
    */
   removeKotobaProgress: async (kotobaId) => {
-    set({ isLoading: true });
+    set((state) => ({ loadingCount: state.loadingCount + 1 }));
     try {
       await userKotobaService.remove(kotobaId);
       
@@ -186,11 +190,11 @@ const useUserProgressStore = create((set, get) => ({
         });
       }
     } catch (error) {
-      const message = error.response?.data?.error || "Gagal menghapus kosakata dari hafalan.";
+      const message = error.response?.data?.error || "Failed to remove vocabulary from memorization list.";
       set({ error: message });
       throw error;
     } finally {
-      set({ isLoading: false });
+      set((state) => ({ loadingCount: state.loadingCount - 1 }));
     }
   },
 
@@ -221,7 +225,7 @@ const useUserProgressStore = create((set, get) => ({
         });
       }
     } catch (error) {
-      const message = error.response?.data?.error || "Gagal memperbarui status kosakata.";
+      const message = error.response?.data?.error || "Failed to update vocabulary status.";
       set({ error: message });
       throw error;
     }

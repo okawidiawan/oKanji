@@ -217,8 +217,8 @@ describe("User Kotoba API", () => {
                 .send({}); // Minimal satu field harus diisi
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("At least one field must be provided (isMemorized, difficulty, or note)");
-            expect(response.body.details[0].message).toBe("At least one field must be provided (isMemorized, difficulty, or note)");
+            expect(response.body.error).toBe("At least one field must be provided (isMemorized, difficulty, note, or reviewCount)");
+            expect(response.body.details[0].message).toBe("At least one field must be provided (isMemorized, difficulty, note, or reviewCount)");
         });
     });
 

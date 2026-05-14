@@ -128,15 +128,6 @@ describe("User Kanji API", () => {
                     kanji: {
                         include: {
                             kanjiKotoba: {
-                                where: {
-                                    kotoba: {
-                                        userKotoba: {
-                                            some: {
-                                                userId: 1,
-                                            },
-                                        },
-                                    },
-                                },
                                 include: {
                                     kotoba: {
                                         include: {
@@ -379,7 +370,7 @@ describe("User Kanji API", () => {
                 .send({});
 
             expect(response.status).toBe(400);
-            expect(response.body.error).toBe("At least one field must be provided (isMemorized, difficulty, or note)");
+            expect(response.body.error).toBe("At least one field must be provided (isMemorized, difficulty, note, or reviewCount)");
         });
 
         it("seharusnya gagal (400) jika tingkat kesulitan tidak valid (misal: 6)", async () => {

@@ -72,15 +72,6 @@ const get = async (user, kanjiId) => {
       kanji: {
         include: {
           kanjiKotoba: {
-            where: {
-              kotoba: {
-                userKotoba: {
-                  some: {
-                    userId: user.id,
-                  },
-                },
-              },
-            },
             include: {
               kotoba: {
                 include: {

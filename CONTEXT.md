@@ -156,6 +156,7 @@ frontend/
 11. **Shared Kotoba Reference**: Model `Kotoba` berfungsi sebagai data referensi bersama. Endpoint `POST /api/kotoba` (dan rute terkait) bersifat shared oleh semua user yang login. Aturan _Data Isolation_ (filter `user.id`) tidak berlaku untuk model ini, karena data kotoba tidak bersifat personal.
 12. **Token Hashing**: Session token (UUID) disimpan dalam bentuk hash SHA-256 di database untuk memitigasi risiko jika database bocor. Client tetap menerima token asli yang belum di-hash.
 13. **Centralized Logging**: Semua logging menggunakan Winston melalui modul `src/application/logger.js`. Format log otomatis menyesuaikan environment: development menggunakan format readable berwarna di console, production menggunakan format JSON terstruktur dan menulis ke file (`logs/error.log` untuk error, `logs/combined.log` untuk semua level). Level logging dikontrol via environment variable `LOG_LEVEL` (default: `debug` di development, `info` di production).
+14. **Indikator Progres Personal**: Untuk meningkatkan UX, daftar kanji global (`GET /api/kanjis`) menyertakan indikator status pelajari/hafal milik user saat ini melalui relasi `userKanjis` yang terfilter secara spesifik di level query (`where: { userId }`). Pada detail kanji milik user (`GET /api/user-kanji/:kanjiId`), seluruh kosakata yang terkait dengan kanji tersebut tetap ditampilkan secara lengkap, disertai array `userKotoba` terfilter sebagai penanda *tracking* personal tiap kosakata.
 
 ---
 

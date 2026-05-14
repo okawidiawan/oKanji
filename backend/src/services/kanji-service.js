@@ -6,7 +6,7 @@ import { ResponseError } from '../error/response-error.js';
  * Mengambil daftar data kanji.
  * Mendukung filter level JLPT, pencarian teks (pada karakter atau arti), dan paginasi.
  */
-const list = async (request) => {
+const list = async (user, request) => {
   // Validasi input request menggunakan Zod
   const validatedRequest = getKanjiValidation.parse(request);
   const skip = (validatedRequest.page - 1) * validatedRequest.size;
@@ -31,7 +31,17 @@ const list = async (request) => {
     prisma.kanji.findMany({
       where: filters,
       take: validatedRequest.size,
-      skip: skip
+      skip: skip,
+      include: {
+        userKanjis: {
+          where: {
+            userId: user.id,
+          },
+          select: {
+            isMemorized: true,
+          },
+        },
+      },
     }),
     prisma.kanji.count({
       where: filters

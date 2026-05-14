@@ -60,7 +60,8 @@ const useAuthStore = create(
           // Panggil API logout (opsional handle failure jika token sudah invalid)
           await authService.logout();
         } catch (error) {
-          console.error("Logout error:", error);
+          // Error diabaikan karena state auth tetap di-reset pada blok finally,
+          // sehingga user tetap ter-logout dari sisi frontend meskipun API gagal.
         } finally {
           // Selalu reset state lokal
           set({
@@ -80,24 +81,24 @@ const useAuthStore = create(
           const result = await authService.getCurrentUser();
           set({ user: result.data, isAuthenticated: true });
         } catch (error) {
-          // Jika token tidak valid (401), interceptor akan menangani logout
-          console.error("Fetch user error:", error);
+          // Error 401 (token invalid/expired) ditangani secara otomatis
+          // oleh response interceptor di lib/api.js (auto-redirect ke login).
         }
       },
 
       updateProfile: async (profileData) => {
         set({ isLoading: true, error: null });
         try {
+          const result = await authService.updateProfile(profileData);
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
-          const result = await authService.updateProfile(profileData);
           // result.data berisi { username, name, email }
           set((state) => ({
             user: { ...state.user, ...result.data },
           }));
           return result.data;
         } catch (error) {
-          const message = error.response?.data?.error || "Gagal memperbarui profil.";
+          const message = error.response?.data?.error || "Failed to update profile.";
           set({ error: message });
           throw error;
         } finally {
