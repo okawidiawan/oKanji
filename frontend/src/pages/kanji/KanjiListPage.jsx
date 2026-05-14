@@ -1,16 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useKanjiStore from "../../stores/use-kanji-store";
 
 export default function KanjiListPage() {
   const { kanjis, isLoading, error, paging, filters, fetchKanjis, setFilters } = useKanjiStore();
+  const [searchTerm, setSearchTerm] = useState(filters.search);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setFilters({ search: searchTerm });
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, setFilters]);
 
   useEffect(() => {
     fetchKanjis(paging.page);
   }, [paging.page, filters]);
 
   const handleSearchChange = (e) => {
-    setFilters({ search: e.target.value });
+    setSearchTerm(e.target.value);
   };
 
   const handleLevelChange = (level) => {
@@ -49,7 +58,7 @@ export default function KanjiListPage() {
         <input
           type="text"
           placeholder="Search kanji or meaning (e.g., 日 or Sun)..."
-          value={filters.search}
+          value={searchTerm}
           onChange={handleSearchChange}
           className="w-full bg-background-lighter border border-my-border rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-lg"
         />
@@ -80,16 +89,14 @@ export default function KanjiListPage() {
                   isMemorized
                     ? "border-green-500/30 hover:border-green-500 bg-green-500/5 hover:bg-green-500/10"
                     : isLearning
-                    ? "border-primary/30 hover:border-primary bg-primary/5 hover:bg-primary/10"
-                    : "border-my-border hover:border-primary hover:bg-primary/5"
+                      ? "border-primary/30 hover:border-primary bg-primary/5 hover:bg-primary/10"
+                      : "border-my-border hover:border-primary hover:bg-primary/5"
                 }`}
               >
                 {/* Tracking Indicator */}
                 {isLearning && (
                   <span
-                    className={`absolute top-0 left-0 p-1.5 rounded-br-lg text-xs font-bold flex items-center gap-1 ${
-                      isMemorized ? "bg-green-500 text-background" : "bg-primary/10 text-primary"
-                    }`}
+                    className={`absolute top-0 left-0 p-1.5 rounded-br-lg text-xs font-bold flex items-center gap-1 ${isMemorized ? "bg-green-500 text-background" : "bg-primary/10 text-primary"}`}
                     title={isMemorized ? "Memorized" : "Still Learning"}
                   >
                     {isMemorized ? "✓" : "📖"}
@@ -97,7 +104,7 @@ export default function KanjiListPage() {
                 )}
 
                 <span className="text-4xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{kanji.character}</span>
-                <span className="text-xs text-gray-400 group-hover:text-primary transition-colors text-center line-clamp-1 px-2">{kanji.meaning}</span>
+                <span className="text-xs text-gray-400 group-hover:text-secondary transition-colors text-center line-clamp-1 px-2">{kanji.meaning}</span>
                 <span className="absolute top-0 right-0 text-sm font-bold text-primary/60 bg-primary/10 px-2.5 py-1.5 rounded uppercase">{kanji.jlptLevel}</span>
               </Link>
             );
