@@ -100,7 +100,7 @@ frontend/
   - [x] `DELETE /api/users/logout`: Menghapus token (Logout).
 - **Kanji Data**:
   - [x] `GET /api/kanjis`: Mengambil list kanji.
-    - Query Params: `level` (N1-N5), `search` (karakter/makna), `page`, `size`.
+    - Query Params: `level` (N1-N5), `search` (karakter/makna), `sort_by` (default: jlptLevel), `sort_order` (asc/desc), `page`, `size`.
   - [x] `GET /api/kanjis/:kanjiId`: Mengambil detail satu kanji + list kotoba terkait.
 - **Kotoba Data (Input Manual)**:
   - [x] `POST /api/kotoba`: Membuat kotoba baru (single/batch) + hubungkan ke kanji via `kanjiIds`.
@@ -156,7 +156,7 @@ frontend/
 11. **Shared Kotoba Reference**: Model `Kotoba` berfungsi sebagai data referensi bersama. Endpoint `POST /api/kotoba` (dan rute terkait) bersifat shared oleh semua user yang login. Aturan _Data Isolation_ (filter `user.id`) tidak berlaku untuk model ini, karena data kotoba tidak bersifat personal.
 12. **Token Hashing**: Session token (UUID) disimpan dalam bentuk hash SHA-256 di database untuk memitigasi risiko jika database bocor. Client tetap menerima token asli yang belum di-hash.
 13. **Centralized Logging**: Semua logging menggunakan Winston melalui modul `src/application/logger.js`. Format log otomatis menyesuaikan environment: development menggunakan format readable berwarna di console, production menggunakan format JSON terstruktur dan menulis ke file (`logs/error.log` untuk error, `logs/combined.log` untuk semua level). Level logging dikontrol via environment variable `LOG_LEVEL` (default: `debug` di development, `info` di production).
-14. **Indikator Progres Personal**: Untuk meningkatkan UX, daftar kanji global (`GET /api/kanjis`) menyertakan indikator status pelajari/hafal milik user saat ini melalui relasi `userKanjis` yang terfilter secara spesifik di level query (`where: { userId }`). Pada detail kanji milik user (`GET /api/user-kanji/:kanjiId`), seluruh kosakata yang terkait dengan kanji tersebut tetap ditampilkan secara lengkap, disertai array `userKotoba` terfilter sebagai penanda *tracking* personal tiap kosakata.
+14. **Indikator Progres Personal**: Untuk meningkatkan UX, daftar kanji global (`GET /api/kanjis`) menyertakan indikator status pelajari/hafal milik user saat ini melalui relasi `userKanjis` yang terfilter secara spesifik di level query (`where: { userId }`). Pada detail kanji milik user (`GET /api/user-kanji/:kanjiId`), seluruh kosakata yang terkait dengan kanji tersebut tetap ditampilkan secara lengkap, disertai array `userKotoba` terfilter sebagai penanda _tracking_ personal tiap kosakata.
 
 ---
 
@@ -227,8 +227,14 @@ frontend/
   Selalu buat unit test untuk setiap API atau fitur baru yang ditambahkan atau setelah kode diperbaiki.
   Selalu jalankan unit test yang sudah dibuat, dan harus lolos test dengan benar.
   Jangan langsung lakukan commit, push, pull request jika tidak diminta.
+
 - Untuk AI Assistant yang ditugaskan untuk membuat issue.md, jika tidak ada perintah untuk implementasi, jangan lakukan implementasi kode.
+
 - Untuk AI Assistant yang ditugaskan untuk mereview tidak perlu melakukan coding, lakukan review dan buatkan prompt yang sesuai dengan hasil review untuk digunakan oleh AI yang melakukan coding.
+
+- Untuk AI Assistant yang ditugaskan untuk membantu saya melakukan coding, tidak perlu melakukan coding, cukup buatkan step by step, memberikan clue, dan tutorial secara detail, kecuali jika diminta untuk implementasi langsung.
+
+- Untuk semua AI, gunakan Github CLI untuk melakukan commit, push, membuat PR atau apapun yang berhubungan dengan GIT.
 
 ### Setelah selesai task
 

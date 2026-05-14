@@ -1,7 +1,7 @@
 import * as kanjiService from '../services/kanji-service.js';
 
 /**
- * Mengambil daftar kanji dengan dukungan paginasi, filter level JLPT, dan pencarian.
+ * Mengambil daftar kanji dengan dukungan paginasi, filter level JLPT, pencarian, dan pengurutan.
  */
 const list = async (req, res, next) => {
   try {
@@ -10,7 +10,9 @@ const list = async (req, res, next) => {
       level: req.query.level,
       search: req.query.search,
       page: req.query.page,
-      size: req.query.size
+      size: req.query.size,
+      sort_by: req.query.sort_by,
+      sort_order: req.query.sort_order
     };
 
     // Memanggil service untuk mengambil data

@@ -15,6 +15,7 @@ const useKanjiStore = create((set, get) => ({
   filters: {
     level: "",
     search: "",
+    sort_order: "asc",
   },
 
   // Actions
