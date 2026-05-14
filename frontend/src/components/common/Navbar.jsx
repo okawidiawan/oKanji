@@ -3,6 +3,7 @@ import useAuthStore from "../../stores/use-auth-store";
 import logoImg from "../../assets/logo.png";
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import { useState } from "react";
+import ConfirmModal from "../ui/ConfirmModal";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -63,40 +64,16 @@ export default function Navbar() {
         </div>
       </nav>
       {/* Logout Confirmation Modal */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-          {/* Overlay / Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowConfirm(false)} // Klik di luar untuk batal
-          />
-
-          {/* Modal Box */}
-          <div className="relative bg-background border border-my-border w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-fade-up">
-            <div className="text-center space-y-4">
-              {/* Icon (Opsional) */}
-              <div className="mx-auto w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-primary text-3xl">
-                <RiLogoutCircleRLine />
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-white">Confirm Logout</h3>
-                <p className="text-gray-400 text-sm">Are you sure you want to end your current session?</p>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowConfirm(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-my-border hover:bg-white/5 transition-colors font-medium">
-                  Cancel
-                </button>
-                <button onClick={handleActualLogout} className="flex-1 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/80 transition-colors font-bold">
-                  Yes, Sign Out
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleActualLogout}
+        title="Confirm Logout"
+        message="Are you sure you want to end your current session?"
+        confirmText="Yes, Sign Out"
+        type="danger"
+        icon={<RiLogoutCircleRLine />}
+      />
     </>
   );
 }

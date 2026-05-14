@@ -53,10 +53,11 @@ const useUserProgressStore = create((set, get) => ({
     }
   },
 
-  memorizeKanji: async (kanjiId, isMemorized) => {
+  memorizeKanji: async (kanjiId, data) => {
     set({ isLoading: true });
     try {
-      const result = await userKanjiService.update(kanjiId, { isMemorized });
+      // data can contain { isMemorized, reviewCount, difficulty, note }
+      const result = await userKanjiService.update(kanjiId, data);
       
       // Update local state if we are viewing the detail of this kanji
       const current = get().currentProgressDetail;
@@ -193,9 +194,10 @@ const useUserProgressStore = create((set, get) => ({
     }
   },
 
-  toggleKotobaMemorized: async (kotobaId, isMemorized) => {
+  toggleKotobaMemorized: async (kotobaId, data) => {
     try {
-      const result = await userKotobaService.update(kotobaId, { isMemorized });
+      // data can contain { isMemorized, reviewCount, difficulty, note }
+      const result = await userKotobaService.update(kotobaId, data);
       
       // Update nested state in currentProgressDetail
       const current = get().currentProgressDetail;
