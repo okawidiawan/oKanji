@@ -2,17 +2,37 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useUserProgressStore from "../../stores/use-user-progress-store";
 import { BsBookmarkCheckFill, BsBookHalf } from "react-icons/bs";
+import KanjiGrid from "../../components/ui/KanjiGrid";
+import { IoMdBookmark } from "react-icons/io";
+import { IoBookmarks } from "react-icons/io5";
+import { IoCheckmarkDone } from "react-icons/io5";
+import { FaCheck } from "react-icons/fa";
 
 export default function UserKanjiListPage() {
   const { userKanjis, isLoading, error, paging, fetchUserKanjis } = useUserProgressStore();
+
   const [filterMemorized, setFilterMemorized] = useState("all"); // "all", "memorized", "learning"
+
+  const normalizedKanjis = userKanjis.map((item) => ({
+    ...item.kanji,
+    userKanjis: [item],
+  }));
+
+  const myEmptyMessage = (
+    <div className="flex flex-col items-center gap-4">
+      <p>No kanji found in your collection.</p>
+      <Link to="/kanji" className="...">
+        Explore Kanji List
+      </Link>
+    </div>
+  );
 
   useEffect(() => {
     // Convert filter string to boolean or undefined
     const params = { page: paging.page || 1 };
     if (filterMemorized === "memorized") params.isMemorized = true;
     if (filterMemorized === "learning") params.isMemorized = false;
-    
+
     fetchUserKanjis(params);
   }, [paging.page, filterMemorized]);
 
@@ -31,9 +51,7 @@ export default function UserKanjiListPage() {
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <span>My Kanji Collection</span>
-            <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full font-mono uppercase tracking-wider">
-              Personal Progress
-            </span>
+            <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full font-mono uppercase tracking-wider">Personal Progress</span>
           </h1>
           <p className="text-gray-400 mt-1">Track and review the Kanji characters you are currently focusing on.</p>
         </div>
@@ -42,8 +60,8 @@ export default function UserKanjiListPage() {
         <div className="flex flex-wrap gap-2 bg-background-lighter p-1.5 rounded-xl border border-my-border">
           {[
             { id: "all", label: "All", icon: null },
-            { id: "memorized", label: "Memorized", icon: <BsBookmarkCheckFill className="text-green-500" /> },
-            { id: "learning", label: "Learning", icon: <BsBookHalf className="text-primary" /> },
+            { id: "memorized", label: "Memorized", icon: <IoCheckmarkDone className="text-2xl text-green-600" /> },
+            { id: "learning", label: "Learning", icon: <IoBookmarks className="text-md text-primary/80" /> },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -58,11 +76,7 @@ export default function UserKanjiListPage() {
                   fetchUserKanjis(params);
                 }
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all cursor-pointer ${
-                filterMemorized === tab.id
-                  ? "bg-primary text-background shadow-md shadow-primary/20"
-                  : "text-gray-400 hover:text-white"
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all cursor-pointer ${filterMemorized === tab.id ? "bg-secondary/80 text-background shadow-md shadow-primary/20" : "text-gray-400 hover:text-white"}`}
             >
               {tab.icon && <span className="text-base">{tab.icon}</span>}
               <span>{tab.label}</span>
@@ -74,71 +88,7 @@ export default function UserKanjiListPage() {
       {error && <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl">{error}</div>}
 
       {/* Kanji Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {isLoading ? (
-          // Skeletons
-          Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="aspect-square bg-background-lighter border border-my-border rounded-2xl animate-pulse" />
-          ))
-        ) : userKanjis && userKanjis.length > 0 ? (
-          userKanjis.map((item) => {
-            const kanji = item.kanji || {};
-            return (
-              <Link
-                key={item.kanjiId}
-                to={`/kanji/${item.kanjiId}`}
-                className={`relative overflow-hidden group aspect-square bg-background-lighter border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-300 ${
-                  item.isMemorized
-                    ? "border-green-500/30 hover:border-green-500 bg-green-500/5 hover:bg-green-500/10"
-                    : "border-my-border hover:border-primary hover:bg-primary/5"
-                }`}
-              >
-                {/* Corner Status Badge */}
-                <span
-                  className={`absolute top-0 left-0 p-1.5 rounded-br-lg text-xs font-bold flex items-center gap-1 ${
-                    item.isMemorized ? "bg-green-500 text-background" : "bg-primary/10 text-primary"
-                  }`}
-                  title={item.isMemorized ? "Memorized" : "Still Learning"}
-                >
-                  {item.isMemorized ? "✓" : "📖"}
-                </span>
-
-                {/* Review Count Badge */}
-                <span
-                  className="absolute bottom-2 right-2 text-[10px] font-mono text-gray-400 group-hover:text-white bg-background px-1.5 py-0.5 rounded border border-my-border"
-                  title="Total Reviews"
-                >
-                  ★ {item.reviewCount || 0}
-                </span>
-
-                {/* JLPT Level */}
-                {kanji.jlptLevel && (
-                  <span className="absolute top-0 right-0 text-xs font-bold text-primary/60 bg-primary/10 px-2 py-1 rounded uppercase">
-                    {kanji.jlptLevel}
-                  </span>
-                )}
-
-                <span className="text-4xl font-bold text-white group-hover:scale-110 transition-transform duration-300">
-                  {kanji.character}
-                </span>
-                <span className="text-xs text-gray-400 group-hover:text-primary transition-colors text-center line-clamp-1 px-2">
-                  {kanji.meaning}
-                </span>
-              </Link>
-            );
-          })
-        ) : (
-          <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 bg-background-lighter rounded-3xl border border-dashed border-my-border p-8">
-            <p className="text-gray-400 text-lg">No kanji found in your personal collection for this filter.</p>
-            <Link
-              to="/kanji"
-              className="px-6 py-2.5 bg-primary text-background font-bold rounded-xl hover:bg-primary-hover transition-all shadow-lg shadow-primary/20"
-            >
-              Explore Kanji List
-            </Link>
-          </div>
-        )}
-      </div>
+      <KanjiGrid kanjis={normalizedKanjis} isLoading={isLoading} emptyMessage={myEmptyMessage} />
 
       {/* Pagination */}
       {paging && paging.total_page > 1 && (

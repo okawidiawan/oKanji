@@ -132,15 +132,69 @@ export default function KanjiDetailPage() {
   }
 
   return (
-    <div className="space-y-10 max-w-5xl mx-auto animate-fade-up">
+    <div className="space-y-10 max-w-5xl animate-fade-up flex flex-col justify-center items-center md:items-stretch mx-auto">
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row gap-8 items-center md:items-stretch mb-4">
-        <div className="shrink-0 w-64 h-64 rounded-3xl flex items-center justify-center text-[10rem] font-bold shadow-2xl text-secondary border border-my-border">{currentKanji.character}</div>
+        <div className="flex flex-col gap-4">
+          <div className="shrink-0 w-64 h-64 rounded-3xl flex items-center justify-center text-[10rem] font-bold shadow-2xl text-secondary border border-my-border">{currentKanji.character}</div>
+          {/* Add Kanji Actions */}
+          <div className="w-64 flex justify-center">
+            {isAuthenticated && (
+              <div className="flex items-center gap-4">
+                {!currentProgressDetail ? (
+                  <button
+                    onClick={handleQuickAdd}
+                    disabled={isActionLoading}
+                    className="flex items-center gap-2 px-6 py-3 bg-primary text-background font-black rounded-2xl hover:bg-primary-hover hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <BsBookmarkPlusFill className="text-2xl" />
+                    <span>{isActionLoading ? "Adding..." : "Start Learning"}</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md p-1.5 rounded-2xl border border-my-border animate-fade-in">
+                    {/* Tombol Utama: Hafalkan */}
+                    <button
+                      onClick={handleHafalkan}
+                      disabled={isActionLoading || !currentProgressDetail.isMemorized}
+                      title={!currentProgressDetail.isMemorized ? "Memorize this kanji first to increase review count" : "Add Review Count"}
+                      className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black bg-secondary text-background transition-all shadow-lg shadow-white/10 ${
+                        isActionLoading || !currentProgressDetail.isMemorized ? "opacity-30 cursor-not-allowed" : "hover:opacity-90 hover:scale-105 active:scale-95 cursor-pointer"
+                      }`}
+                    >
+                      <span className="text-sm uppercase tracking-wider">{isActionLoading ? "..." : "Review"}</span>
+                    </button>
 
+                    {/* Tombol Status Hafalan (Toggle Terpisah) */}
+                    <button
+                      onClick={handleToggleMemorized}
+                      disabled={isActionLoading}
+                      title={currentProgressDetail.isMemorized ? "Mark as Not Memorized" : "Mark as Memorized"}
+                      className={`p-2.5 rounded-xl transition-all cursor-pointer border ${
+                        currentProgressDetail.isMemorized ? "bg-green-500 text-background border-green-500 shadow-lg shadow-green-500/20" : "bg-background-lighter text-gray-500 border-my-border hover:text-primary hover:border-primary"
+                      } active:scale-95 disabled:opacity-50`}
+                    >
+                      {currentProgressDetail.isMemorized ? <IoIosCheckmarkCircleOutline className="text-xl" /> : <IoMdAddCircleOutline className="text-xl" />}
+                    </button>
+
+                    {/* Tombol Batal Pelajari */}
+                    <button
+                      onClick={handleRemoveKanji}
+                      disabled={isActionLoading}
+                      title="Stop Learning"
+                      className="p-2.5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                    >
+                      <IoMdTrash className="text-xl" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
         <div className="grow flex flex-col justify-center space-y-6 text-center md:text-left">
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center w-full justify-center md:justify-start gap-4">
                 {/* JLPT Level */}
                 <span className="px-3 py-1 bg-primary text-background font-black rounded-lg text-sm uppercase">{currentKanji.jlptLevel}</span>
 
@@ -163,64 +217,11 @@ export default function KanjiDetailPage() {
           </div>
         </div>
       </div>
-      {/* Add Kanji Actions */}
-      <div className="w-64 flex justify-center">
-        {isAuthenticated && (
-          <div className="flex items-center gap-4">
-            {!currentProgressDetail ? (
-              <button
-                onClick={handleQuickAdd}
-                disabled={isActionLoading}
-                className="flex items-center gap-2 px-6 py-3 bg-primary text-background font-black rounded-2xl hover:bg-primary-hover hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <BsBookmarkPlusFill className="text-xl" />
-                <span>{isActionLoading ? "Adding..." : "Start Learning"}</span>
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 bg-background/50 backdrop-blur-md p-1.5 rounded-2xl border border-my-border animate-fade-in">
-                {/* Tombol Utama: Hafalkan */}
-                <button
-                  onClick={handleHafalkan}
-                  disabled={isActionLoading || !currentProgressDetail.isMemorized}
-                  title={!currentProgressDetail.isMemorized ? "Memorize this kanji first to increase review count" : "Add Review Count"}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black bg-secondary text-background transition-all shadow-lg shadow-white/10 ${
-                    isActionLoading || !currentProgressDetail.isMemorized ? "opacity-30 cursor-not-allowed" : "hover:opacity-90 hover:scale-105 active:scale-95 cursor-pointer"
-                  }`}
-                >
-                  <span className="text-sm uppercase tracking-wider">{isActionLoading ? "..." : "Review"}</span>
-                </button>
-
-                {/* Tombol Status Hafalan (Toggle Terpisah) */}
-                <button
-                  onClick={handleToggleMemorized}
-                  disabled={isActionLoading}
-                  title={currentProgressDetail.isMemorized ? "Mark as Not Memorized" : "Mark as Memorized"}
-                  className={`p-2.5 rounded-xl transition-all cursor-pointer border ${
-                    currentProgressDetail.isMemorized ? "bg-green-500 text-background border-green-500 shadow-lg shadow-green-500/20" : "bg-background-lighter text-gray-500 border-my-border hover:text-primary hover:border-primary"
-                  } active:scale-95 disabled:opacity-50`}
-                >
-                  {currentProgressDetail.isMemorized ? <IoIosCheckmarkCircleOutline className="text-xl" /> : <IoMdAddCircleOutline className="text-xl" />}
-                </button>
-
-                {/* Tombol Batal Pelajari */}
-                <button
-                  onClick={handleRemoveKanji}
-                  disabled={isActionLoading}
-                  title="Stop Learning"
-                  className="p-2.5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all cursor-pointer disabled:opacity-50 active:scale-95"
-                >
-                  <IoMdTrash className="text-xl" />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
 
       <hr className="border-my-border" />
 
       {/* Kotoba Section */}
-      <section className="space-y-6">
+      <section className="space-y-6 ">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             <span className="w-8 h-8 bg-background-lighter rounded-lg flex items-center justify-center text-primary text-sm">
@@ -253,53 +254,52 @@ export default function KanjiDetailPage() {
                 return (
                   <div
                     key={word.id}
-                    className={`group p-5 bg-background-lighter border border-my-border rounded-2xl flex items-center justify-between transition-all hover:border-primary/50 ${isMemorized ? "border-green-500/30 bg-green-500/5" : ""}`}
+                    className={`group p-4 bg-background-lighter border border-my-border rounded-2xl flex items-center justify-between transition-all hover:border-primary/50 ${isMemorized ? "border-green-500/30 bg-green-500/5" : ""}`}
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl font-bold text-white">{word.word}</span>
-                        <span className="text-sm text-gray-500 font-mono">[{word.reading}]</span>
+                    <div className="space-y-1 w-md">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-bold text-white">{word.word}</span>
+                          <span className="text-sm text-gray-500 font-mono">[{word.reading}]</span>
+                        </div>
+                        {isAuthenticated && (
+                          <div className="flex items-center gap-1">
+                            {userKotoba ? (
+                              <>
+                                <button
+                                  onClick={() => handleToggleKotoba(word.id, isMemorized)}
+                                  title={isMemorized ? "Mark as Not Memorized" : "Mark as Memorized"}
+                                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                                    isMemorized ? "bg-green-500 text-background shadow-md shadow-green-500/20" : "bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary"
+                                  } hover:scale-105 active:scale-95`}
+                                >
+                                  <IoIosCheckmarkCircleOutline className="w-5 h-5" />
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveKotoba(word.id)}
+                                  title="Remove Progress"
+                                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer border border-my-border"
+                                >
+                                  <IoMdTrash className="w-4 h-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => handleAddKotoba(word.id)}
+                                disabled={!currentProgressDetail}
+                                title={!currentProgressDetail ? "Start learning this kanji first to track vocabulary" : "Add to Memorization List"}
+                                className={`w-9 h-9 rounded-xl flex items-center justify-center bg-background-lighter border border-my-border transition-all ${
+                                  !currentProgressDetail ? "opacity-30 cursor-not-allowed text-gray-600" : "text-gray-500 hover:text-primary hover:border-primary cursor-pointer hover:scale-105 active:scale-95"
+                                }`}
+                              >
+                                <IoMdAddCircleOutline className="w-5 h-5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="text-gray-400 text-sm">{word.meaning}</div>
                     </div>
-
-                    {isAuthenticated && (
-                      <div className="flex items-center gap-1.5">
-                        {userKotoba ? (
-                          <>
-                            <button
-                              onClick={() => handleToggleKotoba(word.id, isMemorized)}
-                              title={isMemorized ? "Mark as Not Memorized" : "Mark as Memorized"}
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                                isMemorized ? "bg-green-500 text-background shadow-md shadow-green-500/20" : "bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary"
-                              } hover:scale-105 active:scale-95`}
-                            >
-                              <IoIosCheckmarkCircleOutline className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => handleRemoveKotoba(word.id)}
-                              title="Remove Progress"
-                              className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
-                            >
-                              <IoMdTrash className="w-4 h-4" />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => handleAddKotoba(word.id)}
-                            disabled={!currentProgressDetail}
-                            title={!currentProgressDetail ? "Start learning this kanji first to track vocabulary" : "Add to Memorization List"}
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center bg-background-lighter border border-my-border transition-all ${
-                              !currentProgressDetail
-                                ? "opacity-30 cursor-not-allowed text-gray-600"
-                                : "text-gray-500 hover:text-primary hover:border-primary cursor-pointer hover:scale-105 active:scale-95"
-                            }`}
-                          >
-                            <IoMdAddCircleOutline className="w-5 h-5" />
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </div>
                 );
               })

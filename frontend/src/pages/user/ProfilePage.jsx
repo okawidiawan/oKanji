@@ -16,7 +16,7 @@ export default function ProfilePage() {
         <div className="bg-background-lighter/40 p-6 rounded-2xl border space-y-8 border-my-border backdrop-blur-md top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)]">
           {/* User Info Header */}
           <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-full border-4 border-primary/20 p-1 bg-linear-to-tr from-primary/80 to-primary/40">
+            <div className="w-18 h-18 md:w-24 md:h-24 rounded-full border-4 border-primary/20 p-1 bg-linear-to-tr from-primary/80 to-primary/40">
               <div className="w-full h-full bg-background rounded-full flex items-center justify-center text-2xl font-bold text-primary">
                 {user?.name
                   ? user.name
