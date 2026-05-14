@@ -47,7 +47,7 @@ export default function Navbar() {
             <Link to="/kanji" className="hover:text-primary transition-colors">
               Kanji List
             </Link>
-            <Link to="/" className="hover:text-primary transition-colors">
+            <Link to="/my-kanji" className="hover:text-primary transition-colors">
               My Kanji
             </Link>
 

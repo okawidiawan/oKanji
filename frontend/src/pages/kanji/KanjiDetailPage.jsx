@@ -233,62 +233,80 @@ export default function KanjiDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {currentKanji.kotoba && currentKanji.kotoba.length > 0 ? (
-            currentKanji.kotoba.map((word) => {
-              const userKotoba = word.userKotoba?.[0];
-              const isMemorized = userKotoba?.isMemorized || false;
+          {(() => {
+            const kotobaList = currentKanji.kotoba || [];
+            const userKotobaMap = {};
 
-              return (
-                <div
-                  key={word.id}
-                  className={`group p-5 bg-background-lighter border border-my-border rounded-2xl flex items-center justify-between transition-all hover:border-primary/50 ${isMemorized ? "border-green-500/30 bg-green-500/5" : ""}`}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl font-bold text-white">{word.word}</span>
-                      <span className="text-sm text-gray-500 font-mono">[{word.reading}]</span>
+            if (currentProgressDetail?.kanji?.kotoba) {
+              currentProgressDetail.kanji.kotoba.forEach((k) => {
+                if (k.userKotoba && k.userKotoba.length > 0) {
+                  userKotobaMap[k.id] = k.userKotoba[0];
+                }
+              });
+            }
+
+            return kotobaList.length > 0 ? (
+              kotobaList.map((word) => {
+                const userKotoba = userKotobaMap[word.id] || null;
+                const isMemorized = userKotoba?.isMemorized || false;
+
+                return (
+                  <div
+                    key={word.id}
+                    className={`group p-5 bg-background-lighter border border-my-border rounded-2xl flex items-center justify-between transition-all hover:border-primary/50 ${isMemorized ? "border-green-500/30 bg-green-500/5" : ""}`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-bold text-white">{word.word}</span>
+                        <span className="text-sm text-gray-500 font-mono">[{word.reading}]</span>
+                      </div>
+                      <div className="text-gray-400 text-sm">{word.meaning}</div>
                     </div>
-                    <div className="text-gray-400 text-sm">{word.meaning}</div>
+
+                    {isAuthenticated && (
+                      <div className="flex items-center gap-1.5">
+                        {userKotoba ? (
+                          <>
+                            <button
+                              onClick={() => handleToggleKotoba(word.id, isMemorized)}
+                              title={isMemorized ? "Mark as Not Memorized" : "Mark as Memorized"}
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                                isMemorized ? "bg-green-500 text-background shadow-md shadow-green-500/20" : "bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary"
+                              } hover:scale-105 active:scale-95`}
+                            >
+                              <IoIosCheckmarkCircleOutline className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleRemoveKotoba(word.id)}
+                              title="Remove Progress"
+                              className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+                            >
+                              <IoMdTrash className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleAddKotoba(word.id)}
+                            disabled={!currentProgressDetail}
+                            title={!currentProgressDetail ? "Start learning this kanji first to track vocabulary" : "Add to Memorization List"}
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center bg-background-lighter border border-my-border transition-all ${
+                              !currentProgressDetail
+                                ? "opacity-30 cursor-not-allowed text-gray-600"
+                                : "text-gray-500 hover:text-primary hover:border-primary cursor-pointer hover:scale-105 active:scale-95"
+                            }`}
+                          >
+                            <IoMdAddCircleOutline className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-
-                  {isAuthenticated && (
-                    <div className="flex items-center gap-1.5">
-                      {userKotoba ? (
-                        <>
-                          <button
-                            onClick={() => handleToggleKotoba(word.id, isMemorized)}
-                            title={isMemorized ? "Mark as Not Memorized" : "Mark as Memorized"}
-                            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                              isMemorized ? "bg-green-500 text-background shadow-md shadow-green-500/20" : "bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary"
-                            } hover:scale-105 active:scale-95`}
-                          >
-                            <IoIosCheckmarkCircleOutline className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleRemoveKotoba(word.id)}
-                            title="Remove Progress"
-                            className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
-                          >
-                            <IoMdTrash className="w-4 h-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => handleAddKotoba(word.id)}
-                          title="Add to Memorization List"
-                          className="w-9 h-9 rounded-xl flex items-center justify-center bg-background-lighter border border-my-border text-gray-500 hover:text-primary hover:border-primary transition-all cursor-pointer hover:scale-105 active:scale-95"
-                        >
-                          <IoMdAddCircleOutline className="w-5 h-5" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          ) : (
-            <div className="col-span-full py-10 text-center text-gray-500 bg-background-lighter rounded-2xl border border-dashed border-my-border">No vocabulary added for this kanji yet.</div>
-          )}
+                );
+              })
+            ) : (
+              <div className="col-span-full py-10 text-center text-gray-500 bg-background-lighter rounded-2xl border border-dashed border-my-border">No vocabulary added for this kanji yet.</div>
+            );
+          })()}
         </div>
       </section>
 
