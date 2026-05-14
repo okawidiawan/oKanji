@@ -47,7 +47,7 @@ const useKanjiStore = create((set, get) => ({
         paging: result.paging,
       });
     } catch (error) {
-      const message = error.response?.data?.error || "Gagal mengambil daftar kanji.";
+      const message = error.response?.data?.error || "Failed to fetch kanji list.";
       set({ error: message });
     } finally {
       set({ isLoading: false });
@@ -61,7 +61,7 @@ const useKanjiStore = create((set, get) => ({
       // Backend returns { data: { ...kanji, kotoba: [...] } }
       set({ currentKanji: result.data });
     } catch (error) {
-      const message = error.response?.data?.error || "Gagal mengambil detail kanji.";
+      const message = error.response?.data?.error || "Failed to fetch kanji detail.";
       set({ error: message });
     } finally {
       set({ isLoading: false });

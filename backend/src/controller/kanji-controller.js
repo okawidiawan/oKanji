@@ -14,7 +14,7 @@ const list = async (req, res, next) => {
     };
 
     // Memanggil service untuk mengambil data
-    const result = await kanjiService.list(request);
+    const result = await kanjiService.list(req.user, request);
     res.status(200).json(result);
   } catch (e) {
     // Meneruskan error ke middleware penanganan error

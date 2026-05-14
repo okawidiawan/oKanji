@@ -58,7 +58,13 @@ describe("Kanji API", () => {
 
             expect(prismaMock.kanji.findMany).toHaveBeenCalledWith(expect.objectContaining({
                 take: 20,
-                skip: 0
+                skip: 0,
+                include: {
+                    userKanjis: {
+                        where: { userId: 1 },
+                        select: { isMemorized: true }
+                    }
+                }
             }));
         });
 
