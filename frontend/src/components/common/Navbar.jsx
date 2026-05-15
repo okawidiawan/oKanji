@@ -33,7 +33,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="hidden sm:block sm:border-b fixed sm:sticky z-50 border-my-border bg-background-lighter border-t sm:bg-transparent backdrop-blur-md bottom-0 sm:top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)] w-full">
+      <nav className="hidden sm:block border-b fixed sm:sticky z-50 border-my-border  bg-transparent backdrop-blur-md bottom-0 top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)] w-full">
         <div className="container mx-auto px-4 h-16 flex items-center justify-center sm:justify-between">
           {/* Logo / Brand */}
           <Link to="/kanji" className="hidden sm:block">
@@ -42,30 +42,30 @@ export default function Navbar() {
 
           {/* Menu Navigasi */}
           <div className="flex items-center gap-6">
-            <div className="profile sm:order-1 order-2">
+            <div className="profile ">
               <Link to="/profile" className="hidden sm:block hover:text-primary transition-colors">
                 Profile
               </Link>
             </div>
 
-            <div className="kanji-list order-3 sm:order-2">
+            <div className="kanji-list ">
               <Link to="/kanji" className="hidden sm:block hover:text-primary transition-colors">
                 Kanji List
               </Link>
             </div>
 
-            <div className="my-kanji sm:order-3 order-4">
+            <div className="my-kanji ">
               <Link to="/my-kanji" className="hidden sm:block hover:text-primary transition-colors">
                 My Kanji
               </Link>
             </div>
 
             {/* Info User & Tombol Logout */}
-            <div className="flex items-center gap-4 ml-4 sm:border-l border-r border-my-border sm:pl-6 pr-6 order-1 sm:order-4">
+            <div className="flex items-center gap-4 ml-4 border-l border-my-border pl-6 pr-6">
               <span className="text-sm text-gray-400 hidden sm:inline">
                 Hello, <span className="text-white font-medium">{user?.username}</span>
               </span>
-              <button onClick={handleLogoutClick} className="bg-primary/10 text-primary hover:bg-primary hover:text-background p-2 rounded-lg text-2xl font-semibold transition-all cursor-pointer order-1">
+              <button onClick={handleLogoutClick} className="bg-primary/10 text-primary hover:bg-primary hover:text-background p-2 rounded-lg text-2xl font-semibold transition-all cursor-pointer">
                 <RiLogoutCircleRLine />
               </button>
             </div>

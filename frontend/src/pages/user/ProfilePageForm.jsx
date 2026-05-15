@@ -136,7 +136,7 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
       <div className="flex flex-wrap justify-start gap-4">
         {/* Jika sedang mode edit, tampilkan tombol Cancel */}
         {isEdit && (
-          <button type="button" onClick={handleCancel} className="w-full sm:w-fit px-6 py-3 border border-my-border rounded-xl hover:bg-white/5 transition-all cursor-pointer">
+          <button type="button" onClick={handleCancel} className="w-full sm:w-fit px-6 py-3 border border-my-border rounded-xl hover:bg-white/5 transition-all cursor-pointer text-sm">
             Cancel
           </button>
         )}
@@ -153,7 +153,7 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
                 setIsTransitioning(false);
               }, 800);
             }}
-            className="w-full sm:w-fit px-6 py-3 bg-primary text-background font-bold rounded-xl hover:bg-primary/80 transition-all cursor-pointer disabled:opacity-50"
+            className="w-full sm:w-fit px-6 py-3 bg-primary text-background font-bold rounded-xl hover:bg-primary/80 transition-all cursor-pointer disabled:opacity-50 text-md"
           >
             {isTransittioning ? (
               <div className="flex items-center justify-center gap-2">
@@ -165,7 +165,7 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
             )}
           </button>
         ) : (
-          <button type="submit" disabled={isLoading} className="w-full sm:w-fit px-6 py-3 border border-green-600 text-green-600 font-bold rounded-xl hover:bg-green-600 hover:text-secondary transition-all cursor-pointer">
+          <button type="submit" disabled={isLoading} className="w-full sm:w-fit px-6 py-3 border border-green-600 text-green-600 font-bold rounded-xl hover:bg-green-600 hover:text-secondary transition-all cursor-pointer text-sm">
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
                 <AiOutlineLoading3Quarters className="animate-spin" />
