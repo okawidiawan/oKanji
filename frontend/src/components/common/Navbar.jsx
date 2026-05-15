@@ -33,7 +33,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sm:border-b fixed sm:sticky z-50 border-my-border bg-background-lighter border-t sm:bg-transparent backdrop-blur-md bottom-0 sm:top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)] w-full">
+      <nav className="hidden sm:block sm:border-b fixed sm:sticky z-50 border-my-border bg-background-lighter border-t sm:bg-transparent backdrop-blur-md bottom-0 sm:top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)] w-full">
         <div className="container mx-auto px-4 h-16 flex items-center justify-center sm:justify-between">
           {/* Logo / Brand */}
           <Link to="/kanji" className="hidden sm:block">
@@ -46,35 +46,17 @@ export default function Navbar() {
               <Link to="/profile" className="hidden sm:block hover:text-primary transition-colors">
                 Profile
               </Link>
-              <Link to="/profile" className="sm:hidden hover:text-primary transition-colors">
-                <div className="flex flex-col justify-center items-center gap-2">
-                  <FaUser />
-                  <p className="text-xs">Profile</p>
-                </div>
-              </Link>
             </div>
 
             <div className="kanji-list order-3 sm:order-2">
               <Link to="/kanji" className="hidden sm:block hover:text-primary transition-colors">
                 Kanji List
               </Link>
-              <Link to="/kanji" className="sm:hidden hover:text-primary transition-colors">
-                <div className="flex flex-col justify-center items-center gap-2">
-                  <FaBookOpen />
-                  <p className="text-xs">Kanji List</p>
-                </div>
-              </Link>
             </div>
 
             <div className="my-kanji sm:order-3 order-4">
               <Link to="/my-kanji" className="hidden sm:block hover:text-primary transition-colors">
                 My Kanji
-              </Link>
-              <Link to="/my-kanji" className="sm:hidden hover:text-primary transition-colors">
-                <div className="flex flex-col justify-center items-center gap-2">
-                  <FaBookmark />
-                  <p className="text-xs">My Kanji</p>
-                </div>
               </Link>
             </div>
 
@@ -87,6 +69,59 @@ export default function Navbar() {
                 <RiLogoutCircleRLine />
               </button>
             </div>
+          </div>
+        </div>
+      </nav>
+
+      <nav className="sm:hidden fixed bottom-0 z-50 w-full justify-center items-center">
+        <div className=" gap-4 mx-auto px-4 h-16 flex items-center justify-center sm:justify-between w-full">
+          <div className="logout-button">
+            <button onClick={handleLogoutClick} className="bg-transparent border border-my-border backdrop-blur-md  p-4 text-2xl font-semibold rounded-full text-primary/80">
+              <RiLogoutCircleRLine />
+            </button>
+          </div>
+
+          {/* Menu Navigasi */}
+          <div className="flex items-center ">
+            <div className="flex backdrop-blur-md border border-my-border gap-8 py-3 px-8 rounded-full bg-transparent">
+              <div className="profile">
+                <Link to="/profile" className="hidden sm:block hover:text-primary transition-colors ">
+                  Profile
+                </Link>
+                <Link to="/profile" className="sm:hidden hover:text-primary transition-colors">
+                  <div className="flex flex-col justify-center items-center gap-2">
+                    <FaUser />
+                    <p className="text-xs text-secondary-dark">Profile</p>
+                  </div>
+                </Link>
+              </div>
+
+              <div className="kanji-list">
+                <Link to="/kanji" className="hidden sm:block hover:text-primary transition-colors">
+                  Kanji List
+                </Link>
+                <Link to="/kanji" className="sm:hidden hover:text-primary transition-colors">
+                  <div className="flex flex-col justify-center items-center gap-2">
+                    <FaBookOpen />
+                    <p className="text-xs text-secondary-dark">Kanji List</p>
+                  </div>
+                </Link>
+              </div>
+
+              <div className="my-kanji">
+                <Link to="/my-kanji" className="hidden sm:block hover:text-primary transition-colors">
+                  My Kanji
+                </Link>
+                <Link to="/my-kanji" className="sm:hidden hover:text-primary transition-colors">
+                  <div className="flex flex-col justify-center items-center gap-2">
+                    <FaBookmark />
+                    <p className="text-xs text-secondary-dark">My Kanji</p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* Info User & Tombol Logout */}
           </div>
         </div>
       </nav>

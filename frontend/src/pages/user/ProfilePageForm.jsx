@@ -156,7 +156,7 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
             className="w-full sm:w-fit px-6 py-3 bg-primary text-background font-bold rounded-xl hover:bg-primary/80 transition-all cursor-pointer disabled:opacity-50"
           >
             {isTransittioning ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <AiOutlineLoading3Quarters className="animate-spin" />
                 <span>Loading...</span>
               </div>
@@ -167,7 +167,7 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
         ) : (
           <button type="submit" disabled={isLoading} className="w-full sm:w-fit px-6 py-3 border border-green-600 text-green-600 font-bold rounded-xl hover:bg-green-600 hover:text-secondary transition-all cursor-pointer">
             {isLoading ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <AiOutlineLoading3Quarters className="animate-spin" />
                 <span>Saving...</span>
               </div>
