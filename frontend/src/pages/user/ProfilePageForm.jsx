@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 export default function ProfilePageForm({ user, updateProfile, isLoading, error, successMessage, setSuccessMessage, clearError, validationError, setValidationError }) {
   // Local state for form
@@ -8,6 +9,22 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
     password: "",
     confirmPassword: "",
   });
+
+  const [isEdit, setIsEdit] = useState(false);
+
+  const [isTransittioning, setIsTransitioning] = useState(false);
+
+  const handleCancel = () => {
+    setFormData({
+      name: user?.name || "",
+      email: user?.email || "",
+      password: "",
+      confirmPassword: "",
+    });
+    setIsEdit(false);
+
+    if (validationError) setValidationError("");
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,6 +59,7 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
 
     try {
       await updateProfile(dataToUpdate);
+      setIsEdit(false);
       setSuccessMessage("Profile Update Successfully");
       setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" })); // Clear password field
 
@@ -63,9 +81,10 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full bg-background-lighter border border-my-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-white"
+            className="w-full bg-background-lighter border border-my-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-white disabled:text-secondary-dark disabled:opacity-70"
             placeholder="Your Name"
             required
+            disabled={!isEdit}
           />
         </div>
         <div className="space-y-2">
@@ -75,9 +94,10 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full bg-background-lighter border border-my-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-white"
+            className="w-full bg-background-lighter border border-my-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-white disabled:text-secondary-dark disabled:opacity-70"
             placeholder="email@example.com"
             required
+            disabled={!isEdit}
           />
         </div>
       </div>
@@ -89,9 +109,10 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
           name="password"
           value={formData.password}
           onChange={handleChange}
-          className="w-full bg-background-lighter border border-my-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-white font-mono"
+          className="w-full text-xs sm:text-sm bg-background-lighter border border-my-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-secondary font-mono disabled:text-secondary-dark disabled:opacity-70"
           placeholder="Leave blank to keep current password"
           minLength={8}
+          disabled={!isEdit}
         />
       </div>
 
@@ -102,23 +123,59 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
           name="confirmPassword"
           value={formData.confirmPassword}
           onChange={handleChange}
-          className="w-full bg-background-lighter border border-my-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-white font-mono"
+          className="w-full text-xs sm:text-sm bg-background-lighter border border-my-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-white font-mono disabled:text-secondary-dark disabled:opacity-70"
           placeholder="Confirm Your New Password"
           minLength={8}
           required={formData.password.length > 0}
+          disabled={!isEdit}
         />
       </div>
 
       {error && <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl text-sm">{error}</div>}
 
-      <div className="pt-4">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full md:w-auto px-8 py-3 bg-primary hover:bg-primary-hover text-background font-bold rounded-xl transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-        >
-          {isLoading ? "Saving..." : "Save Changes"}
-        </button>
+      <div className="flex flex-wrap justify-start gap-4">
+        {/* Jika sedang mode edit, tampilkan tombol Cancel */}
+        {isEdit && (
+          <button type="button" onClick={handleCancel} className="w-full sm:w-fit px-6 py-3 border border-my-border rounded-xl hover:bg-white/5 transition-all cursor-pointer text-sm">
+            Cancel
+          </button>
+        )}
+
+        {/* Tombol utama: Toggle antara Edit dan Save */}
+        {!isEdit ? (
+          <button
+            type="button"
+            disabled={isTransittioning}
+            onClick={() => {
+              setIsTransitioning(true);
+              setTimeout(() => {
+                setIsEdit(true);
+                setIsTransitioning(false);
+              }, 800);
+            }}
+            className="w-full sm:w-fit px-6 py-3 bg-primary text-background font-bold rounded-xl hover:bg-primary/80 transition-all cursor-pointer disabled:opacity-50 text-md"
+          >
+            {isTransittioning ? (
+              <div className="flex items-center justify-center gap-2">
+                <AiOutlineLoading3Quarters className="animate-spin" />
+                <span>Loading...</span>
+              </div>
+            ) : (
+              "Edit Profile"
+            )}
+          </button>
+        ) : (
+          <button type="submit" disabled={isLoading} className="w-full sm:w-fit px-6 py-3 border border-green-600 text-green-600 font-bold rounded-xl hover:bg-green-600 hover:text-secondary transition-all cursor-pointer text-sm">
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <AiOutlineLoading3Quarters className="animate-spin" />
+                <span>Saving...</span>
+              </div>
+            ) : (
+              "Save Changes"
+            )}
+          </button>
+        )}
       </div>
     </form>
   );

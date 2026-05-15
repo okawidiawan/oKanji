@@ -4,6 +4,7 @@ import logoImg from "../../assets/logo.png";
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import { useState } from "react";
 import ConfirmModal from "../ui/ConfirmModal";
+import { FaUser, FaBookOpen, FaBookmark } from "react-icons/fa";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -32,27 +33,35 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="border-b sticky z-50 border-my-border bg-transparent backdrop-blur-md top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)]">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <nav className="hidden sm:block border-b fixed sm:sticky z-50 border-my-border  bg-transparent backdrop-blur-md bottom-0 top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)] w-full">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-center sm:justify-between">
           {/* Logo / Brand */}
-          <Link to="/kanji" className="text-2xl font-bold text-primary tracking-tighter">
+          <Link to="/kanji" className="hidden sm:block">
             <img src={logoImg} alt="okanji Logo" className="h-10 w-auto" />
           </Link>
 
           {/* Menu Navigasi */}
           <div className="flex items-center gap-6">
-            <Link to="/profile" className="hover:text-primary transition-colors">
-              Profile
-            </Link>
-            <Link to="/kanji" className="hover:text-primary transition-colors">
-              Kanji List
-            </Link>
-            <Link to="/my-kanji" className="hover:text-primary transition-colors">
-              My Kanji
-            </Link>
+            <div className="profile ">
+              <Link to="/profile" className="hidden sm:block hover:text-primary transition-colors">
+                Profile
+              </Link>
+            </div>
+
+            <div className="kanji-list ">
+              <Link to="/kanji" className="hidden sm:block hover:text-primary transition-colors">
+                Kanji List
+              </Link>
+            </div>
+
+            <div className="my-kanji ">
+              <Link to="/my-kanji" className="hidden sm:block hover:text-primary transition-colors">
+                My Kanji
+              </Link>
+            </div>
 
             {/* Info User & Tombol Logout */}
-            <div className="flex items-center gap-4 ml-4 border-l border-my-border pl-6">
+            <div className="flex items-center gap-4 ml-4 border-l border-my-border pl-6 pr-6">
               <span className="text-sm text-gray-400 hidden sm:inline">
                 Hello, <span className="text-white font-medium">{user?.username}</span>
               </span>
@@ -60,6 +69,59 @@ export default function Navbar() {
                 <RiLogoutCircleRLine />
               </button>
             </div>
+          </div>
+        </div>
+      </nav>
+
+      <nav className="sm:hidden fixed bottom-0 z-50 w-full justify-center items-center">
+        <div className=" gap-4 mx-auto px-4 h-16 flex items-center justify-center sm:justify-between w-full">
+          <div className="logout-button">
+            <button onClick={handleLogoutClick} className="bg-transparent border border-my-border backdrop-blur-md  p-4 text-2xl font-semibold rounded-full text-primary/80">
+              <RiLogoutCircleRLine />
+            </button>
+          </div>
+
+          {/* Menu Navigasi */}
+          <div className="flex items-center ">
+            <div className="flex backdrop-blur-md border border-my-border gap-8 py-3 px-8 rounded-full bg-transparent">
+              <div className="profile">
+                <Link to="/profile" className="hidden sm:block hover:text-primary transition-colors ">
+                  Profile
+                </Link>
+                <Link to="/profile" className="sm:hidden hover:text-primary transition-colors">
+                  <div className="flex flex-col justify-center items-center gap-2">
+                    <FaUser />
+                    <p className="text-xs text-secondary-dark">Profile</p>
+                  </div>
+                </Link>
+              </div>
+
+              <div className="kanji-list">
+                <Link to="/kanji" className="hidden sm:block hover:text-primary transition-colors">
+                  Kanji List
+                </Link>
+                <Link to="/kanji" className="sm:hidden hover:text-primary transition-colors">
+                  <div className="flex flex-col justify-center items-center gap-2">
+                    <FaBookOpen />
+                    <p className="text-xs text-secondary-dark">Kanji List</p>
+                  </div>
+                </Link>
+              </div>
+
+              <div className="my-kanji">
+                <Link to="/my-kanji" className="hidden sm:block hover:text-primary transition-colors">
+                  My Kanji
+                </Link>
+                <Link to="/my-kanji" className="sm:hidden hover:text-primary transition-colors">
+                  <div className="flex flex-col justify-center items-center gap-2">
+                    <FaBookmark />
+                    <p className="text-xs text-secondary-dark">My Kanji</p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* Info User & Tombol Logout */}
           </div>
         </div>
       </nav>
