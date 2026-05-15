@@ -1,187 +1,302 @@
-# Feature: Implementasi Sort Kanji Berdasarkan Level JLPT
+# Refactor: Migrasi useEffect ke React Router v7 Loader & Custom Hook
 
-## Deskripsi
+## Ringkasan
 
-Menambahkan fitur pengurutan (sort) pada daftar kanji berdasarkan level JLPT. Saat ini endpoint `GET /api/kanjis` belum mendukung parameter sort, sehingga data dikembalikan dalam urutan default database. Fitur ini memungkinkan user mengurutkan kanji dari N5→N1 (ascending) atau N1→N5 (descending) melalui UI dropdown di halaman Kanji List.
+Saat ini semua halaman (pages) di frontend menggunakan `useEffect` untuk data fetching, redirect, dan side effect lainnya. Ini bisa disederhanakan dan dibuat lebih idiomatis dengan memanfaatkan fitur **React Router v7 `loader`** dan **custom hook**.
 
-## Latar Belakang
+**Jumlah useEffect yang akan dimigrasi: 7 buah** (di 6 halaman).
 
-- Data kanji menggunakan paginasi (`page` & `size`), sehingga **sorting harus dilakukan di level backend/database** agar urutan konsisten di seluruh halaman.
-- Field `jlptLevel` adalah `ENUM (N5, N4, N3, N2, N1)` di Prisma/MySQL. Prisma mengurutkan enum berdasarkan urutan definisi: `ASC` = N5→N1, `DESC` = N1→N5.
-
-## Scope Perubahan
-
-### Branch
-
-`feature/sort-kanji-list`
+**Branch**: `refactor/migrate-useeffect`
 
 ---
 
-## Backend
+## Daftar Perubahan
 
-### 1. Update Validasi Zod
+### Task 1: Buat Custom Hook `useDebounce`
 
-**File**: `backend/src/validation/kanji-validation.js`
+> **File baru**: `frontend/src/hooks/useDebounce.js`
 
-Tambahkan dua field baru ke skema `getKanjiValidation`:
+Buat custom hook sederhana untuk menangani debounce value. Hook ini menggantikan pola `useEffect` + `setTimeout` yang ada di `KanjiListPage.jsx`.
 
-- `sort_by`: Field yang akan diurutkan. Untuk saat ini hanya mendukung `jlptLevel`. Gunakan `z.enum()` agar hanya menerima nilai yang valid. Berikan default `jlptLevel`.
-- `sort_order`: Arah pengurutan, hanya menerima `asc` atau `desc`. Gunakan `z.enum()`. Berikan default `asc`.
+**Spesifikasi Hook:**
+- Nama: `useDebounce(value, delay)`
+- Parameter:
+  - `value` — nilai yang ingin di-debounce (tipe apapun)
+  - `delay` — waktu tunggu dalam milidetik (number)
+- Return: `debouncedValue` — nilai yang sudah di-debounce
+- Logika: Gunakan `useEffect` + `setTimeout` secara internal. Setiap kali `value` berubah, set timeout baru. Cleanup timeout lama saat value berubah lagi atau komponen unmount.
 
-**Referensi kode saat ini** (baris 6-11):
-
-```javascript
-const getKanjiValidation = z.object({
-  level: z.string().regex(/^N[1-5]$/, "Level format must be N1-N5").optional(),
-  search: z.string().min(1).max(50).optional(),
-  page: z.coerce.number().min(1, "Page must be at least 1").default(1),
-  size: z.coerce.number().min(1, "Size must be at least 1").max(100, "Size must not exceed 100").default(20),
-});
+**Contoh penggunaan nanti:**
+```jsx
+const debouncedSearch = useDebounce(searchTerm, 500);
 ```
 
-**Yang perlu ditambahkan** di dalam object `z.object({})`:
-
-- `sort_by`: `z.enum(["jlptLevel"]).default("jlptLevel")`
-- `sort_order`: `z.enum(["asc", "desc"], { message: "Sort order must be 'asc' or 'desc'" }).default("asc")`
-
-### 2. Update Service Layer
-
-**File**: `backend/src/services/kanji-service.js`
-
-Tambahkan property `orderBy` ke dalam query `prisma.kanji.findMany()` di fungsi `list`.
-
-**Referensi kode saat ini** (baris 30-45):
-
-```javascript
-const [data, total] = await Promise.all([
-  prisma.kanji.findMany({
-    where: filters,
-    take: validatedRequest.size,
-    skip: skip,
-    include: {
-      userKanjis: {
-        where: { userId: user.id },
-        select: { isMemorized: true },
-      },
-    },
-  }),
-  prisma.kanji.count({ where: filters })
-]);
-```
-
-**Yang perlu ditambahkan** di dalam `prisma.kanji.findMany({})`, setelah `skip`:
-
-```javascript
-orderBy: {
-  [validatedRequest.sort_by]: validatedRequest.sort_order
-},
-```
-
-**Perbarui juga dokumentasi JSDoc** di atas fungsi `list` (baris 6-8) untuk menyertakan informasi sorting.
-
-### 3. Update Controller
-
-**File**: `backend/src/controller/kanji-controller.js`
-
-Tambahkan dua query parameter baru ke objek `request` di fungsi `list`.
-
-**Referensi kode saat ini** (baris 9-14):
-
-```javascript
-const request = {
-  level: req.query.level,
-  search: req.query.search,
-  page: req.query.page,
-  size: req.query.size
-};
-```
-
-**Yang perlu ditambahkan** di dalam object `request`:
-
-- `sort_by: req.query.sort_by`
-- `sort_order: req.query.sort_order`
-
-### 4. Update Unit Test
-
-**File**: `backend/tests/kanji.test.js`
-
-Tambahkan test case baru di dalam `describe("GET /api/kanjis")`:
-
-1. **Test sort ascending (default)**: Pastikan `findMany` dipanggil dengan `orderBy: { jlptLevel: "asc" }` ketika tidak ada parameter sort yang dikirim.
-2. **Test sort descending**: Kirim query `?sort_order=desc` dan pastikan `findMany` dipanggil dengan `orderBy: { jlptLevel: "desc" }`.
-3. **Test sort_order tidak valid**: Kirim query `?sort_order=invalid` dan pastikan response status 400.
-
-**Penting**: Karena `sort_by` dan `sort_order` memiliki nilai default, semua test case yang sudah ada harus tetap lolos. Periksa kembali apakah assertion `expect.objectContaining` di test lama perlu disesuaikan untuk mengakomodasi properti `orderBy` yang sekarang selalu ada di query.
+**Dokumentasi:** Tambahkan komentar berbahasa Indonesia di atas fungsi, jelaskan kegunaan hook ini.
 
 ---
 
-## Frontend
+### Task 2: Migrasi `LandingPage.jsx` — Hapus useEffect Redirect
 
-### 5. Update Zustand Store
+> **File yang diubah**: `frontend/src/router/index.jsx`, `frontend/src/pages/LandingPage.jsx`
 
-**File**: `frontend/src/stores/use-kanji-store.js`
-
-Tambahkan state `sort_order` ke dalam object `filters`.
-
-**Referensi kode saat ini** (baris 15-18):
-
-```javascript
-filters: {
-  level: "",
-  search: "",
-},
+**Kondisi sekarang:**
+```jsx
+// LandingPage.jsx (baris 15-19)
+useEffect(() => {
+  if (isAuthenticated) {
+    navigate("/profile", { replace: true });
+  }
+}, [isAuthenticated, navigate]);
 ```
 
-**Yang perlu ditambahkan** di dalam `filters`:
+**Yang harus dilakukan:**
 
-- `sort_order: "asc"` (nilai default)
-
-Tidak perlu mengubah logika `fetchKanjis` karena filters sudah di-spread ke params secara dinamis (baris 35: `...filters`).
-
-### 6. Update Kanji List Page
-
-**File**: `frontend/src/pages/kanji/KanjiListPage.jsx`
-
-Tambahkan elemen UI berupa dropdown/select atau tombol toggle untuk memilih urutan sort.
-
-**Langkah-langkah**:
-
-1. Destructure `filters` dari store (sudah ada di baris 7).
-2. Buat handler baru untuk mengubah sort order:
-   ```javascript
-   const handleSortChange = (order) => {
-     setFilters({ sort_order: order });
-   };
+1. Di `router/index.jsx`, tambahkan property `loader` pada route `/`:
+   ```jsx
+   {
+     path: "/",
+     element: <LandingPage />,
+     loader: () => {
+       const { isAuthenticated } = useAuthStore.getState();
+       if (isAuthenticated) {
+         return redirect("/profile");
+       }
+       return null;
+     },
+   },
    ```
-3. Tambahkan UI element (misal: `<select>` atau tombol toggle) di area header halaman, dekat filter level JLPT (sekitar baris 44-54).
-4. Pastikan `useEffect` yang memantau `filters` (baris 18-20) sudah otomatis memicu `fetchKanjis` ulang saat sort berubah — ini seharusnya sudah bekerja tanpa modifikasi karena `filters` sudah menjadi dependency.
+   > **Catatan penting**: Import `redirect` dari `react-router-dom`. Panggil `useAuthStore.getState()` (bukan hook `useAuthStore()`) karena loader bukan React component.
 
-**Contoh UI yang disarankan** (pilih salah satu pendekatan):
-
-- **Opsi A (Select Dropdown)**: `<select>` dengan opsi "N5 → N1" dan "N1 → N5".
-- **Opsi B (Toggle Button)**: Tombol dengan icon panah atas/bawah yang bisa diklik untuk toggle antara `asc`/`desc`.
-
-**Styling**: Sesuaikan dengan design system yang sudah ada (gunakan class `bg-background-lighter`, `border-my-border`, `text-gray-400`, `rounded-lg`, dll).
+2. Di `LandingPage.jsx`:
+   - Hapus import `useEffect` (jika tidak dipakai di tempat lain)
+   - Hapus import `useNavigate` dari `react-router`
+   - Hapus import `useAuthStore`
+   - Hapus seluruh blok `useEffect` dan variabel `navigate`, `isAuthenticated`
+   - Komponen menjadi murni render saja (tidak ada state/effect)
 
 ---
 
-## Checklist Implementasi
+### Task 3: Migrasi `LoginPage.jsx` & `RegisterPage.jsx` — Hapus useEffect clearError
 
-- [ ] Update `backend/src/validation/kanji-validation.js` — tambah field `sort_by` dan `sort_order`.
-- [ ] Update `backend/src/services/kanji-service.js` — tambah `orderBy` ke query Prisma.
-- [ ] Update `backend/src/controller/kanji-controller.js` — teruskan query params baru.
-- [ ] Update `backend/tests/kanji.test.js` — tambah test case untuk sorting + sesuaikan test lama jika perlu.
-- [ ] Jalankan dan loloskan semua unit test (`bun test`).
-- [ ] Update `frontend/src/stores/use-kanji-store.js` — tambah `sort_order` ke filters.
-- [ ] Update `frontend/src/pages/kanji/KanjiListPage.jsx` — tambah UI sort dan handler.
-- [ ] Verifikasi manual di browser: sort ascending dan descending berfungsi dengan benar.
-- [ ] Update `CONTEXT.md` jika ada perubahan signifikan pada API (penambahan query parameter baru).
+> **File yang diubah**: `frontend/src/router/index.jsx`, `frontend/src/pages/auth/LoginPage.jsx`, `frontend/src/pages/auth/RegisterPage.jsx`
+
+**Kondisi sekarang (sama di kedua file):**
+```jsx
+useEffect(() => {
+  clearError();
+}, [clearError]);
+```
+
+**Yang harus dilakukan:**
+
+1. Di `router/index.jsx`, tambahkan `loader` pada route `login` dan `register`:
+   ```jsx
+   {
+     path: "auth",
+     element: <AuthLayout />,
+     children: [
+       {
+         path: "login",
+         element: <LoginPage />,
+         loader: () => {
+           useAuthStore.getState().clearError();
+           return null;
+         },
+       },
+       {
+         path: "register",
+         element: <RegisterPage />,
+         loader: () => {
+           useAuthStore.getState().clearError();
+           return null;
+         },
+       },
+     ],
+   },
+   ```
+
+2. Di `LoginPage.jsx`:
+   - Hapus blok `useEffect` (baris 19-22)
+   - **Pertahankan** `clearError` di destructuring store — karena masih dipakai di `handleChange` (baris 28)
+   - Hapus import `useEffect` dari React. Ubah baris 1 menjadi: `import { useState } from "react";`
+
+3. Di `RegisterPage.jsx`:
+   - Lakukan hal yang sama persis seperti LoginPage
+   - Hapus blok `useEffect` (baris 28-31)
+   - **Pertahankan** `clearError` di destructuring store — masih dipakai di `handleChange` (baris 36)
+   - Hapus import `useEffect` dari React. Ubah baris 1 menjadi: `import { useState } from "react";`
+
+---
+
+### Task 4: Migrasi `KanjiListPage.jsx` — Ganti useEffect Debounce dengan Custom Hook
+
+> **File yang diubah**: `frontend/src/pages/kanji/KanjiListPage.jsx`
+
+**Kondisi sekarang — ada 2 useEffect:**
+
+```jsx
+// Effect 1: Debounce search (baris 10-16)
+useEffect(() => {
+  const delayDebounceFn = setTimeout(() => {
+    setFilters({ search: searchTerm });
+  }, 500);
+  return () => clearTimeout(delayDebounceFn);
+}, [searchTerm, setFilters]);
+
+// Effect 2: Fetch data (baris 18-20)
+useEffect(() => {
+  fetchKanjis(paging.page);
+}, [paging.page, filters]);
+```
+
+**Yang harus dilakukan:**
+
+1. **Ganti Effect 1** dengan custom hook `useDebounce` (dari Task 1):
+   ```jsx
+   import useDebounce from "../../hooks/useDebounce";
+
+   // Di dalam komponen:
+   const debouncedSearch = useDebounce(searchTerm, 500);
+
+   // Lalu gunakan useEffect BARU yang lebih bersih untuk sync ke store:
+   useEffect(() => {
+     setFilters({ search: debouncedSearch });
+   }, [debouncedSearch, setFilters]);
+   ```
+   > **Catatan**: useEffect ini masih ada, tapi sekarang jauh lebih bersih — hanya 1 baris, tanpa setTimeout manual. Logika debounce sudah dienkapsulasi di hook.
+
+2. **Effect 2 tetap dipertahankan** — fetch data di halaman ini bergantung pada perubahan `filters` dan `paging.page` yang bisa berubah secara interaktif (bukan hanya saat pertama kali load). Loader hanya berjalan saat navigasi, sedangkan filter/pagination berubah tanpa navigasi ulang. Jadi effect ini **tetap diperlukan**.
+
+3. **Hapus** import `useEffect` yang lama hanya jika sudah tidak dipakai (dalam kasus ini masih dipakai, jadi tetap pertahankan).
+
+---
+
+### Task 5: Migrasi `KanjiDetailPage.jsx` — Ganti useEffect Fetch dengan Loader
+
+> **File yang diubah**: `frontend/src/router/index.jsx`, `frontend/src/pages/kanji/KanjiDetailPage.jsx`
+
+**Kondisi sekarang:**
+```jsx
+// baris 31-38
+useEffect(() => {
+  if (id) {
+    fetchKanjiDetail(id);
+    if (isAuthenticated) {
+      fetchProgressDetail(id);
+    }
+  }
+}, [id, isAuthenticated]);
+```
+
+**Yang harus dilakukan:**
+
+1. Di `router/index.jsx`, tambahkan `loader` pada route `kanji/:id`:
+   ```jsx
+   {
+     path: "kanji/:id",
+     element: <KanjiDetailPage />,
+     loader: ({ params }) => {
+       const { isAuthenticated } = useAuthStore.getState();
+       useKanjiStore.getState().fetchKanjiDetail(params.id);
+       if (isAuthenticated) {
+         useUserProgressStore.getState().fetchProgressDetail(params.id);
+       }
+       return null;
+     },
+   },
+   ```
+   > **Catatan penting**: Karena `fetchKanjiDetail` dan `fetchProgressDetail` adalah async, kita **tidak perlu await** di sini. Store sudah mengatur `isLoading` secara internal, dan komponen sudah menampilkan loading spinner berdasarkan `isLoading`. Loader cukup *trigger* fetch-nya saja (fire-and-forget).
+
+   > **Import yang perlu ditambahkan di `router/index.jsx`**:
+   > ```jsx
+   > import useAuthStore from "../stores/use-auth-store";
+   > import useKanjiStore from "../stores/use-kanji-store";
+   > import useUserProgressStore from "../stores/use-user-progress-store";
+   > ```
+
+2. Di `KanjiDetailPage.jsx`:
+   - Hapus seluruh blok `useEffect` (baris 31-38)
+   - Hapus import `useEffect` dari React. Ubah baris 1 menjadi: `import { useState } from "react";`
+   - **JANGAN hapus** import `useParams` — masih dibutuhkan oleh handler lain (`handleQuickAdd`, `handleToggleMemorized`, dll) yang menggunakan `id`
+   - **JANGAN hapus** `isAuthenticated` dari `useAuthStore` — masih dipakai di JSX untuk conditional rendering tombol
+   - **JANGAN hapus** `fetchKanjiDetail` dan `fetchProgressDetail` dari destructuring store — hanya hapus blok `useEffect` saja
+
+---
+
+### Task 6: Migrasi `UserKanjiListPage.jsx` — Pisahkan Initial Load ke Loader
+
+> **File yang diubah**: `frontend/src/router/index.jsx`, `frontend/src/pages/user/UserKanjiListPage.jsx`
+
+**Kondisi sekarang:**
+```jsx
+// baris 30-37
+useEffect(() => {
+  const params = { page: paging.page || 1 };
+  if (filterMemorized === "memorized") params.isMemorized = true;
+  if (filterMemorized === "learning") params.isMemorized = false;
+  fetchUserKanjis(params);
+}, [paging.page, filterMemorized]);
+```
+
+**Yang harus dilakukan:**
+
+Halaman ini memiliki filter interaktif (`filterMemorized`) yang berubah tanpa navigasi ulang, mirip seperti KanjiListPage. Oleh karena itu:
+
+1. Di `router/index.jsx`, tambahkan `loader` pada route `my-kanji` untuk **initial load** saja:
+   ```jsx
+   {
+     path: "my-kanji",
+     element: <UserKanjiListPage />,
+     loader: () => {
+       useUserProgressStore.getState().fetchUserKanjis({ page: 1 });
+       return null;
+     },
+   },
+   ```
+
+2. Di `UserKanjiListPage.jsx`:
+   - **Ubah** useEffect agar hanya merespons perubahan filter (bukan initial load):
+     ```jsx
+     useEffect(() => {
+       const params = { page: 1 };
+       if (filterMemorized === "memorized") params.isMemorized = true;
+       if (filterMemorized === "learning") params.isMemorized = false;
+       fetchUserKanjis(params);
+     }, [filterMemorized]);
+     ```
+   - Hapus `paging.page` dari dependency array karena initial load sudah ditangani loader, dan perubahan halaman sudah ditangani oleh `handlePageChange` yang memanggil `fetchUserKanjis` secara langsung.
+
+---
+
+## Ringkasan Perubahan File
+
+| File | Aksi |
+|---|---|
+| `frontend/src/hooks/useDebounce.js` | **BARU** — Custom hook debounce |
+| `frontend/src/router/index.jsx` | **UBAH** — Tambah loader di 5 route, tambah import store & redirect |
+| `frontend/src/pages/LandingPage.jsx` | **UBAH** — Hapus useEffect, hapus import yang tidak perlu |
+| `frontend/src/pages/auth/LoginPage.jsx` | **UBAH** — Hapus blok useEffect, hapus import useEffect |
+| `frontend/src/pages/auth/RegisterPage.jsx` | **UBAH** — Hapus blok useEffect, hapus import useEffect |
+| `frontend/src/pages/kanji/KanjiListPage.jsx` | **UBAH** — Ganti debounce manual dengan `useDebounce` hook |
+| `frontend/src/pages/kanji/KanjiDetailPage.jsx` | **UBAH** — Hapus useEffect fetch, hapus import useEffect |
+| `frontend/src/pages/user/UserKanjiListPage.jsx` | **UBAH** — Ubah useEffect, hapus dependency `paging.page` |
+
+## Catatan Penting
+
+1. **Jangan ubah logika bisnis atau tampilan UI** — refactor ini hanya mengubah *di mana* dan *bagaimana* side effect dipanggil, bukan *apa* yang dilakukan.
+2. **Semua store action tetap sama** — tidak ada perubahan di file `stores/`.
+3. **Pastikan setiap task di-test manual** — buka halaman terkait, pastikan data tetap muncul dengan benar, filter dan pagination tetap berfungsi.
+4. **Kerjakan secara berurutan** dari Task 1 sampai Task 6, karena Task 4 bergantung pada Task 1.
+5. **Import `redirect`** dari `react-router-dom` di `router/index.jsx` (dibutuhkan di Task 2).
+6. Di `router/index.jsx`, loader mengakses store via `.getState()` (bukan hook), karena loader **bukan** React component.
 
 ## Verifikasi
 
-1. Jalankan `bun test` di folder `backend/` dan pastikan semua test (lama + baru) lolos.
-2. Buka browser, akses halaman Kanji List:
-   - Default harus menampilkan urutan N5 → N1.
-   - Pilih sort descending, kanji harus menampilkan urutan N1 → N5.
-   - Kombinasi sort + filter level + search harus tetap bekerja normal.
-   - Paginasi harus tetap konsisten saat sort aktif.
+Setelah semua task selesai, pastikan:
+- [ ] Halaman Landing: user yang sudah login otomatis diarahkan ke `/profile`
+- [ ] Halaman Login/Register: tidak ada error lama yang muncul saat berpindah halaman
+- [ ] Halaman Kanji List: search debounce berfungsi (ketik → tunggu 500ms → hasil muncul), filter level dan sorting berfungsi, pagination berfungsi
+- [ ] Halaman Kanji Detail: data kanji dan progress muncul saat halaman dibuka
+- [ ] Halaman My Kanji: data muncul saat pertama kali buka, filter Memorized/Learning berfungsi, pagination berfungsi
+- [ ] Tidak ada error di console browser
+- [ ] Aplikasi bisa dijalankan tanpa crash (`bun run dev` di folder frontend)

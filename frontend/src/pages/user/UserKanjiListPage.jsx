@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useUserProgressStore from "../../stores/use-user-progress-store";
-import { BsBookmarkCheckFill, BsBookHalf } from "react-icons/bs";
 import KanjiGrid from "../../components/ui/KanjiGrid";
-import { IoMdBookmark } from "react-icons/io";
 import { IoBookmarks } from "react-icons/io5";
 import { IoCheckmarkDone } from "react-icons/io5";
-import { FaCheck } from "react-icons/fa";
 
 export default function UserKanjiListPage() {
   const { userKanjis, isLoading, error, paging, fetchUserKanjis } = useUserProgressStore();
@@ -29,12 +26,12 @@ export default function UserKanjiListPage() {
 
   useEffect(() => {
     // Convert filter string to boolean or undefined
-    const params = { page: paging.page || 1 };
+    const params = { page: 1 };
     if (filterMemorized === "memorized") params.isMemorized = true;
     if (filterMemorized === "learning") params.isMemorized = false;
 
     fetchUserKanjis(params);
-  }, [paging.page, filterMemorized]);
+  }, [filterMemorized]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= paging.total_page) {

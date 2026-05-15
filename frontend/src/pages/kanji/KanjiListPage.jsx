@@ -1,19 +1,16 @@
 import { useEffect, useState } from "react";
 import useKanjiStore from "../../stores/use-kanji-store";
 import KanjiGrid from "../../components/ui/KanjiGrid";
-import { TiDelete, TiDeleteOutline } from "react-icons/ti";
+import useDebounce from "../../hooks/useDebounce";
 
 export default function KanjiListPage() {
   const { kanjis, isLoading, error, paging, filters, fetchKanjis, setFilters } = useKanjiStore();
   const [searchTerm, setSearchTerm] = useState(filters.search);
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      setFilters({ search: searchTerm });
-    }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, setFilters]);
+    setFilters({ search: debouncedSearch });
+  }, [debouncedSearch, setFilters]);
 
   useEffect(() => {
     fetchKanjis(paging.page);

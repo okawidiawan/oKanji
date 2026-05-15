@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import useKanjiStore from "../../stores/use-kanji-store";
 import useUserProgressStore from "../../stores/use-user-progress-store";
@@ -12,8 +12,8 @@ import ReviewValidationModal from "../../components/kanji/ReviewValidationModal"
 export default function KanjiDetailPage() {
   const { id } = useParams();
   const { isAuthenticated } = useAuthStore();
-  const { currentKanji, fetchKanjiDetail, isLoading: isKanjiLoading } = useKanjiStore();
-  const { currentProgressDetail, fetchProgressDetail, quickAddKanji, memorizeKanji, removeKanjiProgress, addKotobaProgress, removeKotobaProgress, toggleKotobaMemorized, isLoading: isProgressLoading } = useUserProgressStore();
+  const { currentKanji, isLoading: isKanjiLoading } = useKanjiStore();
+  const { currentProgressDetail, quickAddKanji, memorizeKanji, removeKanjiProgress, addKotobaProgress, removeKotobaProgress, toggleKotobaMemorized } = useUserProgressStore();
 
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [modalConfig, setModalConfig] = useState({
@@ -27,15 +27,6 @@ export default function KanjiDetailPage() {
   });
 
   const [showReviewChallenge, setShowReviewChallenge] = useState(false);
-
-  useEffect(() => {
-    if (id) {
-      fetchKanjiDetail(id);
-      if (isAuthenticated) {
-        fetchProgressDetail(id);
-      }
-    }
-  }, [id, isAuthenticated]);
 
   const handleQuickAdd = async () => {
     setIsActionLoading(true);
@@ -336,14 +327,7 @@ export default function KanjiDetailPage() {
       />
 
       {/* Kanji Review Challenge Modal */}
-      {currentKanji && (
-        <ReviewValidationModal
-          isOpen={showReviewChallenge}
-          onClose={() => setShowReviewChallenge(false)}
-          onSuccess={handleReviewSuccess}
-          kanji={currentKanji}
-        />
-      )}
+      {currentKanji && <ReviewValidationModal isOpen={showReviewChallenge} onClose={() => setShowReviewChallenge(false)} onSuccess={handleReviewSuccess} kanji={currentKanji} />}
     </div>
   );
 }

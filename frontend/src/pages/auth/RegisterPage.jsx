@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/use-auth-store";
 import { HiOutlineEye, HiOutlineEyeOff } from "react-icons/hi";
@@ -24,11 +24,6 @@ export default function RegisterPage() {
   };
 
   const isFormValid = formData.username.trim().length >= 3 && validateEmail(formData.email) && formData.password.length >= 8 && formData.password === formData.confirmPassword;
-
-  useEffect(() => {
-    // Bersihkan error saat pertama kali masuk halaman
-    clearError();
-  }, [clearError]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
