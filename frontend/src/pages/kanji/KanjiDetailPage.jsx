@@ -7,6 +7,7 @@ import { IoMdAddCircleOutline, IoMdTrash } from "react-icons/io";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 import { BsBookmarkPlusFill } from "react-icons/bs";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import ReviewValidationModal from "../../components/kanji/ReviewValidationModal";
 
 export default function KanjiDetailPage() {
   const { id } = useParams();
@@ -24,6 +25,8 @@ export default function KanjiDetailPage() {
     icon: null,
     onConfirm: () => {},
   });
+
+  const [showReviewChallenge, setShowReviewChallenge] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -55,27 +58,19 @@ export default function KanjiDetailPage() {
     }
   };
 
+  const handleReviewSuccess = async () => {
+    setIsActionLoading(true);
+    try {
+      const newReviewCount = (currentProgressDetail.reviewCount || 0) + 1;
+      await memorizeKanji(id, { reviewCount: newReviewCount });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   const handleHafalkan = () => {
     if (!currentProgressDetail || !currentProgressDetail.isMemorized) return;
-    setModalConfig({
-      isOpen: true,
-      title: "Finished Reviewing?",
-      message: "This kanji's review count will increase. Make sure you have thoroughly reviewed it today!",
-      confirmText: "Yes, Finished",
-      type: "primary",
-      icon: <BsBookmarkPlusFill />,
-      onConfirm: async () => {
-        setIsActionLoading(true);
-        try {
-          // Delay sengaja untuk feel interaksi yang lebih baik
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          const newReviewCount = (currentProgressDetail.reviewCount || 0) + 1;
-          await memorizeKanji(id, { reviewCount: newReviewCount });
-        } finally {
-          setIsActionLoading(false);
-        }
-      },
-    });
+    setShowReviewChallenge(true);
   };
 
   const handleRemoveKanji = () => {
@@ -339,6 +334,16 @@ export default function KanjiDetailPage() {
         type={modalConfig.type}
         icon={modalConfig.icon}
       />
+
+      {/* Kanji Review Challenge Modal */}
+      {currentKanji && (
+        <ReviewValidationModal
+          isOpen={showReviewChallenge}
+          onClose={() => setShowReviewChallenge(false)}
+          onSuccess={handleReviewSuccess}
+          kanji={currentKanji}
+        />
+      )}
     </div>
   );
 }
