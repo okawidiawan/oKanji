@@ -254,13 +254,13 @@ export default function KanjiDetailPage() {
                 return (
                   <div
                     key={word.id}
-                    className={`group p-4 bg-background-lighter border border-my-border rounded-2xl flex items-center justify-between transition-all hover:border-primary/50 ${isMemorized ? "border-green-500/30 bg-green-500/5" : ""}`}
+                    className={`group p-4 bg-background-lighter border border-my-border rounded-2xl flex items-center justify-evenly transition-all hover:border-secondary ${isMemorized ? "border-green-500/30 bg-green-500/5" : ""}`}
                   >
                     <div className="space-y-1 w-md">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl font-bold text-white">{word.word}</span>
-                          <span className="text-sm text-gray-500 font-mono">[{word.reading}]</span>
+                          <span className="text-2xl font-bold text-secondary">{word.word}</span>
+                          <span className="text-md text-secondary-dark font-mono">[{word.reading}]</span>
                         </div>
                         {isAuthenticated && (
                           <div className="flex items-center gap-1">

@@ -47,17 +47,15 @@ export default function UserKanjiListPage() {
 
   return (
     <div className="space-y-8 animate-fade-up">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <span>My Kanji Collection</span>
-            <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full font-mono uppercase tracking-wider">Personal Progress</span>
-          </h1>
+          <h1 className="text-3xl font-bold text-white flex items-center gap-3">My Kanji Collection</h1>
           <p className="text-gray-400 mt-1">Track and review the Kanji characters you are currently focusing on.</p>
+          <span className="text-xs bg-primary/20 text-primary px-3 py-1 rounded-full font-mono uppercase tracking-wider">Personal Progress</span>
         </div>
 
         {/* Status Filters */}
-        <div className="flex flex-wrap gap-2 bg-background-lighter p-1.5 rounded-xl border border-my-border">
+        <div className="flex flex-wrap justify-center items-center gap-1 bg-background-lighter p-1.5 rounded-xl border border-my-border sm:w-sm xl:w-sm">
           {[
             { id: "all", label: "All", icon: null },
             { id: "memorized", label: "Memorized", icon: <IoCheckmarkDone className="text-2xl text-green-600" /> },
