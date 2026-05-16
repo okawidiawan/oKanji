@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/use-auth-store";
-import logoImg from "../../assets/logo.png";
+import logoImg from "../../assets/logo.svg";
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import { useState } from "react";
 import ConfirmModal from "../ui/ConfirmModal";
