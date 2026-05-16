@@ -126,8 +126,15 @@ frontend/
 - [x] Konfigurasi Axios & Base API.
 - [x] Setup Tailwind CSS v4.
 - [x] Domain-driven Folder Structure.
-- [/] Implementasi UI Komponen (In Progress).
-- [x] Integrasi Login/Register (Done).
+- [x] Implementasi Landing Page.
+- [x] Integrasi Login/Register.
+- [x] Implementasi User Profile Page.
+- [x] Implementasi Kanji List Page.
+- [x] Implementasi My Kanji Page.
+- [x] Implementasi Detail Kanji Page.
+- [x] Membuat Mini Quiz Untuk Review Kanji.
+- [x] Membuat Mini Quiz Untuk Review Kotoba.
+- [x]
 
 ---
 
@@ -157,6 +164,8 @@ frontend/
 12. **Token Hashing**: Session token (UUID) disimpan dalam bentuk hash SHA-256 di database untuk memitigasi risiko jika database bocor. Client tetap menerima token asli yang belum di-hash.
 13. **Centralized Logging**: Semua logging menggunakan Winston melalui modul `src/application/logger.js`. Format log otomatis menyesuaikan environment: development menggunakan format readable berwarna di console, production menggunakan format JSON terstruktur dan menulis ke file (`logs/error.log` untuk error, `logs/combined.log` untuk semua level). Level logging dikontrol via environment variable `LOG_LEVEL` (default: `debug` di development, `info` di production).
 14. **Indikator Progres Personal**: Untuk meningkatkan UX, daftar kanji global (`GET /api/kanjis`) menyertakan indikator status pelajari/hafal milik user saat ini melalui relasi `userKanjis` yang terfilter secara spesifik di level query (`where: { userId }`). Pada detail kanji milik user (`GET /api/user-kanji/:kanjiId`), seluruh kosakata yang terkait dengan kanji tersebut tetap ditampilkan secara lengkap, disertai array `userKotoba` terfilter sebagai penanda _tracking_ personal tiap kosakata.
+15. **Loader-first Architecture (Frontend)**: Frontend menggunakan pola **Render-as-You-Fetch** melalui React Router v7 Loaders. Data fetching awal dan logika redirect autentikasi didefinisikan di konfigurasi route (`router/index.jsx`), bukan di dalam komponen via `useEffect`. Ini menghilangkan _rendering waterfall_ dan _UI flickering_. Karena loader berjalan di luar konteks React component, akses ke Zustand store **wajib** menggunakan `useStore.getState()` (bukan hook `useStore()`), dan redirect menggunakan fungsi `redirect()` dari `react-router-dom`.
+16. **Minimalisasi useEffect (Frontend)**: `useEffect` hanya digunakan jika benar-benar diperlukan untuk sinkronisasi dengan sistem eksternal. Pola yang **dihindari**: data fetching saat mount, redirect berdasarkan state, dan cleanup error state. Pola yang **digunakan sebagai pengganti**: React Router Loaders untuk data fetching & redirect, Custom Hooks (contoh: `useDebounce` di `hooks/useDebounce.js`) untuk logika reusable, dan derived/computed values untuk state turunan. Referensi: prinsip _"You Might Not Need an Effect"_ dari dokumentasi React.
 
 ---
 
