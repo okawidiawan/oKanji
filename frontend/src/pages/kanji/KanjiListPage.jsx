@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import useKanjiStore from "../../stores/use-kanji-store";
 import KanjiGrid from "../../components/ui/KanjiGrid";
+import { TiDeleteOutline } from "react-icons/ti";
 import useDebounce from "../../hooks/useDebounce";
 
 export default function KanjiListPage() {
