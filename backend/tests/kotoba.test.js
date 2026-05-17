@@ -10,10 +10,15 @@ const prismaMock = {
     },
     kotoba: {
         findUnique: mock(),
+        findFirst: mock(),
         create: mock(),
         update: mock(),
         delete: mock(),
         count: mock()
+    },
+    kanjiKotoba: {
+        createMany: mock(),
+        create: mock()
     },
     $transaction: mock()
 };
@@ -28,11 +33,16 @@ describe("Kotoba API", () => {
     beforeEach(() => {
         prismaMock.user.findUnique.mockReset();
         prismaMock.kotoba.findUnique.mockReset();
+        prismaMock.kotoba.findFirst.mockReset();
         prismaMock.kotoba.create.mockReset();
         prismaMock.kotoba.update.mockReset();
         prismaMock.kotoba.delete.mockReset();
         prismaMock.kotoba.count.mockReset();
         prismaMock.kanji.count.mockReset();
+        if (prismaMock.kanjiKotoba) {
+            prismaMock.kanjiKotoba.createMany.mockReset();
+            prismaMock.kanjiKotoba.create.mockReset();
+        }
         prismaMock.$transaction.mockReset();
     });
 
@@ -105,28 +115,79 @@ describe("Kotoba API", () => {
             expect(prismaMock.kotoba.create).toHaveBeenCalledTimes(2);
         });
 
-        it("seharusnya gagal (400) jika ada item duplikat dalam satu batch", async () => {
+        it("seharusnya berhasil me-link kotoba tunggal yang sudah ada ke kanji baru", async () => {
             mockAuthSuccess();
-            const payload = [
-                { word: "食べる", reading: "たべる", meaning: "makan", kanjiIds: ["550e8400-e29b-41d4-a716-446655440000"] },
-                { word: "食べる", reading: "たべる", meaning: "makan lagi", kanjiIds: ["550e8400-e29b-41d4-a716-446655440000"] }
-            ];
+            const payload = {
+                word: "食べる",
+                reading: "たべる",
+                meaning: "makan",
+                jlptLevel: "N5",
+                kanjiIds: ["770e8400-e29b-41d4-a716-446655440000"]
+            };
 
             prismaMock.kanji.count.mockResolvedValue(1);
-            prismaMock.$transaction.mockImplementation(async (callback) => {
-                return await callback(prismaMock);
+            prismaMock.kotoba.findFirst.mockResolvedValue({
+                id: "kotoba-uuid-1",
+                word: "食べる",
+                reading: "たべる",
+                meaning: "makan",
+                jlptLevel: "N5",
+                kanjiKotoba: [
+                    { kanjiId: "550e8400-e29b-41d4-a716-446655440000" }
+                ]
             });
-            
-            // Mock findFirst/count to return 1 for the second item
-            prismaMock.kotoba.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
+
+            prismaMock.kanjiKotoba.createMany.mockResolvedValue({ count: 1 });
 
             const response = await request(app)
                 .post("/api/kotoba")
                 .set("Authorization", "Bearer valid-token")
                 .send(payload);
 
-            expect(response.status).toBe(400);
-            expect(response.body.error).toContain("already registered");
+            expect(response.status).toBe(201);
+            expect(response.body.data.id).toBe("kotoba-uuid-1");
+            expect(response.body.data.kanjiIds).toEqual([
+                "550e8400-e29b-41d4-a716-446655440000",
+                "770e8400-e29b-41d4-a716-446655440000"
+            ]);
+            expect(prismaMock.kotoba.create).not.toHaveBeenCalled();
+            expect(prismaMock.kanjiKotoba.createMany).toHaveBeenCalled();
+        });
+
+        it("seharusnya berhasil me-link secara otomatis jika ada item yang sudah terdaftar dalam batch", async () => {
+            mockAuthSuccess();
+            const payload = [
+                { word: "食べる", reading: "たべる", meaning: "makan", kanjiIds: ["550e8400-e29b-41d4-a716-446655440000"] },
+                { word: "食べる", reading: "たべる", meaning: "makan lagi", kanjiIds: ["770e8400-e29b-41d4-a716-446655440000"] }
+            ];
+
+            prismaMock.kanji.count.mockResolvedValue(2);
+            prismaMock.$transaction.mockImplementation(async (callback) => {
+                return await callback(prismaMock);
+            });
+            
+            prismaMock.kotoba.findFirst
+                .mockResolvedValueOnce(null)
+                .mockResolvedValueOnce({
+                    id: "kotoba-uuid-1",
+                    word: "食べる",
+                    reading: "たべる",
+                    kanjiKotoba: [
+                        { kanjiId: "550e8400-e29b-41d4-a716-446655440000" }
+                    ]
+                });
+
+            prismaMock.kanjiKotoba.createMany.mockResolvedValue({ count: 1 });
+
+            const response = await request(app)
+                .post("/api/kotoba")
+                .set("Authorization", "Bearer valid-token")
+                .send(payload);
+
+            expect(response.status).toBe(201);
+            expect(response.body.data.count).toBe(2);
+            expect(prismaMock.kotoba.create).toHaveBeenCalledTimes(1);
+            expect(prismaMock.kanjiKotoba.createMany).toHaveBeenCalledTimes(1);
         });
 
         it("seharusnya gagal (400) jika validasi input salah", async () => {
