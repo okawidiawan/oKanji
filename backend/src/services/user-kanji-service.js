@@ -245,4 +245,49 @@ const update = async (user, request) => {
   });
 };
 
-export { add, get, list, remove, update };
+/**
+ * Mengambil statistik progres belajar kanji user berdasarkan level JLPT (N5 - N1).
+ */
+const getStats = async (user) => {
+  const levels = ["N5", "N4", "N3", "N2", "N1"];
+
+  // Menjalankan query count secara paralel menggunakan Promise.all
+  const stats = await Promise.all(
+    levels.map(async (level) => {
+      // 1. Total kanji global di database untuk level ini
+      const total = await prisma.kanji.count({
+        where: { jlptLevel: level },
+      });
+
+      // 2. Total kanji yang sudah di-add ke list belajar user
+      const added = await prisma.userKanji.count({
+        where: {
+          userId: user.id,
+          kanji: { jlptLevel: level },
+        },
+      });
+
+      // 3. Total kanji yang sudah di-memorize (isMemorized: true) oleh user
+      const memorized = await prisma.userKanji.count({
+        where: {
+          userId: user.id,
+          isMemorized: true,
+          kanji: { jlptLevel: level },
+        },
+      });
+
+      return {
+        level,
+        total,
+        added,
+        memorized,
+        notMemorized: added - memorized, // Kanji yang sudah di-add tapi belum hafal
+        notAdded: total - added,
+        percentage: total > 0 ? Math.round((memorized / total) * 100) : 0,
+      };
+    }),
+  );
+  return stats;
+};
+
+export { add, get, list, remove, update, getStats };
