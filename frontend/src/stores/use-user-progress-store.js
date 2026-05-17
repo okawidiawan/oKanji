@@ -9,6 +9,7 @@ import useKanjiStore from "./use-kanji-store";
 const useUserProgressStore = create((set, get) => ({
   // State
   userKanjis: [],
+  stats: [],
   currentProgressDetail: null,
   paging: {
     page: 1,
