@@ -1,4 +1,4 @@
-import api from '../lib/api';
+import api from "../lib/api";
 
 /**
  * User Kanji Service
@@ -43,7 +43,7 @@ const userKanjiService = {
    * @returns {Promise<Object>} Mengembalikan { data, paging }
    */
   getList: async (params) => {
-    const response = await api.get('/user-kanji', { params });
+    const response = await api.get("/user-kanji", { params });
     return response.data;
   },
 
@@ -54,6 +54,15 @@ const userKanjiService = {
    */
   getDetail: async (kanjiId) => {
     const response = await api.get(`/user-kanji/${kanjiId}`);
+    return response.data;
+  },
+
+  /**
+   * Mengambil statistik progres belajar kanji milik user berdasarkan level
+   * @returns {Promise<Object>} Mengembalikan { data: [...] }
+   */
+  getStats: async () => {
+    const response = await api.get("/user-kanji/stats");
     return response.data;
   },
 };

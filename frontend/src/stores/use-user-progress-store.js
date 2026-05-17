@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import userKanjiService from '../services/user-kanji-service';
-import userKotobaService from '../services/user-kotoba-service';
-import useKanjiStore from './use-kanji-store';
+import { create } from "zustand";
+import userKanjiService from "../services/user-kanji-service";
+import userKotobaService from "../services/user-kotoba-service";
+import useKanjiStore from "./use-kanji-store";
 
 /**
  * Store untuk mengelola progres belajar pengguna (Kanji & Kotoba)
@@ -62,20 +62,18 @@ const useUserProgressStore = create((set, get) => ({
     try {
       // data can contain { isMemorized, reviewCount, difficulty, note }
       const result = await userKanjiService.update(kanjiId, data);
-      
+
       // Update local state if we are viewing the detail of this kanji
       const current = get().currentProgressDetail;
       if (current && current.kanjiId === kanjiId) {
         set({
-          currentProgressDetail: { ...current, ...result.data }
+          currentProgressDetail: { ...current, ...result.data },
         });
       }
-      
+
       // Update list if needed
       set((state) => ({
-        userKanjis: state.userKanjis.map((item) => 
-          item.kanjiId === kanjiId ? { ...item, ...result.data } : item
-        )
+        userKanjis: state.userKanjis.map((item) => (item.kanjiId === kanjiId ? { ...item, ...result.data } : item)),
       }));
     } catch (error) {
       const message = error.response?.data?.error || "Failed to update memorization status.";
@@ -115,16 +113,16 @@ const useUserProgressStore = create((set, get) => ({
     set((state) => ({ loadingCount: state.loadingCount + 1 }));
     try {
       await userKanjiService.remove(kanjiId);
-      
+
       // Reset detail jika sedang ditampilkan
       const current = get().currentProgressDetail;
       if (current && current.kanjiId === kanjiId) {
         set({ currentProgressDetail: null });
       }
-      
+
       // Update daftar kanji user
       set((state) => ({
-        userKanjis: state.userKanjis.filter((item) => item.kanjiId !== kanjiId)
+        userKanjis: state.userKanjis.filter((item) => item.kanjiId !== kanjiId),
       }));
 
       // Refresh data kanji list secara silent agar indikator tracking terupdate
@@ -146,7 +144,7 @@ const useUserProgressStore = create((set, get) => ({
     set((state) => ({ loadingCount: state.loadingCount + 1 }));
     try {
       const result = await userKotobaService.add(kotobaId);
-      
+
       // Update state nested di currentProgressDetail
       const current = get().currentProgressDetail;
       if (current && current.kanji && current.kanji.kotoba) {
@@ -159,8 +157,8 @@ const useUserProgressStore = create((set, get) => ({
         set({
           currentProgressDetail: {
             ...current,
-            kanji: { ...current.kanji, kotoba: updatedKotoba }
-          }
+            kanji: { ...current.kanji, kotoba: updatedKotoba },
+          },
         });
       }
     } catch (error) {
@@ -180,7 +178,7 @@ const useUserProgressStore = create((set, get) => ({
     set((state) => ({ loadingCount: state.loadingCount + 1 }));
     try {
       await userKotobaService.remove(kotobaId);
-      
+
       // Update state nested di currentProgressDetail
       const current = get().currentProgressDetail;
       if (current && current.kanji && current.kanji.kotoba) {
@@ -193,8 +191,8 @@ const useUserProgressStore = create((set, get) => ({
         set({
           currentProgressDetail: {
             ...current,
-            kanji: { ...current.kanji, kotoba: updatedKotoba }
-          }
+            kanji: { ...current.kanji, kotoba: updatedKotoba },
+          },
         });
       }
     } catch (error) {
@@ -210,16 +208,14 @@ const useUserProgressStore = create((set, get) => ({
     try {
       // data can contain { isMemorized, reviewCount, difficulty, note }
       const result = await userKotobaService.update(kotobaId, data);
-      
+
       // Update nested state in currentProgressDetail
       const current = get().currentProgressDetail;
       if (current && current.kanji && current.kanji.kotoba) {
         const updatedKotoba = current.kanji.kotoba.map((k) => {
           if (k.id === kotobaId) {
             // Update userKotoba progress inside kotoba object
-            const newUserKotoba = k.userKotoba && k.userKotoba.length > 0
-              ? [{ ...k.userKotoba[0], ...result.data }]
-              : [result.data];
+            const newUserKotoba = k.userKotoba && k.userKotoba.length > 0 ? [{ ...k.userKotoba[0], ...result.data }] : [result.data];
             return { ...k, userKotoba: newUserKotoba };
           }
           return k;
@@ -228,14 +224,27 @@ const useUserProgressStore = create((set, get) => ({
         set({
           currentProgressDetail: {
             ...current,
-            kanji: { ...current.kanji, kotoba: updatedKotoba }
-          }
+            kanji: { ...current.kanji, kotoba: updatedKotoba },
+          },
         });
       }
     } catch (error) {
       const message = error.response?.data?.error || "Failed to update vocabulary status.";
       set({ error: message });
       throw error;
+    }
+  },
+
+  fetchStats: async () => {
+    set((state) => ({ loadingCount: state.loadingCount + 1, error: null }));
+    try {
+      const result = await userKanjiService.getStats();
+      set({ stats: result.data });
+    } catch (error) {
+      const message = error.response?.data?.error || "Failed to Fetch Kanji Statistics.";
+      set({ error: message });
+    } finally {
+      set((state) => ({ loadingCount: state.loadingCount - 1 }));
     }
   },
 
