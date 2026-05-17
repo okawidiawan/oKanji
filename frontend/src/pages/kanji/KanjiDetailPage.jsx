@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import useKanjiStore from "../../stores/use-kanji-store";
 import useUserProgressStore from "../../stores/use-user-progress-store";
 import useAuthStore from "../../stores/use-auth-store";
@@ -8,12 +8,14 @@ import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 import { BsBookmarkPlusFill } from "react-icons/bs";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import ReviewValidationModal from "../../components/kanji/ReviewValidationModal";
+import { IoChevronBack } from "react-icons/io5";
 
 export default function KanjiDetailPage() {
   const { id } = useParams();
   const { isAuthenticated } = useAuthStore();
   const { currentKanji, isLoading: isKanjiLoading } = useKanjiStore();
   const { currentProgressDetail, quickAddKanji, memorizeKanji, removeKanjiProgress, addKotobaProgress, removeKotobaProgress, toggleKotobaMemorized } = useUserProgressStore();
+  const navigate = useNavigate();
 
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [modalConfig, setModalConfig] = useState({
@@ -119,10 +121,19 @@ export default function KanjiDetailPage() {
 
   return (
     <div className="space-y-10 max-w-5xl animate-fade-up flex flex-col justify-center items-center md:items-stretch mx-auto">
+      {/* Tombol Back */}
+      <button
+        onClick={() => navigate(-1)} // -1 artinya kembali ke halaman sebelumnya di history browser
+        className="group flex items-center w-full gap-2 text-secondary-dark text-md font-medium transition-all cursor-pointer text-xl hover:text-secondary"
+      >
+        <IoChevronBack className="group-hover:-translate-x-1 group-hover:text-primary transition-all duration-500" />
+        Back
+      </button>
+
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row gap-8 items-center md:items-stretch mb-4">
         <div className="flex flex-col gap-4">
-          <div className="shrink-0 w-64 h-64 rounded-3xl flex items-center justify-center text-[10rem] font-bold shadow-2xl text-secondary border border-my-border">{currentKanji.character}</div>
+          <div className="shrink-0 w-64 h-64 rounded-3xl flex items-center justify-center text-[10rem] font-bold text-secondary border border-my-border">{currentKanji.character}</div>
           {/* Add Kanji Actions */}
           <div className="w-64 flex justify-center">
             {isAuthenticated && (
@@ -177,7 +188,8 @@ export default function KanjiDetailPage() {
             )}
           </div>
         </div>
-        <div className="grow flex flex-col justify-center space-y-6 text-center md:text-left">
+
+        <div className="grow flex flex-col justify-start space-y-6 text-center md:text-left border-t border-my-border sm:border-none pt-8 sm:pt-0">
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center w-full justify-center md:justify-start gap-4">
@@ -188,11 +200,11 @@ export default function KanjiDetailPage() {
                 {currentKanji.radical && <span className="text-gray-500 text-sm">Radikal: {currentKanji.radical}</span>}
               </div>
             </div>
-            <h1 className="text-5xl font-extrabold text-white">{currentKanji.meaning}</h1>
+            <h1 className="sm:text-5xl text-3xl font-extrabold text-white">{currentKanji.meaning}</h1>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 max-w-md mx-auto md:mx-0">
-            <div className="space-y-1">
+          <div className="grid grid-cols-2 max-w-md mx-auto md:mx-0 w-full py-2">
+            <div className="space-y-1 border-r border-my-border sm:border-none">
               <div className="text-xs font-bold text-primary uppercase tracking-widest">Onyomi</div>
               <div className="text-xl text-white font-medium">{currentKanji.onyomi}</div>
             </div>
@@ -290,7 +302,7 @@ export default function KanjiDetailPage() {
                 );
               })
             ) : (
-              <div className="col-span-full py-10 text-center text-gray-500 bg-background-lighter rounded-2xl border border-dashed border-my-border">No vocabulary added for this kanji yet.</div>
+              <div className="col-span-full py-10 text-center text-gray-500 bg-background-lighter rounded-2xl border border-dashed border-my-border text-xs sm:text-lg">No vocabulary added for this kanji yet.</div>
             );
           })()}
         </div>

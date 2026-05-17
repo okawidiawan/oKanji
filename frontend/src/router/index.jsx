@@ -62,9 +62,9 @@ const router = createBrowserRouter([
       {
         element: <MainLayout />,
         children: [
-          { 
-            path: "kanji", 
-            element: <KanjiListPage /> 
+          {
+            path: "kanji",
+            element: <KanjiListPage />,
           },
           {
             path: "kanji/:id",
@@ -78,15 +78,22 @@ const router = createBrowserRouter([
               return null;
             },
           },
-          { 
-            path: "my-kanji", 
+          {
+            path: "my-kanji",
             element: <UserKanjiListPage />,
             loader: () => {
               useUserProgressStore.getState().fetchUserKanjis({ page: 1 });
               return null;
             },
           },
-          { path: "profile", element: <ProfilePage /> },
+          {
+            path: "profile",
+            element: <ProfilePage />,
+            loader: () => {
+              useUserProgressStore.getState().fetchStats();
+              return null;
+            },
+          },
         ],
       },
     ],

@@ -1,6 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import useAuthStore from "../../stores/use-auth-store";
-import logoImg from "../../assets/logo.png";
+import logoImg from "../../assets/logo.svg";
 import { RiLogoutCircleRLine } from "react-icons/ri";
 import { useState } from "react";
 import ConfirmModal from "../ui/ConfirmModal";
@@ -43,21 +43,21 @@ export default function Navbar() {
           {/* Menu Navigasi */}
           <div className="flex items-center gap-6">
             <div className="profile ">
-              <Link to="/profile" className="hidden sm:block hover:text-primary transition-colors">
+              <NavLink to="/profile" className={({ isActive }) => `hidden sm:block transition-colors ${isActive ? "text-primary text-lg font-semibold" : "text-gray-400 hover:text-primary"}`}>
                 Profile
-              </Link>
+              </NavLink>
             </div>
 
             <div className="kanji-list ">
-              <Link to="/kanji" className="hidden sm:block hover:text-primary transition-colors">
+              <NavLink to="/kanji" className={({ isActive }) => `hidden sm:block transition-colors ${isActive ? "text-primary text-lg font-semibold" : "text-gray-400 hover:text-primary"}`}>
                 Kanji List
-              </Link>
+              </NavLink>
             </div>
 
             <div className="my-kanji ">
-              <Link to="/my-kanji" className="hidden sm:block hover:text-primary transition-colors">
+              <NavLink to="/my-kanji" className={({ isActive }) => `hidden sm:block transition-colors ${isActive ? "text-primary text-lg font-semibold" : "text-gray-400 hover:text-primary"}`}>
                 My Kanji
-              </Link>
+              </NavLink>
             </div>
 
             {/* Info User & Tombol Logout */}
@@ -73,55 +73,45 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <nav className="sm:hidden fixed bottom-0 z-50 w-full justify-center items-center">
+      <nav className="sm:hidden fixed bottom-2 z-50 w-full justify-center items-center">
         <div className=" gap-4 mx-auto px-4 h-16 flex items-center justify-center sm:justify-between w-full">
           <div className="logout-button">
-            <button onClick={handleLogoutClick} className="bg-transparent border border-my-border backdrop-blur-md  p-4 text-2xl font-semibold rounded-full text-primary/80">
+            <button onClick={handleLogoutClick} className="bg-transparent border border-my-border backdrop-blur-md  p-4 text-2xl font-semibold rounded-full text-primary/80 shadow-[0_8px_8px_rgba(0,0,0,0.4)]">
               <RiLogoutCircleRLine />
             </button>
           </div>
 
-          {/* Menu Navigasi */}
+          {/* Menu Navigasi Mobile */}
           <div className="flex items-center ">
-            <div className="flex backdrop-blur-md border border-my-border gap-8 py-3 px-8 rounded-full bg-transparent">
+            <div className="flex backdrop-blur-md border border-my-border gap-8 py-2 px-8 rounded-full bg-transparent shadow-[0_8px_8px_rgba(0,0,0,0.4)]">
+              {/* Profile Mobile */}
               <div className="profile">
-                <Link to="/profile" className="hidden sm:block hover:text-primary transition-colors ">
-                  Profile
-                </Link>
-                <Link to="/profile" className="sm:hidden hover:text-primary transition-colors">
+                <NavLink to="/profile" className={({ isActive }) => `sm:hidden transition-colors ${isActive ? "text-primary" : "text-secondary-dark hover:text-primary"}`}>
                   <div className="flex flex-col justify-center items-center gap-2">
-                    <FaUser />
-                    <p className="text-xs text-secondary-dark">Profile</p>
+                    <FaUser className="text-lg" />
+                    <p className="text-xs">Profile</p>
                   </div>
-                </Link>
+                </NavLink>
               </div>
-
+              {/* Kanji List Mobile */}
               <div className="kanji-list">
-                <Link to="/kanji" className="hidden sm:block hover:text-primary transition-colors">
-                  Kanji List
-                </Link>
-                <Link to="/kanji" className="sm:hidden hover:text-primary transition-colors">
+                <NavLink to="/kanji" className={({ isActive }) => `sm:hidden transition-colors ${isActive ? "text-primary" : "text-secondary-dark hover:text-primary"}`}>
                   <div className="flex flex-col justify-center items-center gap-2">
-                    <FaBookOpen />
-                    <p className="text-xs text-secondary-dark">Kanji List</p>
+                    <FaBookOpen className="text-lg" />
+                    <p className="text-xs">Kanji List</p>
                   </div>
-                </Link>
+                </NavLink>
               </div>
-
+              {/* My Kanji Mobile */}
               <div className="my-kanji">
-                <Link to="/my-kanji" className="hidden sm:block hover:text-primary transition-colors">
-                  My Kanji
-                </Link>
-                <Link to="/my-kanji" className="sm:hidden hover:text-primary transition-colors">
+                <NavLink to="/my-kanji" className={({ isActive }) => `sm:hidden transition-colors ${isActive ? "text-primary" : "text-secondary-dark hover:text-primary"}`}>
                   <div className="flex flex-col justify-center items-center gap-2">
-                    <FaBookmark />
-                    <p className="text-xs text-secondary-dark">My Kanji</p>
+                    <FaBookmark className="text-lg" />
+                    <p className="text-xs">My Kanji</p>
                   </div>
-                </Link>
+                </NavLink>
               </div>
             </div>
-
-            {/* Info User & Tombol Logout */}
           </div>
         </div>
       </nav>

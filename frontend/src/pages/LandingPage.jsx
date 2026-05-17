@@ -8,7 +8,7 @@ import Navbar from "../components/landing/Navbar";
 
 export default function LandingPage() {
   return (
-    <main className="h-full bg-background text-white">
+    <main className="h-full sm:w-full w-sm bg-background text-white">
       <Navbar />
       <Hero />
       <Cards />

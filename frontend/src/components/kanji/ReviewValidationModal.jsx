@@ -59,11 +59,11 @@ export default function ReviewValidationModal({ isOpen, onClose, onSuccess, kanj
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     // Normalisasi jawaban: trim, lowercase
-    const normalizedInput = userAnswer.trim().toLowerCase();
+    const normalizedInput = userAnswer.trim().replace(/^-|-$/g, "").toLowerCase();
 
     // Split jawaban benar jika ada koma (misal: "Cut, disconnect")
     // Mendukung koma latin dan jepang
-    const correctAnswers = question.value.split(/[,、]/).map((a) => a.trim().toLowerCase());
+    const correctAnswers = question.value.split(/[,、]/).map((a) => a.trim().replace(/^-|-$/g, "").toLowerCase());
 
     if (correctAnswers.includes(normalizedInput)) {
       setStatus("success");

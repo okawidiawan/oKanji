@@ -9,7 +9,7 @@ import logoImg from "../../assets/logo.png";
 
 export default function Footer() {
   return (
-    <footer className="flex flex-col md:flex-row justify-between items-start w-full max-w-7xl mx-auto mt-40 md:mt-96 mb-24 gap-16 md:gap-0 px-4">
+    <footer className="flex flex-col md:flex-row justify-between items-start w-full max-w-7xl mx-auto mt-40 md:mt-96 mb-24 gap-16 md:gap-0 px-4 border-t pt-8 border-my-border">
       <div className="left-side w-full md:w-1/4 gap-2 flex flex-col">
         <RouterLink>
           <img src={logoImg} alt="okanji Logo" className="h-10 w-auto" />
@@ -40,7 +40,7 @@ export default function Footer() {
             </RouterLink>
           </div>
         </div>
-        <hr className="border-t border-my-border w-full" />
+        <hr className="border-t border-my-border/40 w-full" />
         <div className="social-media w-full">
           <ul className="flex justify-end gap-4">
             <li>

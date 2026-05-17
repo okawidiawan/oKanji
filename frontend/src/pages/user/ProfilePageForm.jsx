@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { FaEdit, FaSave } from "react-icons/fa";
 
 export default function ProfilePageForm({ user, updateProfile, isLoading, error, successMessage, setSuccessMessage, clearError, validationError, setValidationError }) {
   // Local state for form
@@ -161,18 +162,24 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
                 <span>Loading...</span>
               </div>
             ) : (
-              "Edit Profile"
+              <div className="flex items-center justify-center gap-2">
+                <FaEdit className="text-xl -mt-1" />
+                Edit Profile
+              </div>
             )}
           </button>
         ) : (
-          <button type="submit" disabled={isLoading} className="w-full sm:w-fit px-6 py-3 border border-green-600 text-green-600 font-bold rounded-xl hover:bg-green-600 hover:text-secondary transition-all cursor-pointer text-sm">
+          <button type="submit" disabled={isLoading} className="w-full sm:w-fit px-6 py-3 border border-green-800 text-green-800 font-bold rounded-xl hover:bg-green-900 hover:text-secondary transition-all cursor-pointer text-sm">
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
                 <AiOutlineLoading3Quarters className="animate-spin" />
                 <span>Saving...</span>
               </div>
             ) : (
-              "Save Changes"
+              <div className="flex items-center justify-center gap-2">
+                <FaSave className="text-xl -mt-1" />
+                Save Change
+              </div>
             )}
           </button>
         )}

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import useAuthStore from "../stores/use-auth-store";
-import logo from "../assets/Logo.png";
+import logo from "../assets/Logo.svg";
 
 export default function AuthLayout() {
   const navigate = useNavigate();
@@ -19,7 +19,9 @@ export default function AuthLayout() {
       <div className="w-full max-w-md">
         <div className="rounded-2xl p-8 border border-my-border bg-transparent backdrop-blur-md top-0 shadow-[0_8px_8px_rgba(0,0,0,0.4)]">
           <div className="mb-8 flex flex-col items-center">
-            <img src={`${logo}`} alt="okanji logo" className="w-auto h-12" />
+            <Link to={"/"}>
+              <img src={`${logo}`} alt="okanji logo" className="w-auto h-12" />
+            </Link>
             <p className="text-gray-400 mt-2">Your Personal Kanji Companion.</p>
           </div>
           <Outlet />
