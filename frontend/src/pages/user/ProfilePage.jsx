@@ -1,10 +1,11 @@
 import { useState } from "react";
 import useAuthStore from "../../stores/use-auth-store";
 import ProfilePageForm from "./ProfilePageForm";
+import useUserProgressStore from "../../stores/use-user-progress-store";
 
 export default function ProfilePage() {
   const { user, updateProfile, isLoading, error, clearError } = useAuthStore();
-
+  const { stats } = useUserProgressStore();
   const [successMessage, setSuccessMessage] = useState("");
   const [validationError, setValidationError] = useState("");
 
@@ -63,6 +64,38 @@ export default function ProfilePage() {
           {validationError}
         </div>
       )}
+
+      {/* Bagian Statistik Kanji */}
+
+      {/* <div className="bg-background-lighter/40 p-6 rounded-2xl border border-my-border backdrop-blur-md shadow-lg space-y-6">
+        <h2 className="text-xl font-bold text-white font-outfit">Progress Belajar Kanji</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {stats.map((item) => (
+            <div key={item.level} className="bg-background/50 p-4 rounded-xl border border-my-border/60 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-bold text-primary">{item.level}</span>
+                <span className="text-xs text-gray-400 font-mono">
+                  {item.memorized} / {item.total} Hafal
+                </span>
+              </div> */}
+
+      {/* Progress Bar */}
+
+      {/* <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${item.percentage}%` }} />
+              </div> */}
+
+      {/* Keterangan Detail */}
+
+      {/* <div className="flex justify-between text-xs text-gray-500">
+                <span>Sedang Dipelajari: {item.notMemorized}</span>
+                <span>Belum Ditambahkan: {item.notAdded}</span>
+                <span className="text-primary/90 font-semibold">{item.percentage}%</span>
+              </div>
+            </div> */}
+      {/* ))} */}
+      {/* </div>
+      </div> */}
     </>
   );
 }

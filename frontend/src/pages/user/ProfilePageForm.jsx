@@ -169,7 +169,7 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
             )}
           </button>
         ) : (
-          <button type="submit" disabled={isLoading} className="w-full sm:w-fit px-6 py-3 border border-green-600 text-green-600 font-bold rounded-xl hover:bg-green-600 hover:text-secondary transition-all cursor-pointer text-sm">
+          <button type="submit" disabled={isLoading} className="w-full sm:w-fit px-6 py-3 border border-green-800 text-green-800 font-bold rounded-xl hover:bg-green-900 hover:text-secondary transition-all cursor-pointer text-sm">
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
                 <AiOutlineLoading3Quarters className="animate-spin" />
