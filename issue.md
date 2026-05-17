@@ -1,302 +1,113 @@
-# Refactor: Migrasi useEffect ke React Router v7 Loader & Custom Hook
+# Feature: Optimasi Validasi Duplikat Kotoba dengan Relasi Many-to-Many
 
-## Ringkasan
+## Konteks Masalah
 
-Saat ini semua halaman (pages) di frontend menggunakan `useEffect` untuk data fetching, redirect, dan side effect lainnya. Ini bisa disederhanakan dan dibuat lebih idiomatis dengan memanfaatkan fitur **React Router v7 `loader`** dan **custom hook**.
+Saat ini, logika pembuatan kosakata (Kotoba) di `backend/src/services/kotoba-service.js` mencegah masuknya kombinasi `word` dan `reading` yang sama secara mutlak (global) dengan melemparkan error `"Vocabulary already registered"`.
 
-**Jumlah useEffect yang akan dimigrasi: 7 buah** (di 6 halaman).
+Pendekatan ini bermasalah untuk kosakata bahasa Jepang yang saling beririsan dan dimiliki oleh lebih dari satu Kanji.
+**Contoh Kasus:**
+Kosakata `中国` (reading: `ちゅうごく`) terkait dengan kanji `中` dan `国`. Jika user sudah menambahkan `中国` pada kanji `中`, lalu kemudian ingin menambahkan `中国` pada kanji `国`, sistem akan menolak dengan error. Padahal seharusnya kosakata tersebut diizinkan dan cukup **dihubungkan (_linked_)** ke kanji yang baru tanpa membuat duplikat baris baru.
 
-**Branch**: `refactor/migrate-useeffect`
+## Tujuan (Architectural Goal)
+
+Kita memiliki relasi **Many-to-Many** antara `Kanji` dan `Kotoba` melalui tabel penghubung `KanjiKotoba` (lihat `backend/prisma/schema.prisma`).
+Tujuannya adalah:
+
+- **Jangan lempar error** saat mendeteksi duplikat `word` + `reading` pada endpoint Create.
+- Alih-alih error, **cari data Kotoba yang sudah ada tersebut**, lalu **hubungkan (link) secara otomatis** ke `kanjiId` yang baru dikirimkan melalui tabel `KanjiKotoba`.
+- Hal ini mencegah redundansi baris di tabel `kotoba` dan menjaga riwayat progres belajar user tetap terintegrasi sempurna.
+
+## Instruksi Teknis untuk Developer / AI
+
+Harap ubah logika di berkas `backend/src/services/kotoba-service.js`.
+
+### 1. Hapus Validasi Duplikat Global di `create`
+
+Pastikan pemanggilan `await validateDuplicateKotoba(...)` **dihapus** dari alur _single create_. Pengecekan duplikat akan kita ganti dengan logika "Pencarian dan Penghubungan (Find & Link)".
+
+### 2. Ubah Skenario Single Create
+
+Pada fungsi `create` (di bagian penanganan single object):
+
+1. Lakukan pencarian data kotoba yang eksis menggunakan `prisma.kotoba.findFirst` berdasarkan `word` dan `reading` yang dikirimkan. Sertakan relasi `include: { kanjiKotoba: true }`.
+2. Jika Kotoba **sudah ada**:
+   - Ambil daftar `kanjiId` yang saat ini terhubung ke Kotoba tersebut.
+   - Filter `kanjiIds` dari _request payload_ yang **belum terhubung**.
+   - Lakukan `prisma.kanjiKotoba.createMany` untuk menghubungkan `kanjiId` baru ke Kotoba tersebut.
+   - Gabungkan ID kanji yang lama dan baru, lalu _return_ response object tanpa mengeksekusi `prisma.kotoba.create`.
+3. Jika Kotoba **belum ada**:
+   - Eksekusi blok `prisma.kotoba.create` seperti biasa.
+
+### 3. Terapkan Pola Serupa di Batch Create
+
+Pada bagian blok `if (Array.isArray(validatedRequest))` di dalam transaksi `$transaction`:
+
+- Hapus logika `if (existing > 0) throw new ResponseError(...)`.
+- Ganti dengan pendekatan yang sama: Cari data kotoba. Jika sudah ada, gunakan `tx.kanjiKotoba.create` untuk meng-insert relasi barunya saja. Jika belum ada, eksekusi `tx.kotoba.create`.
+
+### 4. Buat dan Perbarui Unit Test
+Sesuai pedoman di `CONTEXT.md`, setiap penambahan fitur atau modifikasi logika wajib diikuti dengan pembuatan **Unit Test**. Gunakan framework **Bun Test** di direktori `backend/tests/` (terutama di `kotoba.test.js`).
+
+Pastikan Anda menambahkan *test case* baru untuk memvalidasi skenario berikut:
+1. **Insert Kotoba Baru**: Proses pembuatan kosakata yang belum ada berjalan seperti biasa.
+2. **Re-use Kotoba (Skenario Utama)**: 
+   - Lakukan pembuatan kosakata (`word` dan `reading`) yang *sama persis* dengan data yang sudah ada di DB, namun berikan `kanjiId` yang **berbeda**.
+   - **Ekspektasi (Expectations)**:
+     - API melempar status `200 OK` (tidak lagi melempar `400 Bad Request`).
+     - Jumlah *record* di tabel `kotoba` (**tidak bertambah** / tidak ada duplikat baris).
+     - Relasi tabel `kanji_kotoba` bertambah untuk `kanjiId` yang baru.
+     - Response API mengembalikan array `kanjiIds` yang berisi gabungan ID kanji lama dan baru.
 
 ---
 
-## Daftar Perubahan
+## Referensi Kode (Clue untuk Single Create)
 
-### Task 1: Buat Custom Hook `useDebounce`
+Berikut adalah gambaran alur kode yang diharapkan untuk proses "Single Create" pada `kotoba-service.js`:
 
-> **File baru**: `frontend/src/hooks/useDebounce.js`
+```javascript
+// 1. Cari apakah Kotoba dengan kombinasi word & reading tersebut sudah terdaftar
+const existingKotoba = await prisma.kotoba.findFirst({
+  where: {
+    word: validatedRequest.word,
+    reading: validatedRequest.reading,
+  },
+  include: {
+    kanjiKotoba: true, // Ambil semua kanji yang saat ini terhubung
+  },
+});
 
-Buat custom hook sederhana untuk menangani debounce value. Hook ini menggantikan pola `useEffect` + `setTimeout` yang ada di `KanjiListPage.jsx`.
+// 2. Jika SUDAH ADA, kita hubungkan dengan kanjiIds yang dikirimkan (jika belum terhubung)
+if (existingKotoba) {
+  const currentLinkedKanjiIds = existingKotoba.kanjiKotoba.map((k) => k.kanjiId);
 
-**Spesifikasi Hook:**
-- Nama: `useDebounce(value, delay)`
-- Parameter:
-  - `value` — nilai yang ingin di-debounce (tipe apapun)
-  - `delay` — waktu tunggu dalam milidetik (number)
-- Return: `debouncedValue` — nilai yang sudah di-debounce
-- Logika: Gunakan `useEffect` + `setTimeout` secara internal. Setiap kali `value` berubah, set timeout baru. Cleanup timeout lama saat value berubah lagi atau komponen unmount.
+  // Filter kanji mana saja yang belum terhubung ke kotoba ini
+  const newLinks = validatedRequest.kanjiIds.filter((id) => !currentLinkedKanjiIds.includes(id));
 
-**Contoh penggunaan nanti:**
-```jsx
-const debouncedSearch = useDebounce(searchTerm, 500);
-```
-
-**Dokumentasi:** Tambahkan komentar berbahasa Indonesia di atas fungsi, jelaskan kegunaan hook ini.
-
----
-
-### Task 2: Migrasi `LandingPage.jsx` — Hapus useEffect Redirect
-
-> **File yang diubah**: `frontend/src/router/index.jsx`, `frontend/src/pages/LandingPage.jsx`
-
-**Kondisi sekarang:**
-```jsx
-// LandingPage.jsx (baris 15-19)
-useEffect(() => {
-  if (isAuthenticated) {
-    navigate("/profile", { replace: true });
+  if (newLinks.length > 0) {
+    // Buat relasi baru di tabel penghubung KanjiKotoba
+    await prisma.kanjiKotoba.createMany({
+      data: newLinks.map((kanjiId) => ({
+        kanjiId: kanjiId,
+        kotobaId: existingKotoba.id,
+      })),
+    });
   }
-}, [isAuthenticated, navigate]);
+
+  // Gabungkan list kanji lama dengan yang baru untuk response data
+  const allLinkedKanjiIds = [...new Set([...currentLinkedKanjiIds, ...validatedRequest.kanjiIds])];
+
+  return {
+    id: existingKotoba.id,
+    word: existingKotoba.word,
+    reading: existingKotoba.reading,
+    meaning: existingKotoba.meaning,
+    jlptLevel: existingKotoba.jlptLevel,
+    kanjiIds: allLinkedKanjiIds,
+  };
+}
+
+// 3. Jika BELUM ADA, jalankan pembuatan data Kotoba baru seperti biasa
+const result = await prisma.kotoba.create({
+  // ... data & select block bawaan ...
+});
 ```
-
-**Yang harus dilakukan:**
-
-1. Di `router/index.jsx`, tambahkan property `loader` pada route `/`:
-   ```jsx
-   {
-     path: "/",
-     element: <LandingPage />,
-     loader: () => {
-       const { isAuthenticated } = useAuthStore.getState();
-       if (isAuthenticated) {
-         return redirect("/profile");
-       }
-       return null;
-     },
-   },
-   ```
-   > **Catatan penting**: Import `redirect` dari `react-router-dom`. Panggil `useAuthStore.getState()` (bukan hook `useAuthStore()`) karena loader bukan React component.
-
-2. Di `LandingPage.jsx`:
-   - Hapus import `useEffect` (jika tidak dipakai di tempat lain)
-   - Hapus import `useNavigate` dari `react-router`
-   - Hapus import `useAuthStore`
-   - Hapus seluruh blok `useEffect` dan variabel `navigate`, `isAuthenticated`
-   - Komponen menjadi murni render saja (tidak ada state/effect)
-
----
-
-### Task 3: Migrasi `LoginPage.jsx` & `RegisterPage.jsx` — Hapus useEffect clearError
-
-> **File yang diubah**: `frontend/src/router/index.jsx`, `frontend/src/pages/auth/LoginPage.jsx`, `frontend/src/pages/auth/RegisterPage.jsx`
-
-**Kondisi sekarang (sama di kedua file):**
-```jsx
-useEffect(() => {
-  clearError();
-}, [clearError]);
-```
-
-**Yang harus dilakukan:**
-
-1. Di `router/index.jsx`, tambahkan `loader` pada route `login` dan `register`:
-   ```jsx
-   {
-     path: "auth",
-     element: <AuthLayout />,
-     children: [
-       {
-         path: "login",
-         element: <LoginPage />,
-         loader: () => {
-           useAuthStore.getState().clearError();
-           return null;
-         },
-       },
-       {
-         path: "register",
-         element: <RegisterPage />,
-         loader: () => {
-           useAuthStore.getState().clearError();
-           return null;
-         },
-       },
-     ],
-   },
-   ```
-
-2. Di `LoginPage.jsx`:
-   - Hapus blok `useEffect` (baris 19-22)
-   - **Pertahankan** `clearError` di destructuring store — karena masih dipakai di `handleChange` (baris 28)
-   - Hapus import `useEffect` dari React. Ubah baris 1 menjadi: `import { useState } from "react";`
-
-3. Di `RegisterPage.jsx`:
-   - Lakukan hal yang sama persis seperti LoginPage
-   - Hapus blok `useEffect` (baris 28-31)
-   - **Pertahankan** `clearError` di destructuring store — masih dipakai di `handleChange` (baris 36)
-   - Hapus import `useEffect` dari React. Ubah baris 1 menjadi: `import { useState } from "react";`
-
----
-
-### Task 4: Migrasi `KanjiListPage.jsx` — Ganti useEffect Debounce dengan Custom Hook
-
-> **File yang diubah**: `frontend/src/pages/kanji/KanjiListPage.jsx`
-
-**Kondisi sekarang — ada 2 useEffect:**
-
-```jsx
-// Effect 1: Debounce search (baris 10-16)
-useEffect(() => {
-  const delayDebounceFn = setTimeout(() => {
-    setFilters({ search: searchTerm });
-  }, 500);
-  return () => clearTimeout(delayDebounceFn);
-}, [searchTerm, setFilters]);
-
-// Effect 2: Fetch data (baris 18-20)
-useEffect(() => {
-  fetchKanjis(paging.page);
-}, [paging.page, filters]);
-```
-
-**Yang harus dilakukan:**
-
-1. **Ganti Effect 1** dengan custom hook `useDebounce` (dari Task 1):
-   ```jsx
-   import useDebounce from "../../hooks/useDebounce";
-
-   // Di dalam komponen:
-   const debouncedSearch = useDebounce(searchTerm, 500);
-
-   // Lalu gunakan useEffect BARU yang lebih bersih untuk sync ke store:
-   useEffect(() => {
-     setFilters({ search: debouncedSearch });
-   }, [debouncedSearch, setFilters]);
-   ```
-   > **Catatan**: useEffect ini masih ada, tapi sekarang jauh lebih bersih — hanya 1 baris, tanpa setTimeout manual. Logika debounce sudah dienkapsulasi di hook.
-
-2. **Effect 2 tetap dipertahankan** — fetch data di halaman ini bergantung pada perubahan `filters` dan `paging.page` yang bisa berubah secara interaktif (bukan hanya saat pertama kali load). Loader hanya berjalan saat navigasi, sedangkan filter/pagination berubah tanpa navigasi ulang. Jadi effect ini **tetap diperlukan**.
-
-3. **Hapus** import `useEffect` yang lama hanya jika sudah tidak dipakai (dalam kasus ini masih dipakai, jadi tetap pertahankan).
-
----
-
-### Task 5: Migrasi `KanjiDetailPage.jsx` — Ganti useEffect Fetch dengan Loader
-
-> **File yang diubah**: `frontend/src/router/index.jsx`, `frontend/src/pages/kanji/KanjiDetailPage.jsx`
-
-**Kondisi sekarang:**
-```jsx
-// baris 31-38
-useEffect(() => {
-  if (id) {
-    fetchKanjiDetail(id);
-    if (isAuthenticated) {
-      fetchProgressDetail(id);
-    }
-  }
-}, [id, isAuthenticated]);
-```
-
-**Yang harus dilakukan:**
-
-1. Di `router/index.jsx`, tambahkan `loader` pada route `kanji/:id`:
-   ```jsx
-   {
-     path: "kanji/:id",
-     element: <KanjiDetailPage />,
-     loader: ({ params }) => {
-       const { isAuthenticated } = useAuthStore.getState();
-       useKanjiStore.getState().fetchKanjiDetail(params.id);
-       if (isAuthenticated) {
-         useUserProgressStore.getState().fetchProgressDetail(params.id);
-       }
-       return null;
-     },
-   },
-   ```
-   > **Catatan penting**: Karena `fetchKanjiDetail` dan `fetchProgressDetail` adalah async, kita **tidak perlu await** di sini. Store sudah mengatur `isLoading` secara internal, dan komponen sudah menampilkan loading spinner berdasarkan `isLoading`. Loader cukup *trigger* fetch-nya saja (fire-and-forget).
-
-   > **Import yang perlu ditambahkan di `router/index.jsx`**:
-   > ```jsx
-   > import useAuthStore from "../stores/use-auth-store";
-   > import useKanjiStore from "../stores/use-kanji-store";
-   > import useUserProgressStore from "../stores/use-user-progress-store";
-   > ```
-
-2. Di `KanjiDetailPage.jsx`:
-   - Hapus seluruh blok `useEffect` (baris 31-38)
-   - Hapus import `useEffect` dari React. Ubah baris 1 menjadi: `import { useState } from "react";`
-   - **JANGAN hapus** import `useParams` — masih dibutuhkan oleh handler lain (`handleQuickAdd`, `handleToggleMemorized`, dll) yang menggunakan `id`
-   - **JANGAN hapus** `isAuthenticated` dari `useAuthStore` — masih dipakai di JSX untuk conditional rendering tombol
-   - **JANGAN hapus** `fetchKanjiDetail` dan `fetchProgressDetail` dari destructuring store — hanya hapus blok `useEffect` saja
-
----
-
-### Task 6: Migrasi `UserKanjiListPage.jsx` — Pisahkan Initial Load ke Loader
-
-> **File yang diubah**: `frontend/src/router/index.jsx`, `frontend/src/pages/user/UserKanjiListPage.jsx`
-
-**Kondisi sekarang:**
-```jsx
-// baris 30-37
-useEffect(() => {
-  const params = { page: paging.page || 1 };
-  if (filterMemorized === "memorized") params.isMemorized = true;
-  if (filterMemorized === "learning") params.isMemorized = false;
-  fetchUserKanjis(params);
-}, [paging.page, filterMemorized]);
-```
-
-**Yang harus dilakukan:**
-
-Halaman ini memiliki filter interaktif (`filterMemorized`) yang berubah tanpa navigasi ulang, mirip seperti KanjiListPage. Oleh karena itu:
-
-1. Di `router/index.jsx`, tambahkan `loader` pada route `my-kanji` untuk **initial load** saja:
-   ```jsx
-   {
-     path: "my-kanji",
-     element: <UserKanjiListPage />,
-     loader: () => {
-       useUserProgressStore.getState().fetchUserKanjis({ page: 1 });
-       return null;
-     },
-   },
-   ```
-
-2. Di `UserKanjiListPage.jsx`:
-   - **Ubah** useEffect agar hanya merespons perubahan filter (bukan initial load):
-     ```jsx
-     useEffect(() => {
-       const params = { page: 1 };
-       if (filterMemorized === "memorized") params.isMemorized = true;
-       if (filterMemorized === "learning") params.isMemorized = false;
-       fetchUserKanjis(params);
-     }, [filterMemorized]);
-     ```
-   - Hapus `paging.page` dari dependency array karena initial load sudah ditangani loader, dan perubahan halaman sudah ditangani oleh `handlePageChange` yang memanggil `fetchUserKanjis` secara langsung.
-
----
-
-## Ringkasan Perubahan File
-
-| File | Aksi |
-|---|---|
-| `frontend/src/hooks/useDebounce.js` | **BARU** — Custom hook debounce |
-| `frontend/src/router/index.jsx` | **UBAH** — Tambah loader di 5 route, tambah import store & redirect |
-| `frontend/src/pages/LandingPage.jsx` | **UBAH** — Hapus useEffect, hapus import yang tidak perlu |
-| `frontend/src/pages/auth/LoginPage.jsx` | **UBAH** — Hapus blok useEffect, hapus import useEffect |
-| `frontend/src/pages/auth/RegisterPage.jsx` | **UBAH** — Hapus blok useEffect, hapus import useEffect |
-| `frontend/src/pages/kanji/KanjiListPage.jsx` | **UBAH** — Ganti debounce manual dengan `useDebounce` hook |
-| `frontend/src/pages/kanji/KanjiDetailPage.jsx` | **UBAH** — Hapus useEffect fetch, hapus import useEffect |
-| `frontend/src/pages/user/UserKanjiListPage.jsx` | **UBAH** — Ubah useEffect, hapus dependency `paging.page` |
-
-## Catatan Penting
-
-1. **Jangan ubah logika bisnis atau tampilan UI** — refactor ini hanya mengubah *di mana* dan *bagaimana* side effect dipanggil, bukan *apa* yang dilakukan.
-2. **Semua store action tetap sama** — tidak ada perubahan di file `stores/`.
-3. **Pastikan setiap task di-test manual** — buka halaman terkait, pastikan data tetap muncul dengan benar, filter dan pagination tetap berfungsi.
-4. **Kerjakan secara berurutan** dari Task 1 sampai Task 6, karena Task 4 bergantung pada Task 1.
-5. **Import `redirect`** dari `react-router-dom` di `router/index.jsx` (dibutuhkan di Task 2).
-6. Di `router/index.jsx`, loader mengakses store via `.getState()` (bukan hook), karena loader **bukan** React component.
-
-## Verifikasi
-
-Setelah semua task selesai, pastikan:
-- [ ] Halaman Landing: user yang sudah login otomatis diarahkan ke `/profile`
-- [ ] Halaman Login/Register: tidak ada error lama yang muncul saat berpindah halaman
-- [ ] Halaman Kanji List: search debounce berfungsi (ketik → tunggu 500ms → hasil muncul), filter level dan sorting berfungsi, pagination berfungsi
-- [ ] Halaman Kanji Detail: data kanji dan progress muncul saat halaman dibuka
-- [ ] Halaman My Kanji: data muncul saat pertama kali buka, filter Memorized/Learning berfungsi, pagination berfungsi
-- [ ] Tidak ada error di console browser
-- [ ] Aplikasi bisa dijalankan tanpa crash (`bun run dev` di folder frontend)

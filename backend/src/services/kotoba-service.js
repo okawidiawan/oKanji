@@ -28,23 +28,6 @@ const validateKanjiExistence = async (kanjiIds) => {
   }
 };
 
-/**
- * Memastikan kombinasi word dan reading belum ada di database.
- * @param {string} word
- * @param {string} reading
- */
-const validateDuplicateKotoba = async (word, reading) => {
-  const count = await prisma.kotoba.count({
-    where: {
-      word: word,
-      reading: reading,
-    },
-  });
-
-  if (count > 0) {
-    throw new ResponseError(400, "Vocabulary already registered");
-  }
-};
 
 /**
  * Membuat data kotoba baru (single atau batch) dan menghubungkannya dengan kanji.
@@ -62,31 +45,46 @@ const create = async (request) => {
     const result = await prisma.$transaction(async (tx) => {
       let count = 0;
       for (const item of validatedRequest) {
-        // Cek duplikat untuk tiap item dalam batch
-        const existing = await tx.kotoba.count({
+        // Cari apakah kotoba dengan kombinasi word & reading tersebut sudah terdaftar
+        const existing = await tx.kotoba.findFirst({
           where: {
             word: item.word,
             reading: item.reading,
           },
-        });
-
-        if (existing > 0) {
-          throw new ResponseError(400, `Vocabulary '${item.word}' already registered`);
-        }
-
-        await tx.kotoba.create({
-          data: {
-            word: item.word,
-            reading: item.reading,
-            meaning: item.meaning,
-            jlptLevel: item.jlptLevel,
-            kanjiKotoba: {
-              create: item.kanjiIds.map((kanjiId) => ({
-                kanjiId: kanjiId,
-              })),
-            },
+          include: {
+            kanjiKotoba: true,
           },
         });
+
+        if (existing) {
+          // Jika sudah ada, hubungkan dengan kanjiIds yang baru (jika belum terhubung)
+          const currentLinks = existing.kanjiKotoba.map((k) => k.kanjiId);
+          const newLinks = item.kanjiIds.filter((id) => !currentLinks.includes(id));
+
+          if (newLinks.length > 0) {
+            await tx.kanjiKotoba.createMany({
+              data: newLinks.map((kanjiId) => ({
+                kanjiId: kanjiId,
+                kotobaId: existing.id,
+              })),
+            });
+          }
+        } else {
+          // Jika belum ada, buat data kotoba baru
+          await tx.kotoba.create({
+            data: {
+              word: item.word,
+              reading: item.reading,
+              meaning: item.meaning,
+              jlptLevel: item.jlptLevel,
+              kanjiKotoba: {
+                create: item.kanjiIds.map((kanjiId) => ({
+                  kanjiId: kanjiId,
+                })),
+              },
+            },
+          });
+        }
         count++;
       }
       return { count };
@@ -94,10 +92,53 @@ const create = async (request) => {
     return result;
   }
 
-  // Jika input adalah single object, validasi kanjiIds dan duplikat
+  // Jika input adalah single object, validasi kanjiIds
   await validateKanjiExistence(validatedRequest.kanjiIds);
-  await validateDuplicateKotoba(validatedRequest.word, validatedRequest.reading);
 
+  // Cari apakah Kotoba dengan kombinasi word & reading tersebut sudah terdaftar
+  const existingKotoba = await prisma.kotoba.findFirst({
+    where: {
+      word: validatedRequest.word,
+      reading: validatedRequest.reading,
+    },
+    include: {
+      kanjiKotoba: true, // Ambil semua kanji yang saat ini terhubung
+    },
+  });
+
+  // Jika SUDAH ADA, kita hubungkan dengan kanjiIds yang dikirimkan (jika belum terhubung)
+  if (existingKotoba) {
+    const currentLinkedKanjiIds = existingKotoba.kanjiKotoba.map((k) => k.kanjiId);
+    
+    // Filter kanji mana saja yang belum terhubung ke kotoba ini
+    const newLinks = validatedRequest.kanjiIds.filter(
+      (id) => !currentLinkedKanjiIds.includes(id)
+    );
+
+    if (newLinks.length > 0) {
+      // Buat relasi baru di tabel penghubung KanjiKotoba
+      await prisma.kanjiKotoba.createMany({
+        data: newLinks.map((kanjiId) => ({
+          kanjiId: kanjiId,
+          kotobaId: existingKotoba.id,
+        })),
+      });
+    }
+
+    // Gabungkan list kanji lama dengan yang baru untuk response data
+    const allLinkedKanjiIds = [...new Set([...currentLinkedKanjiIds, ...validatedRequest.kanjiIds])];
+
+    return {
+      id: existingKotoba.id,
+      word: existingKotoba.word,
+      reading: existingKotoba.reading,
+      meaning: existingKotoba.meaning,
+      jlptLevel: existingKotoba.jlptLevel,
+      kanjiIds: allLinkedKanjiIds,
+    };
+  }
+
+  // Jika BELUM ADA, jalankan pembuatan data Kotoba baru seperti biasa
   const result = await prisma.kotoba.create({
     data: {
       word: validatedRequest.word,
