@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { FaEdit, FaSave } from "react-icons/fa";
 
 export default function ProfilePageForm({ user, updateProfile, isLoading, error, successMessage, setSuccessMessage, clearError, validationError, setValidationError }) {
   // Local state for form
@@ -161,7 +162,10 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
                 <span>Loading...</span>
               </div>
             ) : (
-              "Edit Profile"
+              <div className="flex items-center justify-center gap-2">
+                <FaEdit className="text-xl -mt-1" />
+                Edit Profile
+              </div>
             )}
           </button>
         ) : (
@@ -172,7 +176,10 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
                 <span>Saving...</span>
               </div>
             ) : (
-              "Save Changes"
+              <div className="flex items-center justify-center gap-2">
+                <FaSave className="text-xl -mt-1" />
+                Save Change
+              </div>
             )}
           </button>
         )}
