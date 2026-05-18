@@ -69,6 +69,9 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
       }, 3000);
     } catch (err) {
       // Error handled by store
+      setTimeout(() => {
+        clearError();
+      }, 3000);
     }
   };
 
@@ -131,8 +134,6 @@ export default function ProfilePageForm({ user, updateProfile, isLoading, error,
           disabled={!isEdit}
         />
       </div>
-
-      {error && <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl text-sm">{error}</div>}
 
       <div className="flex flex-wrap justify-start gap-4">
         {/* Jika sedang mode edit, tampilkan tombol Cancel */}
