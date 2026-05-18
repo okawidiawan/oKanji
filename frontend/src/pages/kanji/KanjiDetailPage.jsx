@@ -3,12 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import useKanjiStore from "../../stores/use-kanji-store";
 import useUserProgressStore from "../../stores/use-user-progress-store";
 import useAuthStore from "../../stores/use-auth-store";
-import { IoMdAddCircleOutline, IoMdTrash } from "react-icons/io";
-import { IoIosCheckmarkCircleOutline } from "react-icons/io";
-import { BsBookmarkPlusFill } from "react-icons/bs";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import ReviewValidationModal from "../../components/kanji/ReviewValidationModal";
+import KotobaReviewValidationModal from "../../components/kanji/KotobaReviewValidationModal";
+import { IoMdAddCircleOutline, IoMdTrash, IoMdSchool, IoIosCheckmarkCircleOutline } from "react-icons/io";
+import { BsBookmarkPlusFill } from "react-icons/bs";
 import { IoChevronBack } from "react-icons/io5";
+import { FaSwatchbook } from "react-icons/fa6";
+import { BiRevision } from "react-icons/bi";
 
 export default function KanjiDetailPage() {
   const { id } = useParams();
@@ -29,6 +31,8 @@ export default function KanjiDetailPage() {
   });
 
   const [showReviewChallenge, setShowReviewChallenge] = useState(false);
+  const [showKotobaReviewChallenge, setShowKotobaReviewChallenge] = useState(false);
+  const [activeReviewingKotoba, setActiveReviewingKotoba] = useState(null);
 
   const handleQuickAdd = async () => {
     setIsActionLoading(true);
@@ -56,6 +60,24 @@ export default function KanjiDetailPage() {
     try {
       const newReviewCount = (currentProgressDetail.reviewCount || 0) + 1;
       await memorizeKanji(id, { reviewCount: newReviewCount });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleKotobaReviewSuccess = async () => {
+    if (!activeReviewingKotoba) return;
+    setIsActionLoading(true);
+    try {
+      let currentReviewCount = 0;
+      if (currentProgressDetail?.kanji?.kotoba) {
+        const found = currentProgressDetail.kanji.kotoba.find((k) => k.id === activeReviewingKotoba.id);
+        if (found?.userKotoba && found.userKotoba.length > 0) {
+          currentReviewCount = found.userKotoba[0].reviewCount || 0;
+        }
+      }
+      const newReviewCount = currentReviewCount + 1;
+      await toggleKotobaMemorized(activeReviewingKotoba.id, { reviewCount: newReviewCount });
     } finally {
       setIsActionLoading(false);
     }
@@ -220,15 +242,11 @@ export default function KanjiDetailPage() {
 
       {/* Kotoba Section */}
       <section className="space-y-6 ">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-            <span className="w-8 h-8 bg-background-lighter rounded-lg flex items-center justify-center text-primary text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M9 4.804A7.993 7.993 0 002 12a7.998 7.998 0 007 7.917V4.804zm2 0v15.113A7.998 7.998 0 0018 12a7.993 7.993 0 00-7-7.196z" />
-              </svg>
-            </span>
-            Related Vocabulary
-          </h2>
+        <div className="flex items-center gap-2">
+          <div className="bg-background-lighter p-3 rounded-lg">
+            <FaSwatchbook className="text-md text-primary bg-background-lighter" />
+          </div>
+          <h2 className="text-xl font-bold text-white flex items-center gap-3">Related Vocabulary</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -252,18 +270,43 @@ export default function KanjiDetailPage() {
                 return (
                   <div
                     key={word.id}
-                    className={`group p-4 bg-background-lighter border border-my-border rounded-2xl flex items-center justify-evenly transition-all hover:border-secondary ${isMemorized ? "border-green-500/30 bg-green-500/5" : ""}`}
+                    className={`group p-4 bg-background-lighter border  rounded-2xl flex items-center justify-evenly transition-all hover:border-secondary ${isMemorized ? " bg-green-500/5 border-green-900" : "border-my-border"}`}
                   >
-                    <div className="space-y-1 w-md">
-                      <div className="flex justify-between items-center">
+                    <div className="space-y-1 w-md flex flex-col ">
+                      <div className="flex justify-between items-center ">
                         <div className="flex items-center gap-2">
                           <span className="text-2xl font-bold text-secondary">{word.word}</span>
                           <span className="text-md text-secondary-dark font-mono">[{word.reading}]</span>
                         </div>
+                        <div className="text-background text-sm p-2 rounded-lg bg-primary/80 font-bold">{word.jlptLevel}</div>
+                      </div>
+                      <div className="text-gray-400 text-sm pb-2">{word.meaning}</div>
+
+                      <div className="flex justify-between items-center border-t border-my-border pt-4 font-mono">
+                        <div className="text-gray-400 text-sm ">Review : {userKotoba?.reviewCount || 0}</div>
                         {isAuthenticated && (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-2">
                             {userKotoba ? (
                               <>
+                                {/* Button Review Kotoba */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveReviewingKotoba(word);
+                                    setShowKotobaReviewChallenge(true);
+                                  }}
+                                  disabled={!isMemorized}
+                                  title={!isMemorized ? "Memorize this vocabulary first to unlock review challenge" : "Start Review Challenge"}
+                                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                                    isMemorized
+                                      ? "bg-secondary text-background shadow-md shadow-secondary/20 hover:scale-105 active:scale-95 cursor-pointer"
+                                      : "opacity-30 cursor-not-allowed bg-background-lighter border border-my-border text-gray-500"
+                                  }`}
+                                >
+                                  <BiRevision className="w-5 h-5" />
+                                </button>
+
+                                {/* Button Check/Memorized */}
                                 <button
                                   onClick={() => handleToggleKotoba(word.id, isMemorized)}
                                   title={isMemorized ? "Mark as Not Memorized" : "Mark as Memorized"}
@@ -273,6 +316,8 @@ export default function KanjiDetailPage() {
                                 >
                                   <IoIosCheckmarkCircleOutline className="w-5 h-5" />
                                 </button>
+
+                                {/* Button Trash/Remove */}
                                 <button
                                   onClick={() => handleRemoveKotoba(word.id)}
                                   title="Remove Progress"
@@ -282,6 +327,7 @@ export default function KanjiDetailPage() {
                                 </button>
                               </>
                             ) : (
+                              // Button Plus/Add
                               <button
                                 onClick={() => handleAddKotoba(word.id)}
                                 disabled={!currentProgressDetail}
@@ -296,7 +342,6 @@ export default function KanjiDetailPage() {
                           </div>
                         )}
                       </div>
-                      <div className="text-gray-400 text-sm">{word.meaning}</div>
                     </div>
                   </div>
                 );
@@ -340,6 +385,19 @@ export default function KanjiDetailPage() {
 
       {/* Kanji Review Challenge Modal */}
       {currentKanji && <ReviewValidationModal isOpen={showReviewChallenge} onClose={() => setShowReviewChallenge(false)} onSuccess={handleReviewSuccess} kanji={currentKanji} />}
+
+      {/* Kotoba Review Challenge Modal */}
+      {activeReviewingKotoba && (
+        <KotobaReviewValidationModal
+          isOpen={showKotobaReviewChallenge}
+          onClose={() => {
+            setShowKotobaReviewChallenge(false);
+            setActiveReviewingKotoba(null);
+          }}
+          onSuccess={handleKotobaReviewSuccess}
+          kotoba={activeReviewingKotoba}
+        />
+      )}
     </div>
   );
 }
