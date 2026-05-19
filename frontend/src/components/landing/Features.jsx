@@ -4,6 +4,12 @@ import trackPict from "../../assets/trackPict.png";
 import kotoba from "../../assets/kotoba.png";
 import SectionHeading from "../ui/SectionHeading";
 
+/**
+ * Komponen Features
+ * Menampilkan daftar baris fitur produk (Smart Kanji Browser, Vocabulary in Context,
+ * Personal Progress Tracking) secara terstruktur. Masing-masing baris fitur
+ * di-render menggunakan komponen Feature.
+ */
 export default function Features() {
   const features = [
     {
@@ -30,7 +36,7 @@ export default function Features() {
   ];
 
   return (
-    <section className="flex flex-col justify-center items-center max-w-7xl mx-auto py-20" id="features">
+    <section className="flex flex-col justify-center items-center max-w-7xl mx-auto py-16 md:py-24" id="features">
       <SectionHeading>
         Everything you need to actually <br /> <span className="text-primary">remember</span> kanji.
       </SectionHeading>

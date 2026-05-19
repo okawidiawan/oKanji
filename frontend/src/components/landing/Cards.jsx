@@ -3,6 +3,11 @@ import collection from "../../assets/collection.svg";
 import check from "../../assets/check.svg";
 import context from "../../assets/context.svg";
 
+/**
+ * Komponen Cards
+ * Menampilkan daftar kartu layanan/fitur utama (Browse by Level, Track Progress, Learn in Context)
+ * dalam bentuk grid. Menggunakan efek blur glow dekoratif di bagian latar belakang.
+ */
 export default function Cards() {
   const cards = [
     {
@@ -26,7 +31,7 @@ export default function Cards() {
     },
   ];
   return (
-    <section className="flex justify-center max-w-7xl mx-auto px-4 py-20 relative z-10 mb-80" id="cards">
+    <section className="flex justify-center max-w-7xl mx-auto px-4 py-16 md:py-24 relative z-10" id="cards">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-up [animation-delay:1400ms] opacity-0 relative z-10">
         {cards.map((card) => (
           <Card key={card.id} title={card.title} description={card.description} icon={card.icon} />

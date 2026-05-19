@@ -216,7 +216,7 @@ export default function KanjiDetailPage() {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center w-full justify-center md:justify-start gap-4">
                 {/* JLPT Level */}
-                <span className="px-3 py-1 bg-primary text-background font-black rounded-lg text-sm uppercase">{currentKanji.jlptLevel}</span>
+                <span className="text-background text-sm p-2 rounded-lg bg-primary/80 font-bold">{currentKanji.jlptLevel}</span>
 
                 {/* Radikal */}
                 {currentKanji.radical && <span className="text-gray-500 text-sm">Radikal: {currentKanji.radical}</span>}

@@ -19,12 +19,12 @@ export default function KanjiGrid({ kanjis, isLoading, emptyMessage = "No kanji 
               <Link
                 key={kanji.id}
                 to={`/kanji/${kanji.id}`}
-                className={`relative overflow-hidden group aspect-square bg-background-lighter border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-300 ${
+                className={`relative overflow-hidden group aspect-square bg-background-lighter border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${
                   isMemorized
-                    ? "border-green-500/30 hover:border-green-500 bg-green-500/5 hover:bg-green-500/10"
+                    ? "border-green-800 hover:border-green-700 bg-green-950 hover:bg-green-900"
                     : isLearning
-                      ? "border-primary/30 hover:border-primary bg-primary/5 hover:bg-primary/10"
-                      : "border-my-border hover:border-primary hover:bg-primary/5"
+                      ? "border-primary/30 hover:border-primary bg-red-950 hover:bg-primary-dark"
+                      : "border-my-border hover:border-secondary hover:bg-primary/5"
                 }`}
               >
                 {/* Tracking Indicator */}

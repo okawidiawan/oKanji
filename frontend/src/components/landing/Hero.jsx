@@ -1,8 +1,13 @@
 import { Link as RouterLink } from "react-router";
 
+/**
+ * Komponen Hero
+ * Menampilkan bagian utama halaman (Hero section) dengan judul besar, sub-judul,
+ * dan tombol ajakan bertindak (CTA). Menggunakan animasi masuk fade-up secara bertahap.
+ */
 export default function Hero() {
   return (
-    <section className="flex justify-center items-center min-h-[70vh] relative" id="hero">
+    <section className="flex justify-center items-center min-h-[70vh] py-16 md:py-24 relative" id="hero">
       <div className="w-full max-w-7xl px-4 text-center flex flex-col items-center">
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-4 z-10 relative">
           <span className="text-primary animate-fade-up [animation-delay:600ms] opacity-0 inline-block">Finally</span>
