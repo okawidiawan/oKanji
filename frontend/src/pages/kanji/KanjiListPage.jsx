@@ -25,8 +25,9 @@ export default function KanjiListPage() {
     setFilters({ level: level === filters.level ? "" : level });
   };
 
-  const handleSortChange = (order) => {
-    setFilters({ sort_order: order });
+  const handleSortChange = (value) => {
+    const [sortBy, sortOrder] = value.split("|");
+    setFilters({ sort_by: sortBy, sort_order: sortOrder });
   };
 
   const handlePageChange = (newPage) => {
@@ -57,12 +58,14 @@ export default function KanjiListPage() {
           </div>
 
           <select
-            value={filters.sort_order || "asc"}
+            value={`${filters.sort_by || "jlptLevel"}|${filters.sort_order || "asc"}`}
             onChange={(e) => handleSortChange(e.target.value)}
             className="cursor-pointer bg-background-lighter text-gray-400 border border-my-border hover:border-primary/50 rounded-lg px-4 py-2 font-bold focus:outline-none transition-all"
           >
-            <option value="asc">N5 → N1</option>
-            <option value="desc">N1 → N5</option>
+            <option value="jlptLevel|asc">JLPT: N5 → N1</option>
+            <option value="jlptLevel|desc">JLPT: N1 → N5</option>
+            <option value="priority|asc">Priority: Recommended Order</option>
+            <option value="priority|desc">Priority: Reverse Order</option>
           </select>
         </div>
       </header>

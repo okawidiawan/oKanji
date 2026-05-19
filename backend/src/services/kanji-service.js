@@ -1,5 +1,5 @@
 import { prisma } from '../application/database.js';
-import { getKanjiValidation, getKanjiByIdValidation } from '../validation/kanji-validation.js';
+import { getKanjiValidation, getKanjiByIdValidation, updateKanjiPriorityValidation } from '../validation/kanji-validation.js';
 import { ResponseError } from '../error/response-error.js';
 
 /**
@@ -26,15 +26,28 @@ const list = async (user, request) => {
     ];
   }
 
+  // Menyusun orderBy secara dinamis. Jika sort_by adalah "priority", data yang bernilai null (belum diberi prioritas) akan diletakkan di akhir.
+  let orderBy;
+  if (validatedRequest.sort_by === "priority") {
+    orderBy = {
+      priority: {
+        sort: validatedRequest.sort_order,
+        nulls: "last"
+      }
+    };
+  } else {
+    orderBy = {
+      [validatedRequest.sort_by]: validatedRequest.sort_order,
+    };
+  }
+
   // Mengambil data dan total item secara paralel untuk efisiensi
   const [data, total] = await Promise.all([
     prisma.kanji.findMany({
       where: filters,
       take: validatedRequest.size,
       skip: skip,
-      orderBy: {
-        [validatedRequest.sort_by]: validatedRequest.sort_order,
-      },
+      orderBy: orderBy,
       include: {
         userKanjis: {
           where: {
@@ -101,4 +114,31 @@ const get = async (kanjiId) => {
   };
 };
 
-export { list, get };
+/**
+ * Melakukan batch update/pembaruan prioritas kanji.
+ * Menggunakan transaksi database agar seluruh pembaruan berhasil atau gagal secara bersamaan (atomik).
+ * 
+ * @param {Array} request - Array berisi objek { kanjiId, priority }
+ * @returns {Promise<Object>} Berisi jumlah data kanji yang berhasil diperbarui
+ */
+const updatePriority = async (request) => {
+  // Validasi input data request
+  const validatedRequest = updateKanjiPriorityValidation.parse(request);
+
+  // Buat array query prisma update
+  const updates = validatedRequest.map((item) =>
+    prisma.kanji.update({
+      where: { id: item.kanjiId },
+      data: { priority: item.priority },
+    })
+  );
+
+  // Jalankan transaksi database
+  const results = await prisma.$transaction(updates);
+
+  return {
+    updated: results.length
+  };
+};
+
+export { list, get, updatePriority };

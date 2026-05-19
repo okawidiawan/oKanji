@@ -24,6 +24,16 @@ const kanjiService = {
     const response = await api.get(`/kanjis/${kanjiId}`);
     return response.data;
   },
+
+  /**
+   * Memperbarui prioritas kanji secara massal (batch update)
+   * @param {Array<Object>} priorities - Array berisi objek { kanjiId, priority }
+   * @returns {Promise<Object>} Mengembalikan status pembaruan { data: { updated: number } }
+   */
+  updateKanjiPriority: async (priorities) => {
+    const response = await api.patch('/kanjis/priority', priorities);
+    return response.data;
+  },
 };
 
 export default kanjiService;

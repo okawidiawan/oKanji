@@ -39,4 +39,19 @@ const get = async (req, res, next) => {
   }
 };
 
-export { list, get };
+/**
+ * Melakukan pembaruan prioritas kanji secara massal (batch update).
+ * Menerima array JSON yang berisi detail prioritas kanji.
+ */
+const updatePriority = async (req, res, next) => {
+  try {
+    const result = await kanjiService.updatePriority(req.body);
+    res.status(200).json({
+      data: result
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+export { list, get, updatePriority };
