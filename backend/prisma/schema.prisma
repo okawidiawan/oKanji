@@ -38,6 +38,7 @@ model Kanji {
   meaning     String        @db.VarChar(500)
   strokeCount Int?
   radical     String?       @db.VarChar(10)
+  priority    Int?
   createdAt   DateTime      @default(now())
   userKanjis  UserKanji[]
   kanjiKotoba KanjiKotoba[]

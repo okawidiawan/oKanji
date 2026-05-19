@@ -100,7 +100,8 @@ frontend/
   - [x] `DELETE /api/users/logout`: Menghapus token (Logout).
 - **Kanji Data**:
   - [x] `GET /api/kanjis`: Mengambil list kanji.
-    - Query Params: `level` (N1-N5), `search` (karakter/makna), `sort_by` (default: jlptLevel), `sort_order` (asc/desc), `page`, `size`.
+    - Query Params: `level` (N1-N5), `search` (karakter/makna), `sort_by` (jlptLevel/priority, default: jlptLevel), `sort_order` (asc/desc), `page`, `size`.
+  - [x] `PATCH /api/kanjis/priority`: Melakukan batch update prioritas kanji.
   - [x] `GET /api/kanjis/:kanjiId`: Mengambil detail satu kanji + list kotoba terkait.
 - **Kotoba Data (Input Manual)**:
   - [x] `POST /api/kotoba`: Membuat kotoba baru (single/batch) + hubungkan ke kanji via `kanjiIds`.
@@ -166,6 +167,7 @@ frontend/
 14. **Indikator Progres Personal**: Untuk meningkatkan UX, daftar kanji global (`GET /api/kanjis`) menyertakan indikator status pelajari/hafal milik user saat ini melalui relasi `userKanjis` yang terfilter secara spesifik di level query (`where: { userId }`). Pada detail kanji milik user (`GET /api/user-kanji/:kanjiId`), seluruh kosakata yang terkait dengan kanji tersebut tetap ditampilkan secara lengkap, disertai array `userKotoba` terfilter sebagai penanda _tracking_ personal tiap kosakata.
 15. **Loader-first Architecture (Frontend)**: Frontend menggunakan pola **Render-as-You-Fetch** melalui React Router v7 Loaders. Data fetching awal dan logika redirect autentikasi didefinisikan di konfigurasi route (`router/index.jsx`), bukan di dalam komponen via `useEffect`. Ini menghilangkan _rendering waterfall_ dan _UI flickering_. Karena loader berjalan di luar konteks React component, akses ke Zustand store **wajib** menggunakan `useStore.getState()` (bukan hook `useStore()`), dan redirect menggunakan fungsi `redirect()` dari `react-router-dom`.
 16. **Minimalisasi useEffect (Frontend)**: `useEffect` hanya digunakan jika benar-benar diperlukan untuk sinkronisasi dengan sistem eksternal. Pola yang **dihindari**: data fetching saat mount, redirect berdasarkan state, dan cleanup error state. Pola yang **digunakan sebagai pengganti**: React Router Loaders untuk data fetching & redirect, Custom Hooks (contoh: `useDebounce` di `hooks/useDebounce.js`) untuk logika reusable, dan derived/computed values untuk state turunan. Referensi: prinsip _"You Might Not Need an Effect"_ dari dokumentasi React.
+17. **Sistem Prioritas Kanji**: Field `priority` (Int, nullable) pada model Kanji digunakan untuk memfasilitasi pengurutan berdasarkan rekomendasi belajar global. Ketika diurutkan berdasarkan `priority`, kanji tanpa prioritas (null) akan diposisikan di paling bawah dengan konfigurasi `nulls: 'last'`. Pembaruan prioritas dapat dilakukan secara massal melalui endpoint batch update.
 
 ---
 

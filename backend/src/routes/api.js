@@ -25,6 +25,7 @@ apiRouter.patch("/api/users/current", userController.update);
  * API Kanji: Mengambil data referensi kanji.
  */
 apiRouter.get("/api/kanjis", kanjiController.list);
+apiRouter.patch("/api/kanjis/priority", kanjiController.updatePriority);
 apiRouter.get("/api/kanjis/:kanjiId", kanjiController.get);
 
 /**

@@ -8,8 +8,10 @@ const prismaMock = {
     kanji: {
         findMany: mock(),
         count: mock(),
-        findUnique: mock()
-    }
+        findUnique: mock(),
+        update: mock()
+    },
+    $transaction: mock()
 };
 
 mock.module("../src/application/database.js", () => {
@@ -24,6 +26,8 @@ describe("Kanji API", () => {
         prismaMock.kanji.findMany.mockReset();
         prismaMock.kanji.count.mockReset();
         prismaMock.kanji.findUnique.mockReset();
+        prismaMock.kanji.update.mockReset();
+        prismaMock.$transaction.mockReset();
     });
 
     const mockAuthSuccess = () => {
@@ -208,6 +212,38 @@ describe("Kanji API", () => {
             expect(response.status).toBe(400);
             expect(response.body.error).toBeDefined();
         });
+
+        it("seharusnya berhasil mengurutkan secara ascending berdasarkan priority (nulls last)", async () => {
+            mockAuthSuccess();
+            const mockData = [{ id: "1", character: "日", jlptLevel: "N5", priority: 10 }];
+            prismaMock.kanji.findMany.mockResolvedValue(mockData);
+            prismaMock.kanji.count.mockResolvedValue(1);
+
+            const response = await request(app)
+               .get("/api/kanjis?sort_by=priority&sort_order=asc")
+               .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(200);
+            expect(prismaMock.kanji.findMany).toHaveBeenCalledWith(expect.objectContaining({
+                orderBy: { priority: { sort: "asc", nulls: "last" } }
+            }));
+        });
+
+        it("seharusnya berhasil mengurutkan secara descending berdasarkan priority (nulls last)", async () => {
+            mockAuthSuccess();
+            const mockData = [{ id: "1", character: "日", jlptLevel: "N5", priority: 10 }];
+            prismaMock.kanji.findMany.mockResolvedValue(mockData);
+            prismaMock.kanji.count.mockResolvedValue(1);
+
+            const response = await request(app)
+               .get("/api/kanjis?sort_by=priority&sort_order=desc")
+               .set("Authorization", "Bearer valid-token");
+
+            expect(response.status).toBe(200);
+            expect(prismaMock.kanji.findMany).toHaveBeenCalledWith(expect.objectContaining({
+                orderBy: { priority: { sort: "desc", nulls: "last" } }
+            }));
+        });
     });
 
     describe("GET /api/kanjis/:kanjiId", () => {
@@ -280,6 +316,74 @@ describe("Kanji API", () => {
         it("seharusnya gagal (401) jika tidak menyertakan token", async () => {
             const response = await request(app)
                 .get(`/api/kanjis/${kanjiId}`);
+
+            expect(response.status).toBe(401);
+            expect(response.body.error).toBe("Unauthorized");
+        });
+    });
+
+    describe("PATCH /api/kanjis/priority", () => {
+        const kanjiId1 = "550e8400-e29b-41d4-a716-446655440001";
+        const kanjiId2 = "550e8400-e29b-41d4-a716-446655440002";
+
+        it("seharusnya berhasil melakukan batch update prioritas kanji", async () => {
+            mockAuthSuccess();
+            const payload = [
+                { kanjiId: kanjiId1, priority: 10 },
+                { kanjiId: kanjiId2, priority: 20 }
+            ];
+
+            prismaMock.kanji.update.mockResolvedValue({});
+            prismaMock.$transaction.mockResolvedValue([{}, {}]);
+
+            const response = await request(app)
+                .patch("/api/kanjis/priority")
+                .set("Authorization", "Bearer valid-token")
+                .send(payload);
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.updated).toBe(2);
+            expect(prismaMock.kanji.update).toHaveBeenCalledTimes(2);
+            expect(prismaMock.$transaction).toHaveBeenCalled();
+        });
+
+        it("seharusnya gagal (400) jika body request berupa array kosong", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+                .patch("/api/kanjis/priority")
+                .set("Authorization", "Bearer valid-token")
+                .send([]);
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBeDefined();
+        });
+
+        it("seharusnya gagal (400) jika format kanjiId bukan UUID", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+                .patch("/api/kanjis/priority")
+                .set("Authorization", "Bearer valid-token")
+                .send([{ kanjiId: "bukan-uuid", priority: 10 }]);
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBeDefined();
+        });
+
+        it("seharusnya gagal (400) jika priority bukan bilangan bulat positif", async () => {
+            mockAuthSuccess();
+            const response = await request(app)
+                .patch("/api/kanjis/priority")
+                .set("Authorization", "Bearer valid-token")
+                .send([{ kanjiId: kanjiId1, priority: -5 }]);
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBeDefined();
+        });
+
+        it("seharusnya gagal (401) jika tidak menyertakan token", async () => {
+            const response = await request(app)
+                .patch("/api/kanjis/priority")
+                .send([{ kanjiId: kanjiId1, priority: 10 }]);
 
             expect(response.status).toBe(401);
             expect(response.body.error).toBe("Unauthorized");
