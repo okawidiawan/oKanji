@@ -5,11 +5,16 @@ import { FaFacebookF } from "react-icons/fa";
 import { HiOutlineMail } from "react-icons/hi";
 import { SiWhatsapp } from "react-icons/si";
 
-import logoImg from "../../assets/logo.png";
+import logoImg from "../../assets/logo.svg";
 
+/**
+ * Komponen Footer
+ * Menampilkan footer di bagian bawah halaman dengan informasi hak cipta,
+ * tautan navigasi, tombol CTA (Let's Begin), dan ikon media sosial.
+ */
 export default function Footer() {
   return (
-    <footer className="flex flex-col md:flex-row justify-between items-start w-full max-w-7xl mx-auto mt-40 md:mt-96 mb-24 gap-16 md:gap-0 px-4 border-t pt-8 border-my-border">
+    <footer className="flex flex-col md:flex-row justify-between items-start w-full max-w-7xl mx-auto mt-16 md:mt-24 mb-24 gap-16 md:gap-0 px-4 border-t pt-8 border-my-border">
       <div className="left-side w-full md:w-1/4 gap-2 flex flex-col">
         <RouterLink>
           <img src={logoImg} alt="okanji Logo" className="h-10 w-auto" />
