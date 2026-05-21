@@ -17,7 +17,7 @@ export default function Hero() {
             <span className="text-primary">.</span>
           </span>
         </h1>
-        <h3 className="text-lg tracking-normal text-secondary-dark mb-8 w-[90%] md:w-2xl animate-fade-up [animation-delay:1200ms] opacity-0 z-10 relative">
+        <h3 className="text-md tracking-normal text-secondary-dark mb-8 w-full md:w-2xl animate-fade-up [animation-delay:1200ms] opacity-0 z-10 relative">
           oKanji is your personal kanji companion, browse by JLPT level, track what you've memorized, and learn vocabulary in context.
           <br />
           No overwhelm, just progress, keep sticks.
